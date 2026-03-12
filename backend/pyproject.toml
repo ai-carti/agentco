@@ -12,7 +12,11 @@ dependencies = [
     "litellm>=1.40",
     "langgraph>=0.2",
     "httpx>=0.27",
+    "typer>=0.9",
 ]
+
+[project.scripts]
+agentco = "agentco.cli:main"
 
 [project.optional-dependencies]
 dev = [

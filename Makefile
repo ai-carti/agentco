@@ -1,4 +1,4 @@
-.PHONY: dev test build lint clean
+.PHONY: dev test build lint clean docker-build docker-up docker-down
 
 # ── Dev servers ──────────────────────────────────────────
 dev:
@@ -33,7 +33,19 @@ build-backend:
 	cd backend && uv build
 
 build-frontend:
-	cd frontend && npm run build
+	cd frontend && npm install && npm run build
+	mkdir -p backend/src/agentco/static
+	cp -r frontend/out/. backend/src/agentco/static/
+
+# ── Docker ────────────────────────────────────────────────
+docker-build:
+	docker build -f docker/Dockerfile .
+
+docker-up:
+	docker compose -f docker/docker-compose.yml up --build -d
+
+docker-down:
+	docker compose -f docker/docker-compose.yml down
 
 # ── Misc ──────────────────────────────────────────────────
 lint:

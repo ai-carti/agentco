@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  agentco:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${HOME}/.agentco:/data
+    environment:
+      - AGENTCO_DB_URL=sqlite:////data/agentco.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
