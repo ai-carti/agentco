@@ -20,5 +20,10 @@ frontend/dist/
 .vscode/
 *.swp
 
+# Secrets / env files
+.env
+.env.*
+*.env
+
 # OS
 .DS_Store

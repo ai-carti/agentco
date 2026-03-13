@@ -59,3 +59,11 @@ def test_makefile():
     assert "dev" in content, "Makefile missing 'dev' target"
     assert "test" in content, "Makefile missing 'test' target"
     assert "build" in content, "Makefile missing 'build' target"
+    assert "install" in content, "Makefile missing 'install' target"
+    assert "start" in content, "Makefile missing 'start' target"
+
+
+def test_gitignore_excludes_env():
+    assert p(".gitignore").is_file(), ".gitignore missing"
+    content = p(".gitignore").read_text()
+    assert ".env" in content, ".gitignore must exclude .env files"

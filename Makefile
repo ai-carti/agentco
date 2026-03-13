@@ -1,4 +1,11 @@
-.PHONY: dev test build lint clean docker-build docker-up docker-down
+.PHONY: dev test build lint clean install start docker-build docker-up docker-down
+
+# ── Install / Start ───────────────────────────────────────
+install:
+	cd backend && uv sync
+
+start:
+	agentco start
 
 # ── Dev servers ──────────────────────────────────────────
 dev:
