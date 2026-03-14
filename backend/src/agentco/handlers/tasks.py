@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.task import TaskService, InvalidTransitionError
@@ -16,7 +16,7 @@ router = APIRouter(
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class TaskCreate(BaseModel):
-    title: str
+    title: str = Field(..., min_length=1)
     description: str | None = None
 
 

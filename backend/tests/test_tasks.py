@@ -532,3 +532,20 @@ def test_delete_task_ownership_check(auth_client):
         headers=_auth_headers(token_bob),
     )
     assert resp.status_code == 404
+
+
+# ── BUG-006: TaskCreate.title min_length=1 ────────────────────────────────────
+
+def test_create_task_empty_title_returns_422(auth_client):
+    """BUG-006: POST с title="" должен вернуть 422, а не 201."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="bug006@example.com")
+    company_id = _create_company(client, token)
+    agent_id = _create_agent(client, token, company_id)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/agents/{agent_id}/tasks",
+        json={"title": ""},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422
