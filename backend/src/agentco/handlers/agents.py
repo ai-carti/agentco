@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.agent import AgentService
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/companies/{company_id}/agents", tags=["agents"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class AgentCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
     role: str | None = None
     system_prompt: str | None = None
     model: str = "gpt-4o-mini"

@@ -349,3 +349,19 @@ def test_delete_agent_ownership_check(auth_client):
         headers=_auth_headers(token_alice),
     )
     assert resp_check.status_code == 200
+
+
+# ── BUG-005: AgentCreate.name min_length=1 ───────────────────────────────────
+
+def test_create_agent_empty_name_returns_422(auth_client):
+    """BUG-005: POST с name="" должен вернуть 422, а не 201."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="bug005@example.com")
+    company_id = _create_company(client, token)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/agents",
+        json={"name": "", "role": "worker"},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422
