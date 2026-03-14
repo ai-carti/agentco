@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .handlers import companies_router, agents_router, tasks_router
+from .handlers import companies_router, agents_router, tasks_router, auth_router
 
 app = FastAPI(title="AgentCo", version="0.1.0")
 
+app.include_router(auth_router)
 app.include_router(companies_router)
 app.include_router(agents_router)
 app.include_router(tasks_router)

@@ -1,0 +1,76 @@
+"""Auth endpoints: register + login + protected /me."""
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
+
+from ..db.session import get_session
+from ..orm.user import User
+from ..auth.security import hash_password, verify_password, create_access_token
+from ..auth.dependencies import get_current_user
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# ── Schemas ───────────────────────────────────────────────────────────────────
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterResponse(BaseModel):
+    id: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class MeResponse(BaseModel):
+    id: str
+    email: str
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+def register(body: RegisterRequest, session: Session = Depends(get_session)):
+    """Register a new user. Returns user id."""
+    existing = session.query(User).filter_by(email=body.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user = User(
+        id=str(uuid.uuid4()),
+        email=body.email,
+        hashed_password=hash_password(body.password),
+    )
+    session.add(user)
+    session.commit()
+    return RegisterResponse(id=user.id)
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(body: LoginRequest, session: Session = Depends(get_session)):
+    """Authenticate user and return JWT access token."""
+    user = session.query(User).filter_by(email=body.email).first()
+    if not user or not verify_password(body.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return TokenResponse(access_token=create_access_token(user.id))
+
+
+@router.get("/me", response_model=MeResponse)
+def me(current_user: User = Depends(get_current_user)):
+    """Protected endpoint: returns current user info."""
+    return MeResponse(id=current_user.id, email=current_user.email)
