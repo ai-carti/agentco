@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.task import TaskService, InvalidTransitionError
@@ -18,6 +18,14 @@ router = APIRouter(
 class TaskCreate(BaseModel):
     title: str = Field(..., min_length=1)
     description: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def title_must_not_be_whitespace(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("title must not be empty or whitespace-only")
+        return stripped
 
 
 class TaskUpdate(BaseModel):

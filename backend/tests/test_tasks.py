@@ -549,3 +549,18 @@ def test_create_task_empty_title_returns_422(auth_client):
         headers=_auth_headers(token),
     )
     assert resp.status_code == 422
+
+
+def test_create_task_whitespace_title_returns_422(auth_client):
+    """BUG-008: POST с title="   " (только пробелы) должен вернуть 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="bug008@example.com")
+    company_id = _create_company(client, token)
+    agent_id = _create_agent(client, token, company_id)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/agents/{agent_id}/tasks",
+        json={"title": "   "},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422
