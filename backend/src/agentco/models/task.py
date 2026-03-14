@@ -3,7 +3,15 @@ from typing import Literal
 from pydantic import BaseModel, Field
 import uuid
 
-TaskStatus = Literal["backlog", "in_progress", "done", "cancelled"]
+TaskStatus = Literal["todo", "in_progress", "done", "failed"]
+
+# FSM transitions: from_status → allowed next statuses
+TASK_FSM: dict[str, set[str]] = {
+    "todo": {"in_progress"},
+    "in_progress": {"done", "failed"},
+    "done": set(),
+    "failed": set(),
+}
 
 
 class Task(BaseModel):
@@ -12,7 +20,7 @@ class Task(BaseModel):
     title: str
     description: str | None = None
     agent_id: str | None = None
-    status: TaskStatus = "backlog"
+    status: str = "todo"
     result: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

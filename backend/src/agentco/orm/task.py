@@ -13,7 +13,7 @@ class TaskORM(Base):
     agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"))
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(Text, default="backlog")
+    status: Mapped[str] = mapped_column(Text, default="todo")
     result: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

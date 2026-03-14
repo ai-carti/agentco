@@ -15,3 +15,4 @@ class CompanyORM(Base):
 
     agents: Mapped[list["AgentORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821
     tasks: Mapped[list["TaskORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821
+    credentials: Mapped[list["CredentialORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821

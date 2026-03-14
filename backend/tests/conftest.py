@@ -12,11 +12,12 @@ from sqlalchemy.pool import StaticPool
 from agentco.main import app
 from agentco.orm.base import Base
 # Import all ORM models so Base.metadata knows about them
-import agentco.orm.company  # noqa: F401
-import agentco.orm.agent    # noqa: F401
-import agentco.orm.task     # noqa: F401
-import agentco.orm.run      # noqa: F401
-import agentco.orm.user     # noqa: F401
+import agentco.orm.company     # noqa: F401
+import agentco.orm.agent       # noqa: F401
+import agentco.orm.task        # noqa: F401
+import agentco.orm.run         # noqa: F401
+import agentco.orm.user        # noqa: F401
+import agentco.orm.credential  # noqa: F401
 from agentco.db.session import get_session
 
 
