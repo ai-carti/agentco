@@ -14,6 +14,7 @@ interface AuthState {
 }
 
 interface AuthActions {
+  initAuth: () => Promise<void>
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
   logout: () => void
@@ -22,11 +23,22 @@ interface AuthActions {
 
 type AuthStore = AuthState & AuthActions
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
-  token: api.getStoredToken(),
+  token: null,
   isLoading: false,
   error: null,
+
+  initAuth: async () => {
+    const token = localStorage.getItem('agentco_token')
+    if (!token) return
+    try {
+      const user = await api.getMe(token)
+      set({ token, user })
+    } catch {
+      get().logout()
+    }
+  },
 
   login: async (email, password) => {
     set({ isLoading: true, error: null })
