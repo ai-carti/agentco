@@ -203,3 +203,63 @@ def test_delete_company_actually_deletes(auth_client):
 
     resp = client.get(f"/api/companies/{company_id}", headers=_auth_headers(token))
     assert resp.status_code == 404
+
+
+# ── BUG-004: Ownership checks ─────────────────────────────────────────────────
+
+def test_get_company_cross_user_returns_404(auth_client):
+    """GET /companies/{id} чужой компании → 404 (не 200)."""
+    client, _ = auth_client
+    # Alice создаёт компанию
+    token_alice = _register_and_login(client, email="alice@example.com")
+    create_resp = client.post(
+        "/api/companies/",
+        json={"name": "Alice Corp"},
+        headers=_auth_headers(token_alice),
+    )
+    company_id = create_resp.json()["id"]
+
+    # Bob пробует получить компанию Alice
+    token_bob = _register_and_login(client, email="bob@example.com")
+    resp = client.get(f"/api/companies/{company_id}", headers=_auth_headers(token_bob))
+    assert resp.status_code == 404
+
+
+def test_update_company_cross_user_returns_404(auth_client):
+    """PUT /companies/{id} чужой компании → 404 (не 200)."""
+    client, _ = auth_client
+    token_alice = _register_and_login(client, email="alice2@example.com")
+    create_resp = client.post(
+        "/api/companies/",
+        json={"name": "Alice Corp"},
+        headers=_auth_headers(token_alice),
+    )
+    company_id = create_resp.json()["id"]
+
+    token_bob = _register_and_login(client, email="bob2@example.com")
+    resp = client.put(
+        f"/api/companies/{company_id}",
+        json={"name": "Hacked Name"},
+        headers=_auth_headers(token_bob),
+    )
+    assert resp.status_code == 404
+
+
+def test_delete_company_cross_user_returns_404(auth_client):
+    """DELETE /companies/{id} чужой компании → 404 (не 204)."""
+    client, _ = auth_client
+    token_alice = _register_and_login(client, email="alice3@example.com")
+    create_resp = client.post(
+        "/api/companies/",
+        json={"name": "Alice Corp"},
+        headers=_auth_headers(token_alice),
+    )
+    company_id = create_resp.json()["id"]
+
+    token_bob = _register_and_login(client, email="bob3@example.com")
+    resp = client.delete(f"/api/companies/{company_id}", headers=_auth_headers(token_bob))
+    assert resp.status_code == 404
+
+    # Alice's company still exists
+    resp_check = client.get(f"/api/companies/{company_id}", headers=_auth_headers(token_alice))
+    assert resp_check.status_code == 200

@@ -56,9 +56,12 @@ def get_company(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return _to_out(CompanyService(session).get(company_id))
+        company = CompanyService(session).get(company_id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
+    if company.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return _to_out(company)
 
 
 @router.put("/{company_id}", response_model=CompanyOut)
@@ -68,6 +71,12 @@ def update_company(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    try:
+        company = CompanyService(session).get(company_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Company not found")
     try:
         return _to_out(CompanyService(session).update(company_id, body.name))
     except NotFoundError:
@@ -82,6 +91,12 @@ def delete_company(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    try:
+        company = CompanyService(session).get(company_id)
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Company not found")
+    if company.owner_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Company not found")
     try:
         CompanyService(session).delete(company_id)
     except NotFoundError:
