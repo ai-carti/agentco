@@ -17,6 +17,7 @@ dependencies = [
     "bcrypt>=4.0",
     "pydantic[email]>=2.12.5",
     "cryptography>=46.0.5",
+    "langgraph-checkpoint-sqlite>=1.0",
 ]
 
 [project.scripts]
