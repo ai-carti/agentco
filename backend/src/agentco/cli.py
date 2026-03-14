@@ -15,6 +15,16 @@ app = typer.Typer(
 
 
 @app.command()
+def _run_migrations():
+    """Apply all pending Alembic migrations."""
+    from alembic.config import Config
+    from alembic import command
+    import os
+    alembic_cfg = Config(os.path.join(os.path.dirname(__file__), "..", "..", "..", "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
+
+
+@app.command()
 def start(
     host: str = typer.Option("0.0.0.0", help="Bind host"),
     port: int = typer.Option(8000, help="Bind port"),
@@ -22,6 +32,7 @@ def start(
 ):
     """Start the AgentCo server (production mode)."""
     import uvicorn
+    _run_migrations()
     uvicorn.run(
         "agentco.main:app",
         host=host,
@@ -37,6 +48,7 @@ def dev(
 ):
     """Start the AgentCo server in dev mode (hot-reload)."""
     import uvicorn
+    _run_migrations()
     uvicorn.run(
         "agentco.main:app",
         host=host,

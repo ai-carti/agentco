@@ -11,6 +11,9 @@ AI Agent Orchestration Platform — monorepo.
 ## Quick Start
 
 ```bash
+# Install deps
+make install
+
 # Dev (backend + frontend)
 make dev
 
@@ -19,6 +22,16 @@ make test
 
 # Build
 make build
+```
+
+> Миграции применяются автоматически при `agentco start` / `agentco dev`.
+> Вручную: `cd backend && uv run alembic upgrade head`
+
+## Env variables (optional)
+
+```bash
+AGENTCO_DB_URL=sqlite:///./agentco.db   # default
+SECRET_KEY=your-secret-key              # JWT signing key
 ```
 
 ## Structure
