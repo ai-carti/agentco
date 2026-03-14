@@ -63,6 +63,16 @@ def test_makefile():
     assert "start" in content, "Makefile missing 'start' target"
 
 
+def test_makefile_install_covers_frontend():
+    """make install must install both backend (uv sync) and frontend (npm install)."""
+    content = p("Makefile").read_text()
+    assert "uv sync" in content, "Makefile install target must run 'uv sync' for backend"
+    assert "npm install" in content, (
+        "Makefile install target must run 'npm install' for frontend — "
+        "currently only backend deps are installed"
+    )
+
+
 def test_gitignore_excludes_env():
     assert p(".gitignore").is_file(), ".gitignore missing"
     content = p(".gitignore").read_text()

@@ -3,6 +3,7 @@
 # ── Install / Start ───────────────────────────────────────
 install:
 	cd backend && uv sync
+	cd frontend && npm install
 
 start:
 	agentco start
