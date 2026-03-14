@@ -9,6 +9,72 @@ import pytest
 from sqlalchemy.orm import sessionmaker
 
 
+# ── Bug #1: Пароль > 72 байт → должен вернуть 422, не 500 ──────────────────
+
+def test_register_password_over_72_bytes_returns_422(auth_client):
+    """bcrypt v5 бросает ValueError для паролей > 72 байт. Должны вернуть 422."""
+    client, _ = auth_client
+    long_password = "a" * 73  # 73 байта — больше лимита bcrypt
+    response = client.post(
+        "/auth/register",
+        json={"email": "longpass@example.com", "password": long_password},
+    )
+    assert response.status_code == 422
+
+
+def test_register_password_exactly_72_bytes_returns_201(auth_client):
+    """Пароль ровно 72 байта должен проходить."""
+    client, _ = auth_client
+    ok_password = "a" * 72
+    response = client.post(
+        "/auth/register",
+        json={"email": "exact72@example.com", "password": ok_password},
+    )
+    assert response.status_code == 201
+
+
+# ── Bug #2: Пустой email не должен приниматься → 422 ────────────────────────
+
+def test_register_empty_email_returns_422(auth_client):
+    """Пустой email должен отклоняться с 422."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "", "password": "secret123"},
+    )
+    assert response.status_code == 422
+
+
+def test_register_invalid_email_returns_422(auth_client):
+    """Невалидный email должен отклоняться с 422."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "not-an-email", "password": "secret123"},
+    )
+    assert response.status_code == 422
+
+
+# ── Bug #3: Пустой пароль не должен приниматься → 422 ───────────────────────
+
+def test_register_empty_password_returns_422(auth_client):
+    """Пустой пароль при регистрации должен отклоняться с 422."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "user@example.com", "password": ""},
+    )
+    assert response.status_code == 422
+
+
+def test_login_empty_password_returns_401(auth_client):
+    """Вход с пустым паролем должен возвращать 401."""
+    client, _ = auth_client
+    client.post("/auth/register", json={"email": "user@example.com", "password": "correct"})
+    response = client.post("/auth/login", json={"email": "user@example.com", "password": ""})
+    assert response.status_code == 401
+
+
 # ── AC1: POST /auth/register → 201, возвращает user id ───────────────────────
 
 def test_register_returns_201(auth_client):
