@@ -365,3 +365,19 @@ def test_create_agent_empty_name_returns_422(auth_client):
         headers=_auth_headers(token),
     )
     assert resp.status_code == 422
+
+
+# ── BUG-007: AgentCreate.name whitespace-only ─────────────────────────────────
+
+def test_create_agent_whitespace_name_returns_422(auth_client):
+    """BUG-007: POST с name="   " (whitespace-only) должен вернуть 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="bug007@example.com")
+    company_id = _create_company(client, token)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/agents",
+        json={"name": "   ", "role": "worker"},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422

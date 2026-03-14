@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.agent import AgentService
@@ -17,6 +17,14 @@ class AgentCreate(BaseModel):
     role: str | None = None
     system_prompt: str | None = None
     model: str = "gpt-4o-mini"
+
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_whitespace(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("name must not be empty or whitespace-only")
+        return stripped
 
 
 class AgentUpdate(BaseModel):
