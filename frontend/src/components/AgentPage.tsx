@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AgentForm, { type AgentFormData } from './AgentForm'
 import { getStoredToken } from '../api/client'
+import { useToast } from '../context/ToastContext'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -9,6 +10,7 @@ export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const toast = useToast()
 
   const handleSubmit = async (data: AgentFormData) => {
     setSaveError('')
@@ -27,12 +29,17 @@ export default function AgentPage() {
         },
       )
       if (!res.ok) {
-        setSaveError(`Failed to save agent (${res.status})`)
+        const msg = `Failed to save agent (${res.status})`
+        setSaveError(msg)
+        toast.error(msg)
         return
       }
       setSaved(true)
+      toast.success(`Agent saved`)
     } catch {
-      setSaveError('Network error — could not save agent')
+      const msg = 'Network error — could not save agent'
+      setSaveError(msg)
+      toast.error(msg)
     }
   }
 
