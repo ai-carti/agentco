@@ -27,6 +27,7 @@ from ..models.run import Run
 from ..repositories.run import RunRepository
 from ..repositories.task import TaskRepository
 from ..repositories.base import NotFoundError
+from ..core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +73,19 @@ class RunService:
         run = self._repo.add(run)
         self._session.commit()
 
-        # 3. Запускаем background task
+        # 3. Публикуем run.started
+        bus = EventBus.get()
         loop = asyncio.get_running_loop()
+        loop.create_task(bus.publish({
+            "type": "run.started",
+            "company_id": company_id,
+            "run_id": run.id,
+            "payload": {"status": "pending", "task_id": task_id},
+        }))
+
+        # 4. Запускаем background task
         bg_task = loop.create_task(
-            self._execute_agent(run.id, task_id, agent_id, session_factory)
+            self._execute_agent(run.id, task_id, agent_id, company_id, session_factory)
         )
         RunService._active_tasks[run.id] = bg_task
 
@@ -92,12 +102,15 @@ class RunService:
         run_id: str,
         task_id: str,
         agent_id: Optional[str],
+        company_id: str,
         session_factory: Callable[[], Session],
     ) -> str:
         """
         Background execution stub.
         M2-003 agent_node вызывается здесь; для M2-004 — заглушка.
         """
+        bus = EventBus.get()
+
         with session_factory() as session:
             run_orm = session.get(self._repo.orm_model, run_id)
             if run_orm is None:
@@ -105,17 +118,40 @@ class RunService:
             run_orm.status = "running"
             session.commit()
 
-        # TODO M2-005: реальный вызов agent_node через LangGraph
+        # TODO: реальный вызов agent_node через LangGraph
         await asyncio.sleep(0)  # yield control
 
         result = f"Agent completed task {task_id}"
-        with session_factory() as session:
-            run_orm = session.get(self._repo.orm_model, run_id)
-            if run_orm and run_orm.status == "running":
-                run_orm.status = "done"
-                run_orm.result = result
-                run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                session.commit()
+        try:
+            with session_factory() as session:
+                run_orm = session.get(self._repo.orm_model, run_id)
+                if run_orm and run_orm.status == "running":
+                    run_orm.status = "done"
+                    run_orm.result = result
+                    run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    session.commit()
+
+            await bus.publish({
+                "type": "run.done",
+                "company_id": company_id,
+                "run_id": run_id,
+                "payload": {"result": result},
+            })
+        except Exception as exc:
+            with session_factory() as session:
+                run_orm = session.get(self._repo.orm_model, run_id)
+                if run_orm:
+                    run_orm.status = "failed"
+                    run_orm.error = str(exc)
+                    run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    session.commit()
+
+            await bus.publish({
+                "type": "run.failed",
+                "company_id": company_id,
+                "run_id": run_id,
+                "payload": {"error": str(exc)},
+            })
 
         return result
 

@@ -178,7 +178,7 @@ def _register_and_login(client):
 def _create_company(client, token):
     """Helper: create company, return id."""
     resp = client.post(
-        "/api/companies",
+        "/api/companies/",
         json={"name": "WS Co"},
         headers={"Authorization": f"Bearer {token}"},
     )
