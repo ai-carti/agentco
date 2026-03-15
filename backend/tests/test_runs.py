@@ -275,6 +275,37 @@ def test_stop_nonexistent_run_returns_404(auth_client):
     assert resp.status_code == 404
 
 
+# ── BUG-015: дубликат running рана на одной задаче ─────────────────────────────
+
+def test_cannot_create_second_running_run_for_same_task(auth_client):
+    """BUG-015: POST /tasks/{id}/run при уже running ране → 400."""
+    client, _ = auth_client
+    token = _register_and_login(client)
+    company_id = _create_company(client, token)
+    agent_id = _create_agent(client, token, company_id)
+    task_id = _create_task(client, token, company_id, agent_id)
+
+    async def _hanging_agent(*args, **kwargs):
+        await asyncio.sleep(100)  # имитируем долгий агент
+
+    with patch("agentco.services.run.RunService._execute_agent", side_effect=_hanging_agent):
+        # Первый ран — должен создаться успешно
+        resp1 = client.post(
+            f"/api/companies/{company_id}/tasks/{task_id}/run",
+            headers=_auth_headers(token),
+        )
+        assert resp1.status_code == 201
+
+        # Второй ран на той же задаче — должен вернуть 400
+        resp2 = client.post(
+            f"/api/companies/{company_id}/tasks/{task_id}/run",
+            headers=_auth_headers(token),
+        )
+    assert resp2.status_code == 400
+    detail = resp2.json().get("detail", "")
+    assert detail  # сообщение об ошибке непустое
+
+
 # ── 5. Lifecycle: pending → running → done ─────────────────────────────────────
 
 def test_run_lifecycle_done(auth_client):

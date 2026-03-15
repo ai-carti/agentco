@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..models.run import Run
 from ..repositories.run import RunRepository
 from ..repositories.task import TaskRepository
-from ..repositories.base import NotFoundError
+from ..repositories.base import NotFoundError, ConflictError
 from ..core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
@@ -60,9 +60,17 @@ class RunService:
         if task.company_id != company_id:
             raise NotFoundError(f"Task {task_id!r} not found in company {company_id!r}")
 
+        # 2. Проверяем, нет ли уже активного рана для этой задачи
+        existing = self._repo.find_active_by_task(task_id)
+        if existing is not None:
+            raise ConflictError(
+                f"Task {task_id!r} already has an active run {existing.id!r} (status={existing.status!r}). "
+                "Stop it before starting a new one."
+            )
+
         agent_id = task.agent_id
 
-        # 2. Создаём Run
+        # 4. Создаём Run
         run = Run(
             company_id=company_id,
             task_id=task_id,

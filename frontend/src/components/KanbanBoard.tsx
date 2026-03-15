@@ -35,19 +35,30 @@ interface TaskCardProps {
 
 function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
   const [running, setRunning] = useState(false)
+  const [runError, setRunError] = useState<string | null>(null)
 
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()
     setRunning(true)
+    setRunError(null)
     try {
       const token = getStoredToken()
-      await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}/run`, {
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       })
+      if (!res.ok) {
+        const msg = `Failed to run task (${res.status})`
+        console.error(msg)
+        setRunError(msg)
+      }
+    } catch (err) {
+      const msg = 'Network error — could not run task'
+      console.error(msg, err)
+      setRunError(msg)
     } finally {
       setRunning(false)
     }
@@ -141,6 +152,21 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
       >
         {running ? '⏳' : '▶'} {running ? 'Running…' : 'Run'}
       </button>
+
+      {/* Error feedback */}
+      {runError && (
+        <p
+          data-testid={`run-error-${task.id}`}
+          style={{
+            fontSize: '0.7rem',
+            color: '#f87171',
+            marginTop: '0.3rem',
+            margin: '0.3rem 0 0',
+          }}
+        >
+          ⚠ {runError}
+        </p>
+      )}
     </div>
   )
 }

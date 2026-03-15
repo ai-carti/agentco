@@ -41,3 +41,15 @@ class RunRepository(BaseRepository[RunORM, Run]):
 
     def list_by_task(self, task_id: str) -> list[Run]:
         return self.list(task_id=task_id)
+
+    def find_active_by_task(self, task_id: str) -> Run | None:
+        """Возвращает активный ран (pending или running) для задачи или None."""
+        from sqlalchemy import select, or_
+        stmt = (
+            select(self.orm_model)
+            .where(RunORM.task_id == task_id)
+            .where(or_(RunORM.status == "running", RunORM.status == "pending"))
+            .limit(1)
+        )
+        row = self._session.scalars(stmt).first()
+        return self._to_domain(row) if row else None

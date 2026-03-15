@@ -19,6 +19,10 @@ class NotFoundError(Exception):
     pass
 
 
+class ConflictError(Exception):
+    pass
+
+
 class BaseRepository(Generic[ORMType, DomainType]):
     orm_model: Type[ORMType]
 
