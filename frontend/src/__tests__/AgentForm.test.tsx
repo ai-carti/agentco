@@ -92,6 +92,19 @@ describe('AgentForm - model selector', () => {
     )
   })
 
+  it('falls back to hardcoded list when fetch returns empty array', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: [] }),
+    })
+    render(<AgentForm onSubmit={vi.fn()} />)
+    await waitFor(() => {
+      for (const model of FALLBACK_MODELS) {
+        expect(screen.getByRole('option', { name: model })).toBeInTheDocument()
+      }
+    })
+  })
+
   it('shows placeholder option that prevents empty submit', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

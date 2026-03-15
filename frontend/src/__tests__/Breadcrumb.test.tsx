@@ -1,0 +1,68 @@
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import Breadcrumb from '../components/Breadcrumb'
+import { useAgentStore } from '../store/agentStore'
+
+describe('Breadcrumb', () => {
+  beforeEach(() => {
+    useAgentStore.setState({ currentCompany: null })
+  })
+
+  function renderBreadcrumb(route = '/') {
+    return render(
+      <MemoryRouter initialEntries={[route]}>
+        <Breadcrumb />
+      </MemoryRouter>,
+    )
+  }
+
+  it('renders breadcrumb container', () => {
+    renderBreadcrumb()
+    expect(screen.getByTestId('breadcrumb')).toBeInTheDocument()
+  })
+
+  it('shows "AgentCo > Select company" when no company selected on root page', () => {
+    renderBreadcrumb('/')
+    expect(screen.getByText('AgentCo')).toBeInTheDocument()
+    expect(screen.getByText('Select company')).toBeInTheDocument()
+  })
+
+  it('shows company name when on company page', () => {
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
+    renderBreadcrumb('/companies/c1')
+    expect(screen.getByText('AgentCo')).toBeInTheDocument()
+    expect(screen.getByText('My Startup')).toBeInTheDocument()
+  })
+
+  it('shows section "War Room" on company page', () => {
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
+    renderBreadcrumb('/companies/c1')
+    expect(screen.getByText('War Room')).toBeInTheDocument()
+  })
+
+  it('shows section "Agent" on agent detail page', () => {
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
+    renderBreadcrumb('/companies/c1/agents/a1')
+    expect(screen.getByText('Agent')).toBeInTheDocument()
+  })
+
+  it('shows "Settings" section on settings page', () => {
+    renderBreadcrumb('/settings')
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  it('AgentCo link points to companies list', () => {
+    renderBreadcrumb('/companies/c1')
+    const agentCoLink = screen.getByText('AgentCo')
+    expect(agentCoLink.closest('a')).toHaveAttribute('href', '/')
+  })
+
+  it('is visible on all protected page routes', () => {
+    for (const route of ['/', '/companies/c1', '/companies/c1/agents/a1', '/settings']) {
+      const { unmount } = renderBreadcrumb(route)
+      expect(screen.getByTestId('breadcrumb')).toBeInTheDocument()
+      unmount()
+    }
+  })
+})

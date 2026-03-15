@@ -34,7 +34,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         if (!res.ok) throw new Error('Failed to load models')
         const data = await res.json()
         const list: string[] = data.models ?? data.providers ?? data ?? FALLBACK_MODELS
-        setModels(Array.isArray(list) ? list : FALLBACK_MODELS)
+        const resolved = Array.isArray(list) && list.length > 0 ? list : FALLBACK_MODELS
+        setModels(resolved)
       } catch {
         setModels(FALLBACK_MODELS)
       } finally {
