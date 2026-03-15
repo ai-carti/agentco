@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import AuthPage from './components/AuthPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
+import Breadcrumb from './components/Breadcrumb'
 import CompaniesPage from './components/CompaniesPage'
 import CompanyPage from './components/CompanyPage'
 import AgentPage from './components/AgentPage'
@@ -13,6 +14,7 @@ function AppLayout() {
   return (
     <>
       <Navbar />
+      <Breadcrumb />
       <Routes>
         <Route path="/" element={<CompaniesPage />} />
         <Route path="/companies/:id" element={<CompanyPage />} />

@@ -20,11 +20,18 @@ export interface Task {
   assignee_name?: string
 }
 
+export interface Company {
+  id: string
+  name: string
+}
+
 interface AgentStore {
   agents: Agent[]
   tasks: Task[]
+  currentCompany: Company | null
   setAgents: (agents: Agent[]) => void
   setTasks: (tasks: Task[]) => void
+  setCurrentCompany: (company: Company | null) => void
   updateAgentStatus: (id: string, status: AgentStatus) => void
   updateTaskStatus: (id: string, status: TaskStatus) => void
 }
@@ -32,8 +39,10 @@ interface AgentStore {
 export const useAgentStore = create<AgentStore>((set) => ({
   agents: [],
   tasks: [],
+  currentCompany: null,
   setAgents: (agents) => set({ agents }),
   setTasks: (tasks) => set({ tasks }),
+  setCurrentCompany: (company) => set({ currentCompany: company }),
   updateAgentStatus: (id, status) =>
     set((state) => ({
       agents: state.agents.map((a) => (a.id === id ? { ...a, status } : a)),

@@ -1,0 +1,51 @@
+import { Link, useLocation } from 'react-router-dom'
+import { useAgentStore } from '../store/agentStore'
+
+function getSection(pathname: string): string | null {
+  if (pathname === '/' || pathname === '') return null
+  if (pathname.startsWith('/settings')) return 'Settings'
+  if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
+  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'
+  return null
+}
+
+export default function Breadcrumb() {
+  const location = useLocation()
+  const currentCompany = useAgentStore((s) => s.currentCompany)
+  const section = getSection(location.pathname)
+  const hasCompany = currentCompany !== null
+
+  return (
+    <div
+      data-testid="breadcrumb"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem 1.5rem',
+        fontSize: '0.85rem',
+        color: '#9ca3af',
+        borderBottom: '1px solid #1e293b',
+      }}
+    >
+      <Link to="/" style={{ color: '#60a5fa', textDecoration: 'none' }}>
+        AgentCo
+      </Link>
+
+      <span style={{ color: '#4b5563' }}>&gt;</span>
+
+      {hasCompany ? (
+        <span style={{ color: '#e2e8f0' }}>{currentCompany.name}</span>
+      ) : (
+        <span>Select company</span>
+      )}
+
+      {section && (
+        <>
+          <span style={{ color: '#4b5563' }}>&gt;</span>
+          <span style={{ color: '#e2e8f0' }}>{section}</span>
+        </>
+      )}
+    </div>
+  )
+}
