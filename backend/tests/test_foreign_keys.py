@@ -34,7 +34,7 @@ def make_engine_with_fk(db_url: str):
 def apply_migrations(db_path: str) -> None:
     env = {**os.environ, "AGENTCO_DB_URL": f"sqlite:///{db_path}"}
     result = subprocess.run(
-        ["uv", "run", "alembic", "upgrade", "head"],
+        ["uv", "run", "python", "-m", "alembic", "upgrade", "head"],
         cwd=BACKEND_DIR,
         env=env,
         capture_output=True,

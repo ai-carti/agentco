@@ -27,7 +27,7 @@ def apply_migrations(db_path: str) -> None:
     backend_dir = Path(__file__).parent.parent
     env = {**os.environ, "AGENTCO_DB_URL": f"sqlite:///{db_path}"}
     result = subprocess.run(
-        ["uv", "run", "alembic", "upgrade", "head"],
+        ["uv", "run", "python", "-m", "alembic", "upgrade", "head"],
         cwd=backend_dir,
         env=env,
         capture_output=True,

@@ -248,7 +248,7 @@
   .check-list li span { color: var(--muted); }
 
   /* CTA */
-  #s10 { text-align: center; }
+  #s11 { text-align: center; }
   .cta-box {
     background: linear-gradient(135deg, #6c47ff15, #00d4aa10);
     border: 1px solid #6c47ff40;
@@ -307,7 +307,7 @@
     <div style="margin-top:48px; display:flex; gap:16px; align-items:center;">
       <div class="card" style="padding:16px 24px; background:var(--surface2);">
         <span style="font-size:13px; color:var(--muted);">Status</span>
-        <div style="font-size:15px; font-weight:700; color:var(--accent2); margin-top:4px;">M0 Complete · M1 in progress</div>
+        <div style="font-size:15px; font-weight:700; color:var(--accent2); margin-top:4px;">M0 · M1 · M2 Complete · UX Sprint active</div>
       </div>
       <div class="card" style="padding:16px 24px; background:var(--surface2);">
         <span style="font-size:13px; color:var(--muted);">Stack</span>
@@ -420,19 +420,19 @@
     </div>
     <div class="cards four" style="max-width:900px;">
       <div class="card" style="text-align:center;">
-        <div class="metric-val grad">5</div>
+        <div class="metric-val grad">21</div>
         <div class="metric-label">Milestones closed</div>
-        <div style="font-size:12px; color:var(--accent2); margin-top:6px;">M0 complete ✅</div>
+        <div style="font-size:12px; color:var(--accent2); margin-top:6px;">M0 · M1 · M2 ✅</div>
       </div>
       <div class="card" style="text-align:center;">
-        <div class="metric-val grad">25</div>
+        <div class="metric-val grad">178</div>
         <div class="metric-label">Tests passing</div>
         <div style="font-size:12px; color:var(--accent2); margin-top:6px;">0 failures</div>
       </div>
       <div class="card" style="text-align:center;">
-        <div class="metric-val grad">8</div>
+        <div class="metric-val grad">30+</div>
         <div class="metric-label">Git commits</div>
-        <div style="font-size:12px; color:var(--accent2); margin-top:6px;">TDD throughout</div>
+        <div style="font-size:12px; color:var(--accent2); margin-top:6px;">shipped by AI team</div>
       </div>
       <div class="card" style="text-align:center;">
         <div class="metric-val grad">1</div>
@@ -559,19 +559,24 @@
         <div class="tl-sub">Monorepo, FastAPI, SQLite, LiteLLM, Docker<br><br><span style="color:var(--accent2);">Done ✅</span></div>
       </div>
       <div class="tl-item">
-        <div class="tl-dot active">→</div>
+        <div class="tl-dot done">✓</div>
         <div class="tl-title">M1 — Auth + CRUD</div>
-        <div class="tl-sub">JWT Auth, Companies, Agents, Tasks, Frontend Board<br><br><span style="color:var(--accent);">In progress</span></div>
+        <div class="tl-sub">JWT Auth, Companies, Agents, Tasks, Frontend Board<br><br><span style="color:var(--accent2);">Done ✅</span></div>
       </div>
       <div class="tl-item">
-        <div class="tl-dot"></div>
+        <div class="tl-dot done">✓</div>
         <div class="tl-title">M2 — Orchestration</div>
-        <div class="tl-sub">LangGraph hierarchy, Agent Node, EventBus, War Room UI</div>
+        <div class="tl-sub">LangGraph, EventBus, War Room UI<br><br><span style="color:var(--accent2);">Done ✅</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot active">→</div>
+        <div class="tl-title">UX Sprint</div>
+        <div class="tl-sub">War Room polish, routing, breadcrumb, empty states<br><br><span style="color:var(--accent);">In progress</span></div>
       </div>
       <div class="tl-item">
         <div class="tl-dot"></div>
         <div class="tl-title">M3 — Memory + Scale</div>
-        <div class="tl-sub">RAG memory, Agent Library, Templates, Onboarding</div>
+        <div class="tl-sub">RAG memory, Agent Library, Templates, Onboarding<br><br>Next →</div>
       </div>
     </div>
     <div style="margin-top:48px;">
@@ -639,8 +644,35 @@
     </div>
   </div>
 
-  <!-- S10: CTA -->
+  <!-- S10: PRODUCT TODAY -->
   <div class="slide" id="s10">
+    <div class="slide-header">
+      <div class="label">Product Today</div>
+      <h2>Working software. <span class="grad">Right now.</span></h2>
+      <p class="sub" style="margin-top:12px;">M0 + M1 + M2 закрыты. Вот что работает уже сегодня.</p>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:900px; margin-top:8px;">
+      <div style="border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+        <img src="screenshots/01_login.png" style="width:100%; display:block; max-height:220px; object-fit:cover;" alt="Auth Page"/>
+        <div style="padding:10px 14px; background:var(--surface); font-size:13px; color:var(--muted);">🔐 Auth — JWT, email/password</div>
+      </div>
+      <div style="border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+        <img src="screenshots/02_dashboard.png" style="width:100%; display:block; max-height:220px; object-fit:cover;" alt="Dashboard"/>
+        <div style="padding:10px 14px; background:var(--surface); font-size:13px; color:var(--muted);">🏢 Companies — CRUD + navigation</div>
+      </div>
+      <div style="border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+        <img src="screenshots/04_kanban.png" style="width:100%; display:block; max-height:220px; object-fit:cover;" alt="Kanban"/>
+        <div style="padding:10px 14px; background:var(--surface); font-size:13px; color:var(--muted);">📋 Kanban — Tasks, assignees, ▶ Run</div>
+      </div>
+      <div style="border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+        <img src="screenshots/03_agents.png" style="width:100%; display:block; max-height:220px; object-fit:cover;" alt="Agents"/>
+        <div style="padding:10px 14px; background:var(--surface); font-size:13px; color:var(--muted);">🤖 Agents — model selector, live status</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S11: CTA -->
+  <div class="slide" id="s11">
     <div class="label">Let's build</div>
     <div class="cta-box">
       <h2 style="font-size:52px;"><span class="grad">AgentCo</span></h2>
