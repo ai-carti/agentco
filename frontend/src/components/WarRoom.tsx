@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useAgentStore } from '../store/agentStore'
+import EmptyState from './EmptyState'
 
 interface Run {
   run_id: string
@@ -94,7 +95,13 @@ export default function WarRoom() {
       <h1 className="text-xl font-bold mb-4">War Room</h1>
 
       {runs.length === 0 ? (
-        <p className="text-gray-500">💤 All quiet here</p>
+        <EmptyState
+          emoji="💤"
+          title="All quiet here"
+          subtitle="No agents are running. Start a task to see the magic"
+          ctaLabel="▶ Run a Task"
+          onCTA={() => {}}
+        />
       ) : (
         <div className="space-y-3">
           {runs.map((run) => (

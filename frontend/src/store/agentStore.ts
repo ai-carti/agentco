@@ -6,8 +6,11 @@ export type TaskStatus = 'todo' | 'backlog' | 'in_progress' | 'done' | 'failed'
 export interface Agent {
   id: string
   name: string
+  role?: string
+  model?: string
   status: AgentStatus
   currentTask?: string
+  last_task_at?: string | null
 }
 
 export type TaskPriority = 'high' | 'medium' | 'low'
