@@ -13,8 +13,11 @@ export interface Agent {
 export interface Task {
   id: string
   title: string
+  description?: string
   status: TaskStatus
   assignedTo?: string
+  assignee_id?: string
+  assignee_name?: string
 }
 
 interface AgentStore {
