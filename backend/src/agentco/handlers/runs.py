@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..db.session import get_session, SessionLocal
 from ..services.run import RunService
-from ..repositories.base import NotFoundError
+from ..repositories.base import NotFoundError, ConflictError
 from ..auth.dependencies import get_current_user
 from ..orm.user import User
 
@@ -80,6 +80,8 @@ async def run_task(
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ConflictError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return RunCreatedOut(run_id=run.id)
 
 

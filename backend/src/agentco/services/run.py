@@ -81,7 +81,7 @@ class RunService:
         run = self._repo.add(run)
         self._session.commit()
 
-        # 3. Публикуем run.started
+        # 5. Публикуем run.started
         bus = EventBus.get()
         loop = asyncio.get_running_loop()
         loop.create_task(bus.publish({
@@ -91,7 +91,7 @@ class RunService:
             "payload": {"status": "pending", "task_id": task_id},
         }))
 
-        # 4. Запускаем background task
+        # 6. Запускаем background task
         bg_task = loop.create_task(
             self._execute_agent(run.id, task_id, agent_id, company_id, session_factory)
         )
