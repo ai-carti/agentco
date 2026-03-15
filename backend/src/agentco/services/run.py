@@ -1,0 +1,157 @@
+"""
+RunService — business logic для Runs API (M2-004).
+
+Lifecycle:
+    POST /tasks/{id}/run:
+        1. Создаёт Run(status=pending) в БД
+        2. Запускает _execute_agent как asyncio background task
+        3. Возвращает run_id
+
+    Background task:
+        - Обновляет статус → running
+        - Выполняет агента (заглушка — реальный вызов через agent_node позже)
+        - Обновляет статус → done/failed + result/error
+
+    POST /runs/{id}/stop:
+        - Отменяет asyncio task если running
+        - Обновляет статус → stopped
+"""
+import asyncio
+import logging
+from datetime import datetime, timezone
+from typing import Callable, Optional
+
+from sqlalchemy.orm import Session, sessionmaker
+
+from ..models.run import Run
+from ..repositories.run import RunRepository
+from ..repositories.task import TaskRepository
+from ..repositories.base import NotFoundError
+
+logger = logging.getLogger(__name__)
+
+
+class RunService:
+    # Глобальный реестр активных asyncio Tasks: run_id → asyncio.Task
+    _active_tasks: dict[str, asyncio.Task] = {}
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+        self._repo = RunRepository(session)
+        self._task_repo = TaskRepository(session)
+
+    def create_and_start(
+        self,
+        company_id: str,
+        task_id: str,
+        session_factory: Callable[[], Session],
+    ) -> Run:
+        """
+        Создаёт Run в БД (pending), стартует background task.
+        Возвращает созданный Run.
+        """
+        # 1. Проверяем что task существует и принадлежит компании
+        try:
+            task = self._task_repo.get(task_id)
+        except NotFoundError:
+            raise NotFoundError(f"Task {task_id!r} not found")
+
+        if task.company_id != company_id:
+            raise NotFoundError(f"Task {task_id!r} not found in company {company_id!r}")
+
+        agent_id = task.agent_id
+
+        # 2. Создаём Run
+        run = Run(
+            company_id=company_id,
+            task_id=task_id,
+            agent_id=agent_id,
+            status="pending",
+            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        run = self._repo.add(run)
+        self._session.commit()
+
+        # 3. Запускаем background task
+        loop = asyncio.get_running_loop()
+        bg_task = loop.create_task(
+            self._execute_agent(run.id, task_id, agent_id, session_factory)
+        )
+        RunService._active_tasks[run.id] = bg_task
+
+        # Cleanup на завершении
+        def _on_done(fut: asyncio.Task):
+            RunService._active_tasks.pop(run.id, None)
+
+        bg_task.add_done_callback(_on_done)
+
+        return run
+
+    async def _execute_agent(
+        self,
+        run_id: str,
+        task_id: str,
+        agent_id: Optional[str],
+        session_factory: Callable[[], Session],
+    ) -> str:
+        """
+        Background execution stub.
+        M2-003 agent_node вызывается здесь; для M2-004 — заглушка.
+        """
+        with session_factory() as session:
+            run_orm = session.get(self._repo.orm_model, run_id)
+            if run_orm is None:
+                return ""
+            run_orm.status = "running"
+            session.commit()
+
+        # TODO M2-005: реальный вызов agent_node через LangGraph
+        await asyncio.sleep(0)  # yield control
+
+        result = f"Agent completed task {task_id}"
+        with session_factory() as session:
+            run_orm = session.get(self._repo.orm_model, run_id)
+            if run_orm and run_orm.status == "running":
+                run_orm.status = "done"
+                run_orm.result = result
+                run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                session.commit()
+
+        return result
+
+    def get(self, company_id: str, run_id: str) -> Run:
+        """Возвращает Run по id, проверяет принадлежность компании."""
+        try:
+            run = self._repo.get(run_id)
+        except NotFoundError:
+            raise NotFoundError(f"Run {run_id!r} not found")
+        if run.company_id != company_id:
+            raise NotFoundError(f"Run {run_id!r} not found in company {company_id!r}")
+        return run
+
+    def list_by_company(self, company_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
+        """Список ранов компании с пагинацией."""
+        return self._repo.list_by_company(company_id, limit=limit, offset=offset)
+
+    def stop(self, company_id: str, run_id: str) -> Run:
+        """Останавливает running ран."""
+        try:
+            run_orm = self._session.get(self._repo.orm_model, run_id)
+        except Exception:
+            run_orm = None
+
+        if run_orm is None or run_orm.company_id != company_id:
+            raise NotFoundError(f"Run {run_id!r} not found")
+
+        # Отменяем asyncio task если есть
+        bg_task = RunService._active_tasks.pop(run_id, None)
+        if bg_task and not bg_task.done():
+            bg_task.cancel()
+
+        # Обновляем статус → stopped (независимо от текущего)
+        run_orm.status = "stopped"
+        run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        self._session.flush()
+        self._session.commit()
+
+        return self._repo._to_domain(run_orm)

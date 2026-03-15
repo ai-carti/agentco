@@ -14,7 +14,9 @@ export default function AuthPage() {
   const location = useLocation()
 
   // BUG-010: read the "from" location saved by ProtectedRoute
-  const from = (location.state as { from?: Location })?.from?.pathname || '/'
+  // BUG-012: guard against redirect loop back to /auth
+  const rawFrom = (location.state as { from?: Location })?.from?.pathname
+  const from = rawFrom && rawFrom !== '/auth' ? rawFrom : '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
