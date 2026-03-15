@@ -182,6 +182,7 @@ def _create_company(client, token):
         json={"name": "WS Co"},
         headers={"Authorization": f"Bearer {token}"},
     )
+    assert resp.status_code == 201, f"Company creation failed: {resp.status_code} {resp.text}"
     return resp.json()["id"]
 
 
