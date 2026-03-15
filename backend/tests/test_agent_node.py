@@ -1,0 +1,453 @@
+"""
+TDD тесты для M2-003 — Agent Node: LLM стриминг + tool calls.
+
+Порядок: сначала тест (red), потом реализация (green).
+"""
+from __future__ import annotations
+
+import json
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+
+# ─── Helpers: фабрики для mock streaming chunks ───────────────────────────────
+
+def _make_text_chunk(content: str, finish_reason: str | None = None) -> MagicMock:
+    """Создаёт chunk с текстовым дельтой."""
+    chunk = MagicMock()
+    chunk.choices = [MagicMock()]
+    chunk.choices[0].delta.content = content
+    chunk.choices[0].delta.tool_calls = None
+    chunk.choices[0].finish_reason = finish_reason
+    chunk.usage = None
+    return chunk
+
+
+def _make_tool_call_chunk(
+    index: int,
+    call_id: str | None = None,
+    name: str | None = None,
+    args_delta: str = "",
+    finish_reason: str | None = None,
+) -> MagicMock:
+    """Создаёт chunk с tool_call дельтой."""
+    chunk = MagicMock()
+    chunk.choices = [MagicMock()]
+    chunk.choices[0].delta.content = None
+
+    tc = MagicMock()
+    tc.index = index
+    tc.id = call_id
+    tc.function = MagicMock()
+    tc.function.name = name
+    tc.function.arguments = args_delta
+    chunk.choices[0].delta.tool_calls = [tc]
+    chunk.choices[0].finish_reason = finish_reason
+    chunk.usage = None
+    return chunk
+
+
+def _make_finish_chunk(finish_reason: str = "stop") -> MagicMock:
+    """Создаёт финальный chunk."""
+    chunk = MagicMock()
+    chunk.choices = [MagicMock()]
+    chunk.choices[0].delta.content = None
+    chunk.choices[0].delta.tool_calls = None
+    chunk.choices[0].finish_reason = finish_reason
+    chunk.usage = MagicMock()
+    chunk.usage.total_tokens = 42
+    chunk.usage.prompt_tokens = 20
+    chunk.usage.completion_tokens = 22
+    return chunk
+
+
+def _make_async_stream(chunks):
+    """Создаёт async iterator из списка chunks."""
+    async def _aiter():
+        for c in chunks:
+            yield c
+    mock = MagicMock()
+    mock.__aiter__ = lambda self: _aiter()
+    return mock
+
+
+def _make_base_state() -> dict:
+    """Базовое AgentState для тестов."""
+    return {
+        "run_id": "run-001",
+        "company_id": "company-001",
+        "input": "Do something useful",
+        "messages": [{"role": "user", "content": "Do something useful"}],
+        "pending_tasks": [],
+        "active_tasks": {},
+        "results": {},
+        "iteration_count": 0,
+        "total_tokens": 0,
+        "total_cost_usd": 0.0,
+        "status": "running",
+        "error": None,
+        "final_result": None,
+        # M2-003 поля
+        "agent_id": "ceo",
+        "model": "gpt-4o",
+        "system_prompt": "You are a helpful assistant.",
+        "tools": [],
+        "tool_handlers": {},
+    }
+
+
+# ─── Тесты: базовый text response ─────────────────────────────────────────────
+
+class TestAgentNodeBasicTextResponse:
+    """agent_node собирает стримингровый ответ в полное сообщение."""
+
+    @pytest.mark.asyncio
+    async def test_agent_node_returns_dict(self):
+        """agent_node должен возвращать dict (partial AgentState)."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_text_chunk("Hello"),
+            _make_text_chunk(" world"),
+            _make_finish_chunk("stop"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        assert isinstance(result, dict)
+
+    @pytest.mark.asyncio
+    async def test_agent_node_accumulates_text_chunks(self):
+        """agent_node собирает чанки в полный текст и добавляет assistant message."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_text_chunk("Hello"),
+            _make_text_chunk(", "),
+            _make_text_chunk("world!"),
+            _make_finish_chunk("stop"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        # Должен быть список с assistant message
+        messages = result.get("messages", [])
+        assert len(messages) >= 1
+        assistant_msg = messages[0]
+        assert assistant_msg["role"] == "assistant"
+        assert assistant_msg["content"] == "Hello, world!"
+
+    @pytest.mark.asyncio
+    async def test_agent_node_updates_token_count(self):
+        """agent_node обновляет total_tokens из usage chunk."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_text_chunk("OK"),
+            _make_finish_chunk("stop"),
+        ]
+        # Финальный chunk содержит usage.total_tokens = 42
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        assert result.get("total_tokens", 0) > 0
+
+    @pytest.mark.asyncio
+    async def test_agent_node_calls_litellm_with_stream_true(self):
+        """agent_node вызывает litellm.acompletion с stream=True."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("Hi"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            await agent_node(state)
+
+        mock_acomp.assert_called_once()
+        call_kwargs = mock_acomp.call_args
+        assert call_kwargs.kwargs.get("stream") is True or (
+            len(call_kwargs.args) > 0 and True  # stream может быть в kwargs
+        )
+        # Проверяем что stream=True передан
+        assert mock_acomp.call_args.kwargs.get("stream") is True
+
+    @pytest.mark.asyncio
+    async def test_agent_node_passes_model_from_state(self):
+        """agent_node использует модель из state['model']."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("OK"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["model"] = "claude-3-5-sonnet-20241022"
+            await agent_node(state)
+
+        call_kwargs = mock_acomp.call_args.kwargs
+        assert call_kwargs.get("model") == "claude-3-5-sonnet-20241022"
+
+    @pytest.mark.asyncio
+    async def test_agent_node_includes_system_prompt(self):
+        """agent_node инжектирует system_prompt в начало messages."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("Done"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["system_prompt"] = "You are a CEO agent."
+            await agent_node(state)
+
+        call_messages = mock_acomp.call_args.kwargs.get("messages", [])
+        assert len(call_messages) >= 1
+        assert call_messages[0]["role"] == "system"
+        assert "CEO" in call_messages[0]["content"]
+
+
+# ─── Тесты: tool calls ────────────────────────────────────────────────────────
+
+class TestAgentNodeToolCalls:
+    """agent_node обрабатывает tool_calls из стримингового ответа."""
+
+    @pytest.mark.asyncio
+    async def test_agent_node_parses_tool_calls_from_stream(self):
+        """agent_node собирает tool_calls из стриминговых чанков."""
+        from agentco.orchestration.agent_node import agent_node
+
+        # Симулируем streaming tool call (разбитый на чанки)
+        chunks = [
+            _make_tool_call_chunk(0, call_id="call-001", name="search_web", args_delta='{"q"'),
+            _make_tool_call_chunk(0, args_delta=': "agentco"}'),
+            _make_finish_chunk("tool_calls"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        async def fake_search_web(args: dict, state: dict) -> str:
+            return f"Results for: {args.get('q', '')}"
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["tool_handlers"] = {"search_web": fake_search_web}
+            result = await agent_node(state)
+
+        messages = result.get("messages", [])
+        # Должно быть: 1 assistant message (с tool_calls) + 1 tool result message
+        assert len(messages) >= 2
+
+    @pytest.mark.asyncio
+    async def test_agent_node_dispatches_tool_handler(self):
+        """agent_node вызывает tool_handler и добавляет tool result в messages."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_tool_call_chunk(0, call_id="call-xyz", name="get_time", args_delta="{}"),
+            _make_finish_chunk("tool_calls"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        handler_called = []
+
+        async def fake_get_time(args: dict, state: dict) -> str:
+            handler_called.append(True)
+            return "2026-03-15T14:00:00Z"
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["tool_handlers"] = {"get_time": fake_get_time}
+            result = await agent_node(state)
+
+        assert len(handler_called) == 1
+        messages = result.get("messages", [])
+        # Должно быть tool result сообщение
+        tool_messages = [m for m in messages if m.get("role") == "tool"]
+        assert len(tool_messages) == 1
+        assert "2026-03-15" in tool_messages[0]["content"]
+
+    @pytest.mark.asyncio
+    async def test_agent_node_handles_unknown_tool_gracefully(self):
+        """Если handler не найден — возвращает error в tool result, не падает."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_tool_call_chunk(0, call_id="call-unknown", name="nonexistent_tool", args_delta="{}"),
+            _make_finish_chunk("tool_calls"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["tool_handlers"] = {}  # нет обработчиков
+            result = await agent_node(state)
+
+        # Не должен рейзить исключение
+        messages = result.get("messages", [])
+        tool_messages = [m for m in messages if m.get("role") == "tool"]
+        assert len(tool_messages) == 1
+        assert "error" in tool_messages[0]["content"].lower() or "unknown" in tool_messages[0]["content"].lower()
+
+    @pytest.mark.asyncio
+    async def test_agent_node_assistant_message_has_tool_calls_field(self):
+        """assistant message должен содержать tool_calls если они были в ответе."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_tool_call_chunk(0, call_id="call-001", name="my_tool", args_delta='{"x": 1}'),
+            _make_finish_chunk("tool_calls"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        async def fake_handler(args, state):
+            return "result"
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["tool_handlers"] = {"my_tool": fake_handler}
+            result = await agent_node(state)
+
+        messages = result.get("messages", [])
+        assistant_msgs = [m for m in messages if m.get("role") == "assistant"]
+        assert len(assistant_msgs) == 1
+        assert "tool_calls" in assistant_msgs[0]
+        assert len(assistant_msgs[0]["tool_calls"]) == 1
+        assert assistant_msgs[0]["tool_calls"][0]["function"]["name"] == "my_tool"
+
+
+# ─── Тесты: интеграция с AgentState ──────────────────────────────────────────
+
+class TestAgentNodeStateIntegration:
+    """agent_node интегрирован в AgentState и возвращает корректный state dict."""
+
+    @pytest.mark.asyncio
+    async def test_agent_node_with_no_system_prompt(self):
+        """agent_node работает без system_prompt — не добавляет system message."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("OK"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["system_prompt"] = ""  # пустой
+            result = await agent_node(state)
+
+        call_messages = mock_acomp.call_args.kwargs.get("messages", [])
+        system_msgs = [m for m in call_messages if m.get("role") == "system"]
+        assert len(system_msgs) == 0
+
+    @pytest.mark.asyncio
+    async def test_agent_node_preserves_existing_messages(self):
+        """agent_node передаёт существующие messages в LLM (история разговора)."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("Answer"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["messages"] = [
+                {"role": "user", "content": "First question"},
+                {"role": "assistant", "content": "First answer"},
+                {"role": "user", "content": "Second question"},
+            ]
+            state["system_prompt"] = ""
+            result = await agent_node(state)
+
+        call_messages = mock_acomp.call_args.kwargs.get("messages", [])
+        assert len(call_messages) == 3
+        assert call_messages[-1]["content"] == "Second question"
+
+    @pytest.mark.asyncio
+    async def test_agent_node_with_tools_list(self):
+        """agent_node передаёт tools в litellm если они заданы."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [_make_text_chunk("OK"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "description": "Search the web",
+                    "parameters": {"type": "object", "properties": {"q": {"type": "string"}}},
+                },
+            }
+        ]
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["tools"] = tools
+            result = await agent_node(state)
+
+        call_kwargs = mock_acomp.call_args.kwargs
+        assert call_kwargs.get("tools") == tools
+
+    @pytest.mark.asyncio
+    async def test_agent_node_empty_content_chunk_skipped(self):
+        """Чанки с None или пустым content не добавляются к тексту."""
+        from agentco.orchestration.agent_node import agent_node
+
+        chunks = [
+            _make_text_chunk("Hello"),
+            _make_text_chunk(None),   # None content — пропустить
+            _make_text_chunk(""),     # пустой — пропустить
+            _make_text_chunk(" World"),
+            _make_finish_chunk(),
+        ]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        messages = result.get("messages", [])
+        assert messages[0]["content"] == "Hello World"
+
+
+# ─── Тесты: error handling ────────────────────────────────────────────────────
+
+class TestAgentNodeErrorHandling:
+    """agent_node корректно обрабатывает ошибки LLM."""
+
+    @pytest.mark.asyncio
+    async def test_agent_node_litellm_exception_sets_error(self):
+        """Если litellm.acompletion бросает исключение — state['status'] = 'error'."""
+        from agentco.orchestration.agent_node import agent_node
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.side_effect = Exception("API error: rate limit")
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        assert result.get("status") == "error"
+        assert result.get("error") is not None
+        assert "API error" in result.get("error", "")
