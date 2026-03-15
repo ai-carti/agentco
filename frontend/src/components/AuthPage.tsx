@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
 type Tab = 'signin' | 'signup'
@@ -9,6 +10,11 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
 
   const { login, register, isLoading, error } = useAuthStore()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // BUG-010: read the "from" location saved by ProtectedRoute
+  const from = (location.state as { from?: Location })?.from?.pathname || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -16,6 +22,12 @@ export default function AuthPage() {
       await login(email, password)
     } else {
       await register(email, password)
+    }
+    // BUG-010: navigate to original URL after successful auth
+    // Only navigate if no error — check store state after action
+    const token = useAuthStore.getState().token
+    if (token) {
+      navigate(from, { replace: true })
     }
   }
 

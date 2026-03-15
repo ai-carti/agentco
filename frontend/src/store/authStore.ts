@@ -11,6 +11,7 @@ interface AuthState {
   token: string | null
   isLoading: boolean
   error: string | null
+  isInitialized: boolean
 }
 
 interface AuthActions {
@@ -28,15 +29,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   token: null,
   isLoading: false,
   error: null,
+  isInitialized: false,
 
   initAuth: async () => {
     const token = localStorage.getItem('agentco_token')
-    if (!token) return
+    if (!token) {
+      set({ isInitialized: true })
+      return
+    }
     try {
       const user = await api.getMe(token)
-      set({ token, user })
+      set({ token, user, isInitialized: true })
     } catch {
       get().logout()
+      set({ isInitialized: true })
     }
   },
 

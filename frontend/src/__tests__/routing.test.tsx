@@ -20,6 +20,7 @@ const mockAuthStore = {
   user: null as { id: string; email: string } | null,
   isLoading: false,
   error: null,
+  isInitialized: true,
   initAuth: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),
@@ -47,6 +48,7 @@ describe('Routing', () => {
     vi.clearAllMocks()
     mockAuthStore.token = null
     mockAuthStore.user = null
+    mockAuthStore.isInitialized = true
   })
 
   describe('unauthenticated user', () => {
@@ -120,6 +122,34 @@ describe('Routing', () => {
     it('directly navigating to /companies/:id/agents/:agentId renders agent page', () => {
       renderWithRouter('/companies/c1/agents/a1')
       expect(screen.getByTestId('agent-page')).toBeInTheDocument()
+    })
+  })
+
+  // BUG-011: race condition — isInitialized=false must show spinner, not redirect
+  describe('BUG-011: race condition on page refresh', () => {
+    it('renders null (spinner) when isInitialized=false, even with no token', () => {
+      mockAuthStore.token = null
+      mockAuthStore.isInitialized = false
+      const { container } = renderWithRouter('/companies/deep-link-id')
+      // ProtectedRoute returns null while initializing — auth-page should NOT appear
+      expect(screen.queryByTestId('auth-page')).not.toBeInTheDocument()
+      // container may be mostly empty (just the layout shell)
+      expect(container).toBeTruthy()
+    })
+
+    it('redirects to /auth only after isInitialized=true with no token', () => {
+      mockAuthStore.token = null
+      mockAuthStore.isInitialized = true
+      renderWithRouter('/companies/deep-link-id')
+      expect(screen.getByTestId('auth-page')).toBeInTheDocument()
+    })
+
+    it('renders protected page after isInitialized=true with valid token', () => {
+      mockAuthStore.token = 'valid-token'
+      mockAuthStore.user = { id: '1', email: 'siri@agentco.dev' }
+      mockAuthStore.isInitialized = true
+      renderWithRouter('/companies/deep-link-id')
+      expect(screen.getByTestId('war-room')).toBeInTheDocument()
     })
   })
 })
