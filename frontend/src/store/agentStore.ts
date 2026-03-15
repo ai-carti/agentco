@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 export type AgentStatus = 'idle' | 'running' | 'done' | 'error'
-export type TaskStatus = 'todo' | 'in_progress' | 'done'
+export type TaskStatus = 'todo' | 'backlog' | 'in_progress' | 'done' | 'failed'
 
 export interface Agent {
   id: string
@@ -9,6 +9,8 @@ export interface Agent {
   status: AgentStatus
   currentTask?: string
 }
+
+export type TaskPriority = 'high' | 'medium' | 'low'
 
 export interface Task {
   id: string
@@ -18,6 +20,8 @@ export interface Task {
   assignedTo?: string
   assignee_id?: string
   assignee_name?: string
+  due_date?: string
+  priority?: TaskPriority
 }
 
 export interface Company {

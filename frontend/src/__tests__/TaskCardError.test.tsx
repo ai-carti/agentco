@@ -2,6 +2,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import KanbanBoard from '../components/KanbanBoard'
 import { useAgentStore } from '../store/agentStore'
+import { ToastProvider } from '../context/ToastContext'
+
+function renderWithToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>)
+}
 
 // BUG-018: TaskCard.handleRun error handling tests
 
@@ -16,7 +21,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
     useAgentStore.setState({
       tasks: [{ id: 'err1', title: 'Error Task', status: 'todo', assignee_name: 'Alice' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('run-btn-err1'))
     await waitFor(() => {
       expect(screen.getByTestId('run-error-err1')).toBeInTheDocument()
@@ -28,7 +33,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
     useAgentStore.setState({
       tasks: [{ id: 'err2', title: 'Server Error Task', status: 'todo', assignee_name: 'Bob' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('run-btn-err2'))
     await waitFor(() => {
       expect(screen.getByTestId('run-error-err2')).toBeInTheDocument()
@@ -40,7 +45,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
     useAgentStore.setState({
       tasks: [{ id: 'ok1', title: 'OK Task', status: 'todo', assignee_name: 'Carol' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('run-btn-ok1'))
     await waitFor(() => {
       expect(screen.queryByTestId('run-error-ok1')).not.toBeInTheDocument()
@@ -54,7 +59,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
     useAgentStore.setState({
       tasks: [{ id: 'retry1', title: 'Retry Task', status: 'todo', assignee_name: 'Dave' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     // First click — error
     fireEvent.click(screen.getByTestId('run-btn-retry1'))
     await waitFor(() => {

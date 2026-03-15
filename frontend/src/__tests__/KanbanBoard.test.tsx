@@ -2,6 +2,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import KanbanBoard from '../components/KanbanBoard'
 import { useAgentStore } from '../store/agentStore'
+import { ToastProvider } from '../context/ToastContext'
+
+function renderWithToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>)
+}
 
 // Reset store before each test
 beforeEach(() => {
@@ -11,12 +16,12 @@ beforeEach(() => {
 
 describe('KanbanBoard', () => {
   it('renders without crash', () => {
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
   })
 
   it('shows default columns', () => {
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByText(/todo/i)).toBeInTheDocument()
     expect(screen.getByText(/in progress/i)).toBeInTheDocument()
     expect(screen.getAllByText(/done/i).length).toBeGreaterThan(0)
@@ -34,7 +39,7 @@ describe('KanbanBoard', () => {
         },
       ],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByText('Build login page')).toBeInTheDocument()
     expect(screen.getByText('Alice')).toBeInTheDocument()
     // status badge
@@ -53,7 +58,7 @@ describe('KanbanBoard', () => {
         },
       ],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByTestId('assignee-avatar-t2')).toHaveTextContent('B')
   })
 
@@ -63,7 +68,7 @@ describe('KanbanBoard', () => {
         { id: 't3', title: 'Task X', status: 'todo', assignee_name: 'Carol' },
       ],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByTestId('run-btn-t3')).toBeInTheDocument()
   })
 
@@ -72,7 +77,7 @@ describe('KanbanBoard', () => {
     useAgentStore.setState({
       tasks: [{ id: 't4', title: 'Task Y', status: 'todo', assignee_name: 'Dave' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('run-btn-t4'))
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -94,9 +99,9 @@ describe('KanbanBoard', () => {
         },
       ],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('task-card-t5'))
-    expect(screen.getByTestId('task-side-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('task-detail-sidebar')).toBeInTheDocument()
     expect(screen.getByText('Full description here')).toBeInTheDocument()
   })
 
@@ -104,21 +109,21 @@ describe('KanbanBoard', () => {
     useAgentStore.setState({
       tasks: [{ id: 't6', title: 'Task W', status: 'todo', assignee_name: 'Frank' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('task-card-t6'))
-    expect(screen.getByTestId('task-side-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('task-detail-sidebar')).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape' })
-    expect(screen.queryByTestId('task-side-panel')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('task-detail-sidebar')).not.toBeInTheDocument()
   })
 
   it('side panel closes when clicking overlay', () => {
     useAgentStore.setState({
       tasks: [{ id: 't7', title: 'Task V', status: 'todo', assignee_name: 'Grace' }],
     })
-    render(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('task-card-t7'))
-    expect(screen.getByTestId('task-side-panel')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('side-panel-overlay'))
-    expect(screen.queryByTestId('task-side-panel')).not.toBeInTheDocument()
+    expect(screen.getByTestId('task-detail-sidebar')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('sidebar-backdrop'))
+    expect(screen.queryByTestId('task-detail-sidebar')).not.toBeInTheDocument()
   })
 })

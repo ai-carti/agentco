@@ -1,19 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAgentStore, type Task, type TaskStatus } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
+import TaskDetailSidebar from './TaskDetailSidebar'
+import { useToast } from '../context/ToastContext'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const COLUMNS: { id: TaskStatus; label: string }[] = [
+  { id: 'backlog', label: 'Backlog' },
   { id: 'todo', label: 'Todo' },
   { id: 'in_progress', label: 'In Progress' },
   { id: 'done', label: 'Done' },
 ]
 
-const STATUS_COLORS: Record<TaskStatus, { bg: string; text: string }> = {
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   todo: { bg: '#374151', text: '#d1d5db' },
+  backlog: { bg: '#292524', text: '#a8a29e' },
   in_progress: { bg: '#1d4ed8', text: '#bfdbfe' },
   done: { bg: '#065f46', text: '#a7f3d0' },
+  failed: { bg: '#7f1d1d', text: '#fca5a5' },
 }
 
 const AVATAR_COLORS = [
@@ -36,6 +41,7 @@ interface TaskCardProps {
 function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
+  const toast = useToast()
 
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -54,11 +60,15 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
         const msg = `Failed to run task (${res.status})`
         console.error(msg)
         setRunError(msg)
+        toast.error(msg)
+      } else {
+        toast.success(`▶ Running: ${task.title}`)
       }
     } catch (err) {
       const msg = 'Network error — could not run task'
       console.error(msg, err)
       setRunError(msg)
+      toast.error(msg)
     } finally {
       setRunning(false)
     }
@@ -171,144 +181,6 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
   )
 }
 
-interface SidePanelProps {
-  task: Task
-  onClose: () => void
-}
-
-function SidePanel({ task, onClose }: SidePanelProps) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  const statusColor = STATUS_COLORS[task.status] ?? STATUS_COLORS.todo
-  const assigneeName = task.assignee_name ?? 'Unassigned'
-  const avatarColor = task.assignee_name ? getAvatarColor(task.assignee_name) : '#4b5563'
-
-  return (
-    <>
-      {/* Overlay */}
-      <div
-        data-testid="side-panel-overlay"
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 40,
-        }}
-      />
-      {/* Panel */}
-      <div
-        data-testid="task-side-panel"
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 360,
-          background: '#111827',
-          borderLeft: '1px solid #1f2937',
-          padding: '1.5rem',
-          zIndex: 50,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, flex: 1, lineHeight: 1.4 }}>
-            {task.title}
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#9ca3af',
-              cursor: 'pointer',
-              fontSize: '1.25rem',
-              marginLeft: '0.5rem',
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Status badge */}
-        <span
-          style={{
-            alignSelf: 'flex-start',
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            padding: '0.2rem 0.5rem',
-            borderRadius: 4,
-            background: statusColor.bg,
-            color: statusColor.text,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
-          {task.status.replace('_', ' ')}
-        </span>
-
-        {/* Assignee */}
-        <div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Assignee
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: avatarColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                color: '#fff',
-              }}
-            >
-              {assigneeName.charAt(0).toUpperCase()}
-            </div>
-            <span style={{ fontSize: '0.875rem' }}>{assigneeName}</span>
-          </div>
-        </div>
-
-        {/* Description */}
-        {task.description && (
-          <div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Description
-            </div>
-            <p style={{ fontSize: '0.875rem', color: '#d1d5db', lineHeight: 1.6, margin: 0 }}>
-              {task.description}
-            </p>
-          </div>
-        )}
-
-        {/* IDs */}
-        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #1f2937' }}>
-          <div style={{ fontSize: '0.7rem', color: '#4b5563' }}>Task ID: {task.id}</div>
-          {task.assignee_id && (
-            <div style={{ fontSize: '0.7rem', color: '#4b5563' }}>Assignee ID: {task.assignee_id}</div>
-          )}
-        </div>
-      </div>
-    </>
-  )
-}
-
 interface KanbanBoardProps {
   companyId: string
 }
@@ -359,7 +231,7 @@ export default function KanbanBoard({ companyId }: KanbanBoardProps) {
       </div>
 
       {selectedTask && (
-        <SidePanel task={selectedTask} onClose={handleClose} />
+        <TaskDetailSidebar task={selectedTask} companyId={companyId} onClose={handleClose} />
       )}
     </>
   )
