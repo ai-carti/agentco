@@ -58,9 +58,10 @@ interface TaskCardProps {
   task: Task
   companyId: string
   onCardClick: (task: Task) => void
+  onDragStart?: (e: React.DragEvent, taskId: string) => void
 }
 
-function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
+function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -195,6 +196,8 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
   return (
     <div
       data-testid={`task-card-${task.id}`}
+      draggable
+      onDragStart={(e) => onDragStart?.(e, task.id)}
       onClick={() => onCardClick(task)}
       style={{
         background: '#1f2937',
@@ -515,9 +518,64 @@ interface KanbanBoardProps {
 
 export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardProps) {
   const tasks = useAgentStore((s) => s.tasks)
+  const setTasks = useAgentStore((s) => s.setTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null)
+  const toast = useToast()
 
   const handleClose = useCallback(() => setSelectedTask(null), [])
+
+  const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('text/plain', taskId)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
+    e.preventDefault()
+    setDragOverCol(colId)
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverCol(null)
+  }, [])
+
+  const handleDrop = useCallback(async (e: React.DragEvent, newStatus: TaskStatus) => {
+    e.preventDefault()
+    setDragOverCol(null)
+    const taskId = e.dataTransfer.getData('text/plain')
+    if (!taskId) return
+
+    const currentTasks = useAgentStore.getState().tasks
+    const task = currentTasks.find((t) => t.id === taskId)
+    if (!task || task.status === newStatus) return
+
+    const oldStatus = task.status
+
+    // Optimistic update
+    setTasks(currentTasks.map((t) => t.id === taskId ? { ...t, status: newStatus } : t))
+
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) {
+        // Rollback
+        const rollbackTasks = useAgentStore.getState().tasks
+        setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
+        toast.error('Failed to move task')
+      }
+    } catch {
+      // Rollback
+      const rollbackTasks = useAgentStore.getState().tasks
+      setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
+      toast.error('Failed to move task')
+    }
+  }, [companyId, setTasks, toast])
 
   const showEmpty = isLoaded && tasks.length === 0
 
@@ -539,12 +597,18 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
         {COLUMNS.map((col) => (
           <div
             key={col.id}
+            data-testid={`kanban-column-${col.id}`}
+            onDragOver={(e) => handleDragOver(e, col.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, col.id)}
             style={{
               flex: 1,
               background: '#111827',
               borderRadius: 8,
               padding: '0.75rem',
               minWidth: 0,
+              border: dragOverCol === col.id ? '2px solid #3b82f6' : '2px solid transparent',
+              transition: 'border-color 0.15s',
             }}
           >
             <h2 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#e5e7eb' }}>
@@ -567,6 +631,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
                       task={task}
                       companyId={companyId}
                       onCardClick={setSelectedTask}
+                      onDragStart={handleDragStart}
                     />
                   ))
               )}

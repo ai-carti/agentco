@@ -195,7 +195,7 @@ describe('AgentPage history empty state', () => {
     )
     // Expect history empty state to be present on the page
     await waitFor(() => {
-      expect(screen.getByText(/no history yet/i)).toBeInTheDocument()
+      expect(screen.getByText(/no completed tasks yet/i)).toBeInTheDocument()
     })
     expect(screen.getByText('📜')).toBeInTheDocument()
   })

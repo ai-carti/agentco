@@ -8,10 +8,13 @@ import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+const PAGE_SIZE = 20
+
 interface TaskHistoryItem {
   id: string
   title: string
   status: string
+  description?: string
   created_at?: string
 }
 
@@ -22,6 +25,8 @@ export default function AgentPage() {
   const toast = useToast()
   const [history, setHistory] = useState<TaskHistoryItem[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!companyId || !agentId) return
@@ -68,6 +73,9 @@ export default function AgentPage() {
     }
   }
 
+  const visibleHistory = history.slice(0, visibleCount)
+  const hasMore = history.length > visibleCount
+
   return (
     <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>
       <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, marginBottom: '1.25rem' }}>
@@ -81,7 +89,7 @@ export default function AgentPage() {
           data-testid="agent-save-success"
           style={{ color: '#4ade80', fontSize: '0.875rem', marginTop: '0.75rem' }}
         >
-          ✓ Agent saved
+          Agent saved
         </p>
       )}
       {saveError && (
@@ -89,7 +97,7 @@ export default function AgentPage() {
           data-testid="agent-save-error"
           style={{ color: '#f87171', fontSize: '0.875rem', marginTop: '0.75rem' }}
         >
-          ⚠ {saveError}
+          {saveError}
         </p>
       )}
 
@@ -102,30 +110,56 @@ export default function AgentPage() {
         ) : history.length === 0 ? (
           <EmptyState
             emoji="📜"
-            title="No history yet"
+            title="No completed tasks yet"
             subtitle="This agent hasn't completed any tasks"
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {history.map((item) => (
+            {visibleHistory.map((item) => (
               <div
                 key={item.id}
+                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                 style={{
                   padding: '0.625rem 0.875rem',
                   background: '#1f2937',
                   border: '1px solid #374151',
                   borderRadius: 6,
                   fontSize: '0.875rem',
+                  cursor: 'pointer',
                 }}
               >
-                <span style={{ fontWeight: 500 }}>{item.title}</span>
-                {item.created_at && (
-                  <span style={{ color: '#6b7280', marginLeft: '0.5rem', fontSize: '0.75rem' }}>
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 500 }}>{item.title}</span>
+                  {item.created_at && (
+                    <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                {expandedId === item.id && item.description && (
+                  <div style={{ marginTop: '0.5rem', color: '#9ca3af', fontSize: '0.8rem' }}>
+                    {item.description}
+                  </div>
                 )}
               </div>
             ))}
+            {hasMore && (
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                style={{
+                  padding: '0.5rem',
+                  background: '#374151',
+                  color: '#f8fafc',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                }}
+              >
+                Load more
+              </button>
+            )}
           </div>
         )}
       </div>
