@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { useAgentStore, type Task, type TaskStatus } from '../store/agentStore'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useAgentStore, type Task, type TaskStatus, type TaskPriority } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import TaskDetailSidebar from './TaskDetailSidebar'
 import { useToast } from '../context/ToastContext'
@@ -511,6 +511,194 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
   )
 }
 
+const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low']
+
+interface FilterBarProps {
+  searchQuery: string
+  onSearchChange: (v: string) => void
+  selectedAgents: string[]
+  onToggleAgent: (id: string) => void
+  selectedPriorities: TaskPriority[]
+  onTogglePriority: (p: TaskPriority) => void
+  onClearAll: () => void
+  onRemoveAgent: (id: string) => void
+  onRemovePriority: (p: TaskPriority) => void
+  hasActiveFilters: boolean
+}
+
+function FilterBar({
+  searchQuery, onSearchChange,
+  selectedAgents, onToggleAgent,
+  selectedPriorities, onTogglePriority,
+  onClearAll, onRemoveAgent, onRemovePriority,
+  hasActiveFilters,
+}: FilterBarProps) {
+  const agents = useAgentStore((s) => s.agents)
+  const [agentDropdownOpen, setAgentDropdownOpen] = useState(false)
+  const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false)
+
+  return (
+    <div style={{ padding: '0.75rem 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          data-testid="kanban-search-input"
+          type="text"
+          placeholder="Search tasks..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          style={{
+            padding: '0.4rem 0.75rem', background: '#111827', border: '1px solid #374151',
+            borderRadius: 6, color: '#f8fafc', fontSize: '0.8rem', minWidth: 180,
+          }}
+        />
+
+        {/* Agent dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            data-testid="filter-agent-btn"
+            onClick={() => { setAgentDropdownOpen((v) => !v); setPriorityDropdownOpen(false) }}
+            style={{
+              padding: '0.4rem 0.75rem', background: selectedAgents.length > 0 ? '#1e3a5f' : '#1f2937',
+              border: '1px solid #374151', borderRadius: 6, color: '#e5e7eb',
+              fontSize: '0.8rem', cursor: 'pointer',
+            }}
+          >
+            Agent {selectedAgents.length > 0 && `(${selectedAgents.length})`}
+          </button>
+          {agentDropdownOpen && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
+              border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 160,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            }}>
+              {agents.map((agent) => (
+                <label
+                  key={agent.id}
+                  data-testid={`filter-agent-option-${agent.id}`}
+                  onClick={() => onToggleAgent(agent.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
+                    background: selectedAgents.includes(agent.id) ? '#374151' : 'transparent',
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                    {selectedAgents.includes(agent.id) ? '✓' : ''}
+                  </span>
+                  {agent.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Priority dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            data-testid="filter-priority-btn"
+            onClick={() => { setPriorityDropdownOpen((v) => !v); setAgentDropdownOpen(false) }}
+            style={{
+              padding: '0.4rem 0.75rem', background: selectedPriorities.length > 0 ? '#1e3a5f' : '#1f2937',
+              border: '1px solid #374151', borderRadius: 6, color: '#e5e7eb',
+              fontSize: '0.8rem', cursor: 'pointer',
+            }}
+          >
+            Priority {selectedPriorities.length > 0 && `(${selectedPriorities.length})`}
+          </button>
+          {priorityDropdownOpen && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
+              border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 140,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            }}>
+              {PRIORITIES.map((p) => (
+                <label
+                  key={p}
+                  data-testid={`filter-priority-option-${p}`}
+                  onClick={() => onTogglePriority(p)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
+                    background: selectedPriorities.includes(p) ? '#374151' : 'transparent',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                    {selectedPriorities.includes(p) ? '✓' : ''}
+                  </span>
+                  {p}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            data-testid="filter-clear-all"
+            onClick={onClearAll}
+            style={{
+              padding: '0.4rem 0.75rem', background: 'transparent', border: '1px solid #374151',
+              borderRadius: 6, color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer',
+            }}
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      {/* Active filter badges */}
+      {hasActiveFilters && (
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+          {selectedAgents.map((agentId) => {
+            const agent = agents.find((a) => a.id === agentId)
+            return (
+              <span
+                key={agentId}
+                data-testid={`filter-badge-agent-${agentId}`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                  padding: '0.15rem 0.5rem', background: '#1e3a5f', borderRadius: 12,
+                  fontSize: '0.7rem', color: '#93c5fd',
+                }}
+              >
+                {agent?.name ?? agentId}
+                <button
+                  data-testid={`filter-badge-remove-agent-${agentId}`}
+                  onClick={() => onRemoveAgent(agentId)}
+                  style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </span>
+            )
+          })}
+          {selectedPriorities.map((p) => (
+            <span
+              key={p}
+              data-testid={`filter-badge-priority-${p}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                padding: '0.15rem 0.5rem', background: '#78350f', borderRadius: 12,
+                fontSize: '0.7rem', color: '#fcd34d', textTransform: 'capitalize',
+              }}
+            >
+              {p}
+              <button
+                data-testid={`filter-badge-remove-priority-${p}`}
+                onClick={() => onRemovePriority(p)}
+                style={{ background: 'none', border: 'none', color: '#fcd34d', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface KanbanBoardProps {
   companyId: string
   isLoaded?: boolean
@@ -522,6 +710,50 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const toast = useToast()
+
+  // Filter state
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([])
+  const [selectedPriorities, setSelectedPriorities] = useState<TaskPriority[]>([])
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 150)
+  }, [])
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [])
+
+  const toggleAgent = useCallback((id: string) => {
+    setSelectedAgents((prev) => prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id])
+  }, [])
+
+  const togglePriority = useCallback((p: TaskPriority) => {
+    setSelectedPriorities((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p])
+  }, [])
+
+  const clearAllFilters = useCallback(() => {
+    setSearchInput('')
+    setDebouncedSearch('')
+    setSelectedAgents([])
+    setSelectedPriorities([])
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+  }, [])
+
+  const hasActiveFilters = debouncedSearch.length > 0 || selectedAgents.length > 0 || selectedPriorities.length > 0
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (debouncedSearch && !t.title.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
+      if (selectedAgents.length > 0 && !selectedAgents.includes(t.assignee_id ?? '')) return false
+      if (selectedPriorities.length > 0 && !selectedPriorities.includes(t.priority as TaskPriority)) return false
+      return true
+    })
+  }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])
 
   const handleClose = useCallback(() => setSelectedTask(null), [])
 
@@ -578,6 +810,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
   }, [companyId, setTasks, toast])
 
   const showEmpty = isLoaded && tasks.length === 0
+  const showFilterEmpty = isLoaded && tasks.length > 0 && filteredTasks.length === 0 && hasActiveFilters
 
   return (
     <>
@@ -590,9 +823,28 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           onCTA={() => {}}
         />
       )}
+      {!showEmpty && isLoaded && (
+        <FilterBar
+          searchQuery={searchInput}
+          onSearchChange={handleSearchChange}
+          selectedAgents={selectedAgents}
+          onToggleAgent={toggleAgent}
+          selectedPriorities={selectedPriorities}
+          onTogglePriority={togglePriority}
+          onClearAll={clearAllFilters}
+          onRemoveAgent={(id) => setSelectedAgents((prev) => prev.filter((a) => a !== id))}
+          onRemovePriority={(p) => setSelectedPriorities((prev) => prev.filter((x) => x !== p))}
+          hasActiveFilters={hasActiveFilters}
+        />
+      )}
+      {showFilterEmpty && (
+        <div data-testid="filter-empty-state" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', fontSize: '0.875rem' }}>
+          No tasks match filters
+        </div>
+      )}
       <div
         data-testid="kanban-board"
-        style={{ display: showEmpty ? 'none' : 'flex', gap: '1rem', padding: '1rem' }}
+        style={{ display: (showEmpty || showFilterEmpty) ? 'none' : 'flex', gap: '1rem', padding: '1rem' }}
       >
         {COLUMNS.map((col) => (
           <div
@@ -615,7 +867,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
               {col.label}
               {isLoaded && (
                 <span style={{ marginLeft: '0.4rem', color: '#6b7280', fontWeight: 400 }}>
-                  ({tasks.filter((t) => t.status === col.id).length})
+                  ({filteredTasks.filter((t) => t.status === col.id).length})
                 </span>
               )}
             </h2>
@@ -623,7 +875,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
               {!isLoaded ? (
                 <SkeletonCard variant="task" count={3} />
               ) : (
-                tasks
+                filteredTasks
                   .filter((t) => t.status === col.id)
                   .map((task) => (
                     <TaskCard
