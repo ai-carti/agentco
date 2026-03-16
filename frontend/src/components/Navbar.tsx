@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import GlobalSearch from './GlobalSearch'
 
 export default function Navbar() {
   const { user, logout } = useAuthStore()
@@ -40,6 +41,7 @@ export default function Navbar() {
         </NavLink>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <GlobalSearch />
         {user && (
           <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
             {user.email}
