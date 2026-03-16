@@ -4,6 +4,7 @@ import AgentForm, { type AgentFormData } from './AgentForm'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -97,7 +98,7 @@ export default function AgentPage() {
         <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>History</h2>
 
         {!historyLoaded ? (
-          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading…</p>
+          <SkeletonCard variant="task" count={3} />
         ) : history.length === 0 ? (
           <EmptyState
             emoji="📜"

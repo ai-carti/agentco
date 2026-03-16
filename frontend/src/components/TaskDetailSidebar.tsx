@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { type Task, type TaskStatus } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -300,7 +301,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               }}
             >
               {logsLoading ? (
-                <span style={{ color: '#475569' }}>Loading…</span>
+                <SkeletonCard variant="task" count={2} />
               ) : logs.length === 0 ? (
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (

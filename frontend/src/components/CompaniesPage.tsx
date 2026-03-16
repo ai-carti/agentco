@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import EmptyState from './EmptyState'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -85,7 +86,7 @@ export default function CompaniesPage() {
       </div>
 
       {loading ? (
-        <p style={{ color: '#6b7280' }}>Loading…</p>
+        <SkeletonCard variant="company" count={4} />
       ) : companies.length === 0 ? (
         <EmptyState
           emoji="🏢"
