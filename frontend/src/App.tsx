@@ -4,6 +4,7 @@ import AuthPage from './components/AuthPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import Breadcrumb from './components/Breadcrumb'
+import Sidebar from './components/Sidebar'
 import CompaniesPage from './components/CompaniesPage'
 import CompanyPage from './components/CompanyPage'
 import AgentPage from './components/AgentPage'
@@ -15,14 +16,19 @@ function AppLayout() {
   return (
     <>
       <Navbar />
-      <Breadcrumb />
-      <Routes>
-        <Route path="/" element={<CompaniesPage />} />
-        <Route path="/companies/:id" element={<CompanyPage />} />
-        <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
-        <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Routes>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 49px)' }}>
+        <Sidebar />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Breadcrumb />
+          <Routes>
+            <Route path="/" element={<CompaniesPage />} />
+            <Route path="/companies/:id" element={<CompanyPage />} />
+            <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
+            <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </div>
+      </div>
     </>
   )
 }
