@@ -87,6 +87,24 @@ describe('KanbanBoard', () => {
     })
   })
 
+  // BUG-023: skeleton loading state
+  it('renders skeleton cards when isLoaded=false', () => {
+    renderWithToast(<KanbanBoard companyId="c1" isLoaded={false} />)
+    const skeletons = screen.getAllByTestId('skeleton-task')
+    // 4 columns × 3 skeletons = 12
+    expect(skeletons.length).toBe(12)
+  })
+
+  it('does not render skeleton when isLoaded=true', () => {
+    renderWithToast(<KanbanBoard companyId="c1" isLoaded={true} />)
+    expect(screen.queryByTestId('skeleton-task')).not.toBeInTheDocument()
+  })
+
+  it('does not show empty state while loading (isLoaded=false)', () => {
+    renderWithToast(<KanbanBoard companyId="c1" isLoaded={false} />)
+    expect(screen.queryByText('No tasks yet')).not.toBeInTheDocument()
+  })
+
   it('clicking card (not Run button) opens side panel', () => {
     useAgentStore.setState({
       tasks: [

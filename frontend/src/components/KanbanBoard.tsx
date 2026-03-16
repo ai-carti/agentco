@@ -4,6 +4,7 @@ import { getStoredToken } from '../api/client'
 import TaskDetailSidebar from './TaskDetailSidebar'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -548,21 +549,27 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           >
             <h2 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#e5e7eb' }}>
               {col.label}
-              <span style={{ marginLeft: '0.4rem', color: '#6b7280', fontWeight: 400 }}>
-                ({tasks.filter((t) => t.status === col.id).length})
-              </span>
+              {isLoaded && (
+                <span style={{ marginLeft: '0.4rem', color: '#6b7280', fontWeight: 400 }}>
+                  ({tasks.filter((t) => t.status === col.id).length})
+                </span>
+              )}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {tasks
-                .filter((t) => t.status === col.id)
-                .map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    companyId={companyId}
-                    onCardClick={setSelectedTask}
-                  />
-                ))}
+              {!isLoaded ? (
+                <SkeletonCard variant="task" count={3} />
+              ) : (
+                tasks
+                  .filter((t) => t.status === col.id)
+                  .map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      companyId={companyId}
+                      onCardClick={setSelectedTask}
+                    />
+                  ))
+              )}
             </div>
           </div>
         ))}
