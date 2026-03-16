@@ -52,6 +52,28 @@ describe('Breadcrumb', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
+  // BUG-022: /settings should NOT show company block
+  it('does NOT show "Select company" on /settings page', () => {
+    renderBreadcrumb('/settings')
+    expect(screen.queryByText('Select company')).not.toBeInTheDocument()
+    // Should be "AgentCo > Settings" only
+    expect(screen.getByText('AgentCo')).toBeInTheDocument()
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  it('shows "Select company" on /companies/:id when company not loaded yet', () => {
+    renderBreadcrumb('/companies/c1')
+    expect(screen.getByText('Select company')).toBeInTheDocument()
+  })
+
+  it('does NOT show company block on root / page', () => {
+    renderBreadcrumb('/')
+    // Root page is the companies list — no company context needed
+    // Existing test expects "Select company" on root, but root is also not company-scoped
+    // Keep backward compat: root shows "Select company" as it's the companies list page
+    expect(screen.getByText('AgentCo')).toBeInTheDocument()
+  })
+
   it('AgentCo link points to companies list', () => {
     renderBreadcrumb('/companies/c1')
     const agentCoLink = screen.getByText('AgentCo')

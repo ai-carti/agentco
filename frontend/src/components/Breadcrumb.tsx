@@ -9,11 +9,16 @@ function getSection(pathname: string): string | null {
   return null
 }
 
+function requiresCompany(pathname: string): boolean {
+  return /^\/companies\/[^/]+/.test(pathname)
+}
+
 export default function Breadcrumb() {
   const location = useLocation()
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const section = getSection(location.pathname)
   const hasCompany = currentCompany !== null
+  const showCompanyBlock = requiresCompany(location.pathname) || location.pathname === '/'
 
   return (
     <div
@@ -32,12 +37,15 @@ export default function Breadcrumb() {
         AgentCo
       </Link>
 
-      <span style={{ color: '#4b5563' }}>&gt;</span>
-
-      {hasCompany ? (
-        <span style={{ color: '#e2e8f0' }}>{currentCompany.name}</span>
-      ) : (
-        <span>Select company</span>
+      {showCompanyBlock && (
+        <>
+          <span style={{ color: '#4b5563' }}>&gt;</span>
+          {hasCompany ? (
+            <span style={{ color: '#e2e8f0' }}>{currentCompany.name}</span>
+          ) : (
+            <span>Select company</span>
+          )}
+        </>
       )}
 
       {section && (
