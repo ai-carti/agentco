@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
+import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 
@@ -13,6 +14,7 @@ interface Company {
 
 export default function CompaniesPage() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [showNewModal, setShowNewModal] = useState(false)
@@ -53,12 +55,15 @@ export default function CompaniesPage() {
         body: JSON.stringify({ name: newName.trim() }),
       })
       if (res.ok) {
+        toast.success(`Company ${newName.trim()} created`)
         setNewName('')
         setShowNewModal(false)
         await load()
+      } else {
+        toast.error('Something went wrong. Try again.')
       }
     } catch {
-      // ignore
+      toast.error('Something went wrong. Try again.')
     } finally {
       setCreating(false)
     }
