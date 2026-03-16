@@ -63,7 +63,15 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [editTitle, setEditTitle] = useState(task.title)
+  const [editDesc, setEditDesc] = useState(task.description ?? '')
   const toast = useToast()
+  const agents = useAgentStore((s) => s.agents)
+  const setTasks = useAgentStore((s) => s.setTasks)
+  const tasks = useAgentStore((s) => s.tasks)
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
@@ -95,6 +103,84 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
       toast.error(msg)
     } finally {
       setRunning(false)
+    }
+  }
+
+  const handleEdit = async () => {
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ title: editTitle, description: editDesc }),
+      })
+      if (res.ok) {
+        setTasks(tasks.map((t) => t.id === task.id ? { ...t, title: editTitle, description: editDesc } : t))
+        toast.success(`Task updated`)
+        setEditOpen(false)
+      } else {
+        toast.error('Something went wrong. Try again.')
+      }
+    } catch {
+      toast.error('Something went wrong. Try again.')
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (res.ok) {
+        setTasks(tasks.filter((t) => t.id !== task.id))
+        toast.success(`Task "${task.title}" deleted`)
+        setDeleteOpen(false)
+      } else {
+        toast.error('Something went wrong. Try again.')
+      }
+    } catch {
+      toast.error('Something went wrong. Try again.')
+    }
+  }
+
+  const handleAssign = async (agentId: string, agentName: string) => {
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ assignee_id: agentId }),
+      })
+      if (res.ok) {
+        setTasks(tasks.map((t) => t.id === task.id ? { ...t, assignee_id: agentId, assignee_name: agentName } : t))
+        toast.success(`Task assigned to ${agentName}`)
+        setAssignOpen(false)
+      } else {
+        toast.error('Something went wrong. Try again.')
+      }
+    } catch {
+      toast.error('Something went wrong. Try again.')
+    }
+  }
+
+  const handleMenuAction = (action: string) => {
+    setMenuOpen(false)
+    if (action === 'Edit') {
+      setEditTitle(task.title)
+      setEditDesc(task.description ?? '')
+      setEditOpen(true)
+    } else if (action === 'Delete') {
+      setDeleteOpen(true)
+    } else if (action === 'Assign') {
+      setAssignOpen(true)
     }
   }
 
@@ -159,7 +245,7 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
                 style={{ padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem' }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => handleMenuAction(item)}
               >
                 {item}
               </div>
@@ -271,6 +357,151 @@ function TaskCard({ task, companyId, onCardClick }: TaskCardProps) {
         >
           ⚠ {runError}
         </p>
+      )}
+
+      {/* Edit modal */}
+      {editOpen && (
+        <div
+          data-testid="edit-task-modal"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false) }}
+        >
+          <div style={{
+            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
+            border: '1px solid #374151',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>Edit Task</h2>
+            <input
+              autoFocus
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Task title"
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
+              }}
+            />
+            <textarea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              placeholder="Description"
+              rows={3}
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button
+                onClick={() => setEditOpen(false)}
+                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEdit}
+                disabled={!editTitle.trim()}
+                style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm dialog */}
+      {deleteOpen && (
+        <div
+          data-testid="confirm-delete-dialog"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDeleteOpen(false) }}
+        >
+          <div style={{
+            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
+            border: '1px solid #374151',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 0.5rem', fontWeight: 700 }}>Delete Task</h2>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0 0 1rem' }}>
+              Are you sure you want to delete "{task.title}"? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                data-testid="cancel-delete-btn"
+                onClick={() => setDeleteOpen(false)}
+                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                data-testid="confirm-delete-btn"
+                onClick={handleDelete}
+                style={{ padding: '0.4rem 0.9rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign dropdown */}
+      {assignOpen && (
+        <div
+          data-testid="assign-dropdown"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setAssignOpen(false) }}
+        >
+          <div style={{
+            background: '#1f2937', borderRadius: 10, padding: '1rem', width: 280,
+            border: '1px solid #374151',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem' }}>Assign to Agent</h3>
+            {agents.length === 0 ? (
+              <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>No agents available</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                {agents.map((agent) => (
+                  <button
+                    key={agent.id}
+                    data-testid={`assign-agent-${agent.id}`}
+                    onClick={() => handleAssign(agent.id, agent.name)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.5rem 0.75rem', background: 'transparent',
+                      border: 'none', borderRadius: 6, color: '#f8fafc',
+                      cursor: 'pointer', fontSize: '0.8rem', textAlign: 'left',
+                      width: '100%',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div style={{
+                      width: 24, height: 24, borderRadius: '50%',
+                      background: getAvatarColor(agent.name),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.6rem', fontWeight: 700, color: '#fff',
+                    }}>
+                      {getInitials(agent.name)}
+                    </div>
+                    {agent.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
