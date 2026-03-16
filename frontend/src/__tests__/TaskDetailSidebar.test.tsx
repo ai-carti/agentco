@@ -2,6 +2,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import TaskDetailSidebar from '../components/TaskDetailSidebar'
 import { type Task } from '../store/agentStore'
+import { ToastProvider } from '../context/ToastContext'
+
+function renderWithToast(ui: React.ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>)
+}
 
 const BASE_URL = 'http://localhost:8000'
 
@@ -194,5 +199,41 @@ describe('TaskDetailSidebar — UX-010', () => {
         expect.objectContaining({ method: 'POST' })
       )
     })
+  })
+})
+
+describe('TaskDetailSidebar — BUG-025 toast on run', () => {
+  it('shows success toast when run succeeds', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+
+    renderWithToast(<TaskDetailSidebar {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('sidebar-run-btn'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('toast-item').length).toBeGreaterThan(0)
+    })
+    const toastItems = screen.getAllByTestId('toast-item')
+    const successToast = toastItems.find(
+      (el) => el.getAttribute('data-type') === 'success'
+    )
+    expect(successToast).toBeTruthy()
+    expect(successToast!.textContent).toContain('Build login page')
+  })
+
+  it('shows error toast when run returns !ok', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderWithToast(<TaskDetailSidebar {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('sidebar-run-btn'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('toast-item').length).toBeGreaterThan(0)
+    })
+    const toastItems = screen.getAllByTestId('toast-item')
+    const errorToast = toastItems.find((el) => el.getAttribute('data-type') === 'error')
+    expect(errorToast).toBeTruthy()
+    expect(errorToast!.textContent).toContain('Something went wrong')
   })
 })

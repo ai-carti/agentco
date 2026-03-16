@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { type Task, type TaskStatus } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
+import { useToast } from '../context/ToastContext'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -68,6 +69,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
   const [running, setRunning] = useState(false)
+  const toast = useToast()
 
   // Fetch logs
   useEffect(() => {
@@ -112,15 +114,20 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
     setRunning(true)
     try {
       const token = getStoredToken()
-      await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}/run`, {
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       })
+      if (res.ok) {
+        toast.success(`▶ Running: ${task.title}...`)
+      } else {
+        toast.error('Something went wrong...')
+      }
     } catch {
-      // ignore
+      toast.error('Something went wrong...')
     } finally {
       setRunning(false)
     }
