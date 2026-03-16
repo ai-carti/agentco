@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import WarRoom from './WarRoom'
 import KanbanBoard from './KanbanBoard'
-import { useAgentStore } from '../store/agentStore'
+import AgentCard from './AgentCard'
+import EmptyState from './EmptyState'
+import { useAgentStore, type Agent } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -11,7 +13,10 @@ export default function CompanyPage() {
   const { id } = useParams<{ id: string }>()
   const setCurrentCompany = useAgentStore((s) => s.setCurrentCompany)
   const setTasks = useAgentStore((s) => s.setTasks)
+  const setAgents = useAgentStore((s) => s.setAgents)
+  const agents = useAgentStore((s) => s.agents)
   const [tasksLoaded, setTasksLoaded] = useState(false)
+  const [agentsLoaded, setAgentsLoaded] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -36,15 +41,55 @@ export default function CompanyPage() {
         setTasksLoaded(true)
       })
 
+    setAgentsLoaded(false)
+    fetch(`${BASE_URL}/api/v1/companies/${id}/agents`, { headers })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        setAgents(Array.isArray(data) ? data : [])
+        setAgentsLoaded(true)
+      })
+      .catch(() => {
+        setAgentsLoaded(true)
+      })
+
     return () => {
       setCurrentCompany(null)
       setTasks([])
+      setAgents([])
     }
-  }, [id, setCurrentCompany, setTasks])
+  }, [id, setCurrentCompany, setTasks, setAgents])
+
+  const handleEditAgent = (_agent: Agent) => {
+    // TODO: open edit modal
+  }
 
   return (
     <div data-testid="company-page">
       <WarRoom />
+
+      {/* Agents section */}
+      {agentsLoaded && agents.length === 0 && (
+        <EmptyState
+          emoji="🤖"
+          title="Your AI team is waiting"
+          subtitle="Add agents to start automating"
+          ctaLabel="+ Add Agent"
+          onCTA={() => {}}
+        />
+      )}
+      {agents.length > 0 && (
+        <div style={{ padding: '0 1rem', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#e5e7eb', marginBottom: '0.75rem' }}>
+            Agents ({agents.length})
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+            {agents.map((agent) => (
+              <AgentCard key={agent.id} agent={agent} companyId={id ?? ''} onEdit={handleEditAgent} />
+            ))}
+          </div>
+        </div>
+      )}
+
       <KanbanBoard companyId={id ?? ''} isLoaded={tasksLoaded} />
     </div>
   )

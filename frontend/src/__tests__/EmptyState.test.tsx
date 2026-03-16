@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import CompaniesPage from '../components/CompaniesPage'
+import CompanyPage from '../components/CompanyPage'
 import WarRoom from '../components/WarRoom'
 import KanbanBoard from '../components/KanbanBoard'
 import AgentPage from '../components/AgentPage'
@@ -132,6 +133,50 @@ describe('WarRoom empty state', () => {
     expect(screen.getByText('💤')).toBeInTheDocument()
     expect(screen.getByText('All quiet here')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /run a task/i })).toBeInTheDocument()
+  })
+})
+
+// --- CompanyPage agents empty state (BUG-020) ---
+describe('CompanyPage agents empty state', () => {
+  it('shows agents empty state when no agents loaded', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [] })
+      if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
+      if (url.includes('/companies/')) return Promise.resolve({ ok: true, json: async () => ({ id: 'c1', name: 'TestCo' }) })
+      return Promise.resolve({ ok: true, json: async () => [] })
+    })
+    render(
+      <MemoryRouter initialEntries={['/companies/c1']}>
+        <Routes>
+          <Route path="/companies/:id" element={<ToastProvider><CompanyPage /></ToastProvider>} />
+        </Routes>
+      </MemoryRouter>
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Your AI team is waiting')).toBeInTheDocument()
+    })
+    expect(screen.getByText('🤖')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add agent/i })).toBeInTheDocument()
+  })
+
+  it('does NOT show agents empty state when agents exist', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [{ id: 'a1', name: 'CEO Agent', status: 'idle' }] })
+      if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
+      if (url.includes('/companies/')) return Promise.resolve({ ok: true, json: async () => ({ id: 'c1', name: 'TestCo' }) })
+      return Promise.resolve({ ok: true, json: async () => [] })
+    })
+    render(
+      <MemoryRouter initialEntries={['/companies/c1']}>
+        <Routes>
+          <Route path="/companies/:id" element={<ToastProvider><CompanyPage /></ToastProvider>} />
+        </Routes>
+      </MemoryRouter>
+    )
+    await waitFor(() => {
+      expect(screen.getByText('CEO Agent')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Your AI team is waiting')).not.toBeInTheDocument()
   })
 })
 
