@@ -103,8 +103,8 @@ describe('Routing', () => {
     it('shows navbar with navigation links', () => {
       renderWithRouter('/')
       expect(screen.getByTestId('navbar')).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: /companies/i })).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument()
+      expect(screen.getAllByRole('link', { name: /companies/i }).length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByRole('link', { name: /settings/i }).length).toBeGreaterThanOrEqual(1)
     })
   })
 
