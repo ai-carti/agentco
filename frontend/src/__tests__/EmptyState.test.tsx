@@ -105,7 +105,8 @@ describe('KanbanBoard empty state', () => {
     useAgentStore.setState({ tasks: [] })
     render(<ToastProvider><KanbanBoard companyId="c1" isLoaded={true} /></ToastProvider>)
     expect(screen.getByText('No tasks yet')).toBeInTheDocument()
-    expect(screen.getByText('📋')).toBeInTheDocument()
+    // UX-POLISH-002: emoji replaced with SVG icon
+    expect(screen.getByTestId('empty-state-icon')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new task/i })).toBeInTheDocument()
   })
 
@@ -128,7 +129,8 @@ describe('KanbanBoard empty state', () => {
 describe('WarRoom empty state', () => {
   it('shows styled empty state when no runs', () => {
     render(<MemoryRouter><WarRoom /></MemoryRouter>)
-    expect(screen.getByText('💤')).toBeInTheDocument()
+    // UX-POLISH-002: emoji replaced with SVG icon
+    expect(screen.getByTestId('empty-state-icon')).toBeInTheDocument()
     expect(screen.getByText('All quiet here')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /run a task/i })).toBeInTheDocument()
   })
@@ -153,7 +155,8 @@ describe('CompanyPage agents empty state', () => {
     await waitFor(() => {
       expect(screen.getByText('Your AI team is waiting')).toBeInTheDocument()
     })
-    expect(screen.getByText('🤖')).toBeInTheDocument()
+    // UX-POLISH-002: emoji replaced with SVG icon
+    expect(screen.getAllByTestId('empty-state-icon').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByRole('button', { name: /add agent/i })).toBeInTheDocument()
   })
 
@@ -195,6 +198,7 @@ describe('AgentPage history empty state', () => {
     await waitFor(() => {
       expect(screen.getByText(/no completed tasks yet/i)).toBeInTheDocument()
     })
-    expect(screen.getByText('📜')).toBeInTheDocument()
+    // UX-POLISH-002: emoji replaced with SVG icon
+    expect(screen.getAllByTestId('empty-state-icon').length).toBeGreaterThanOrEqual(1)
   })
 })

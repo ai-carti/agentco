@@ -5,6 +5,7 @@ import TaskDetailSidebar from './TaskDetailSidebar'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
+import { ClipboardList } from 'lucide-react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -850,7 +851,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
     <>
       {showEmpty && (
         <EmptyState
-          emoji="📋"
+          icon={<ClipboardList className="w-12 h-12 text-gray-400" />}
           title="No tasks yet"
           subtitle="Create your first task and assign it to an agent"
           ctaLabel="+ New Task"

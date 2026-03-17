@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
+import { Bot } from 'lucide-react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -221,7 +222,10 @@ export default function LibraryPage() {
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: '1.5rem' }}>{agent.avatar ?? '🤖'}</span>
+              {agent.avatar
+                ? <span style={{ fontSize: '1.5rem' }}>{agent.avatar}</span>
+                : <Bot className="w-6 h-6 text-gray-400" />
+              }
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#f1f5f9' }}>
                   {agent.name}

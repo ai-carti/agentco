@@ -1,14 +1,16 @@
 import React from 'react'
 
 interface EmptyStateProps {
-  emoji: string
+  /** @deprecated Use icon instead. Kept for backward compat. */
+  emoji?: string
+  icon?: React.ReactNode
   title: string
   subtitle: string
   ctaLabel?: string
   onCTA?: () => void
 }
 
-export default function EmptyState({ emoji, title, subtitle, ctaLabel, onCTA }: EmptyStateProps) {
+export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onCTA }: EmptyStateProps) {
   return (
     <div
       data-testid="empty-state"
@@ -23,7 +25,11 @@ export default function EmptyState({ emoji, title, subtitle, ctaLabel, onCTA }: 
         animation: 'fadeIn 0.3s ease-in',
       }}
     >
-      <span style={{ fontSize: '4rem', lineHeight: 1 }}>{emoji}</span>
+      {icon ? (
+        <div data-testid="empty-state-icon" style={{ lineHeight: 1 }}>{icon}</div>
+      ) : (
+        <span style={{ fontSize: '4rem', lineHeight: 1 }}>{emoji}</span>
+      )}
       <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#f8fafc', margin: 0 }}>
         {title}
       </h3>

@@ -63,6 +63,14 @@ describe('OnboardingPage', () => {
     expect(screen.getByTestId('onboarding-skip-btn')).toBeInTheDocument()
   })
 
+  // UX-POLISH-001: button text must be in English
+  it('use-template button text is in English (not Russian)', () => {
+    wrap(<OnboardingPage />)
+    const btn = screen.getByTestId('onboarding-use-template-btn')
+    expect(btn).toHaveTextContent('Launch Demo')
+    expect(btn).not.toHaveTextContent('Запустить')
+  })
+
   it('calls from-template endpoint on button click', async () => {
     const mockOnCreated = vi.fn()
     global.fetch = vi.fn().mockResolvedValue({

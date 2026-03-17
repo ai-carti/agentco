@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useAgentStore } from '../store/agentStore'
 import EmptyState from './EmptyState'
+import { Moon } from 'lucide-react'
 
 interface Run {
   run_id: string
@@ -99,7 +100,7 @@ export default function WarRoom() {
 
       {runs.length === 0 ? (
         <EmptyState
-          emoji="💤"
+          icon={<Moon className="w-12 h-12 text-gray-400" />}
           title="All quiet here"
           subtitle="No agents are running. Start a task to see the magic"
           ctaLabel="▶ Run a Task"

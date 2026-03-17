@@ -101,6 +101,23 @@ describe('AuthPage', () => {
     expect(screen.getByText('AgentCo')).toBeInTheDocument()
   })
 
+  // UX-POLISH-006: no duplicate label+placeholder, Forgot password link present
+  it('does not render duplicate label for email field', () => {
+    renderAuthPage()
+    // Labels removed — only placeholder remains
+    expect(screen.queryByText(/^Email$/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Password$/)).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
+  })
+
+  it('shows Forgot password? link pointing to /forgot-password', () => {
+    renderAuthPage()
+    const link = screen.getByRole('link', { name: /forgot password/i })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', '/forgot-password')
+  })
+
   // BUG-010: after login redirect to original URL
   describe('BUG-010: redirect to original URL after login', () => {
     it('navigates to / by default when no from state', async () => {

@@ -144,29 +144,38 @@ export default function AuthPage() {
         {error && <div style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <label style={styles.label} htmlFor="auth-email">Email</label>
           <input
             id="auth-email"
             style={styles.input}
             type="email"
-            placeholder="email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
           />
 
-          <label style={styles.label} htmlFor="auth-password">Password</label>
           <input
             id="auth-password"
             style={styles.input}
             type="password"
-            placeholder="password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           />
+
+          <div style={{ textAlign: 'right', marginTop: '-0.75rem', marginBottom: '1rem' }}>
+            <a
+              href="/forgot-password"
+              style={{ color: '#6c47ff', fontSize: '0.8rem', textDecoration: 'none' }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              Forgot password?
+            </a>
+          </div>
 
           <button style={styles.button} type="submit" disabled={isLoading}>
             {isLoading ? 'Loading…' : tab === 'signin' ? 'Sign In' : 'Sign Up'}

@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import OnboardingPage from './OnboardingPage'
+import { Building2 } from 'lucide-react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -107,7 +108,7 @@ export default function CompaniesPage() {
         <SkeletonCard variant="company" count={4} />
       ) : companies.length === 0 ? (
         <EmptyState
-          emoji="🏢"
+          icon={<Building2 className="w-12 h-12 text-gray-400" />}
           title="No companies yet"
           subtitle="Create your first workspace"
           ctaLabel="+ New Company"

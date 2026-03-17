@@ -5,6 +5,7 @@ import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
+import { Brain, ScrollText } from 'lucide-react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -192,7 +193,7 @@ export default function AgentPage() {
           <SkeletonCard variant="task" count={2} />
         ) : memories.length === 0 ? (
           <EmptyState
-            emoji="🧠"
+            icon={<Brain className="w-12 h-12 text-gray-400" />}
             title="No memories yet"
             subtitle="This agent hasn't stored any memories"
           />
@@ -232,7 +233,7 @@ export default function AgentPage() {
           <SkeletonCard variant="task" count={3} />
         ) : history.length === 0 ? (
           <EmptyState
-            emoji="📜"
+            icon={<ScrollText className="w-12 h-12 text-gray-400" />}
             title="No completed tasks yet"
             subtitle="This agent hasn't completed any tasks"
           />

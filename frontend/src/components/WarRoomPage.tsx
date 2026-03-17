@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
+import { Moon } from 'lucide-react'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -108,7 +109,7 @@ export default function WarRoomPage() {
           gap: '1.5rem',
         }}
       >
-        <div style={{ fontSize: '3rem' }}>💤</div>
+        <Moon className="w-12 h-12 text-gray-400" />
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>

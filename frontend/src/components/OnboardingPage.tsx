@@ -226,7 +226,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           {loading ? (
             <>⏳ Creating…</>
           ) : (
-            <>🚀 Запустить демо</>
+            <>Launch Demo</>
           )}
         </button>
       </div>

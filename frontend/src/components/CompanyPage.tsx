@@ -7,6 +7,7 @@ import AgentForm, { type AgentFormData } from './AgentForm'
 import EmptyState from './EmptyState'
 import { useAgentStore, type Agent } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
+import { Bot } from 'lucide-react'
 
 const AVATAR_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
@@ -222,7 +223,7 @@ export default function CompanyPage() {
       {/* Agents section */}
       {agentsLoaded && agents.length === 0 && (
         <EmptyState
-          emoji="🤖"
+          icon={<Bot className="w-12 h-12 text-gray-400" />}
           title="Your AI team is waiting"
           subtitle="Add agents to start automating"
           ctaLabel="+ Add Agent"
