@@ -60,6 +60,10 @@ class AgentState(TypedDict):
     total_tokens: int
     total_cost_usd: float
 
+    # Идентификатор агента и уровень в иерархии
+    agent_id: str       # текущий агент (ceo / subagent / swe-001 etc.)
+    level: int          # уровень в иерархии: 0 = CEO, 1 = CTO/PM, 2 = SWE
+
     # Управление выполнением
     status: Literal["running", "completed", "failed", "error"]
     error: str | None

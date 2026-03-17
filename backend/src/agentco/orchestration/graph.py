@@ -89,3 +89,21 @@ def build_orchestration_graph() -> StateGraph:
     )
 
     return graph
+
+
+def compile(checkpointer=None):
+    """
+    Собрать и скомпилировать граф.
+
+    Удобная функция для импорта: `from agentco.orchestration.graph import compile`.
+
+    Args:
+        checkpointer: опциональный LangGraph checkpointer (SqliteSaver / AsyncSqliteSaver)
+
+    Returns:
+        Compiled LangGraph graph ready for invoke/ainvoke.
+    """
+    graph = build_orchestration_graph()
+    if checkpointer is not None:
+        return graph.compile(checkpointer=checkpointer)
+    return graph.compile()

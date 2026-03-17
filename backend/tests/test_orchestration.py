@@ -440,3 +440,61 @@ class TestCheckpointerModule:
         db_path = str(tmp_path / "test.db")
         async with create_checkpointer(db_path) as cp:
             assert isinstance(cp, AsyncSqliteSaver)
+
+
+# ─── M2-002 missing AC tests ──────────────────────────────────────────────────
+
+class TestAgentStateM2002:
+    """AgentState должен содержать level, agent_id из AC M2-002."""
+
+    def test_agent_state_has_level_field(self):
+        """AgentState должен иметь поле level."""
+        from agentco.orchestration.state import AgentState
+        import typing
+        hints = typing.get_type_hints(AgentState)
+        assert "level" in hints, f"level not in AgentState fields: {list(hints.keys())}"
+
+    def test_agent_state_has_agent_id_field(self):
+        """AgentState должен иметь поле agent_id."""
+        from agentco.orchestration.state import AgentState
+        import typing
+        hints = typing.get_type_hints(AgentState)
+        assert "agent_id" in hints, f"agent_id not in AgentState fields: {list(hints.keys())}"
+
+    def test_agent_state_with_level_and_agent_id(self):
+        """Можно создать AgentState с level и agent_id."""
+        from agentco.orchestration.state import AgentState
+        state: AgentState = {
+            "run_id": "run-001",
+            "company_id": "company-001",
+            "input": "task",
+            "messages": [],
+            "pending_tasks": [],
+            "active_tasks": {},
+            "results": {},
+            "iteration_count": 0,
+            "total_tokens": 0,
+            "total_cost_usd": 0.0,
+            "status": "running",
+            "error": None,
+            "final_result": None,
+            "level": 0,
+            "agent_id": "ceo",
+        }
+        assert state["level"] == 0
+        assert state["agent_id"] == "ceo"
+
+
+class TestGraphCompileFunction:
+    """graph.py должен экспортировать compile() функцию."""
+
+    def test_graph_module_exports_compile_function(self):
+        """graph модуль должен иметь compile() функцию."""
+        import agentco.orchestration.graph as g
+        assert hasattr(g, "compile"), "graph module should export compile() function"
+
+    def test_graph_compile_function_returns_compiled_graph(self):
+        """compile() должна возвращать скомпилированный граф."""
+        from agentco.orchestration.graph import compile
+        result = compile()
+        assert result is not None
