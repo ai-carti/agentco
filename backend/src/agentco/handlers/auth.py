@@ -45,6 +45,7 @@ class TokenResponse(BaseModel):
 class MeResponse(BaseModel):
     id: str
     email: str
+    has_completed_onboarding: bool
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -82,4 +83,8 @@ def login(body: LoginRequest, session: Session = Depends(get_session)):
 @router.get("/me", response_model=MeResponse)
 def me(current_user: User = Depends(get_current_user)):
     """Protected endpoint: returns current user info."""
-    return MeResponse(id=current_user.id, email=current_user.email)
+    return MeResponse(
+        id=current_user.id,
+        email=current_user.email,
+        has_completed_onboarding=bool(current_user.has_completed_onboarding),
+    )

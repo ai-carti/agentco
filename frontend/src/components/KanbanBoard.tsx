@@ -709,7 +709,41 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
   const setTasks = useAgentStore((s) => s.setTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDesc, setNewTaskDesc] = useState('')
+  const [creating, setCreating] = useState(false)
   const toast = useToast()
+
+  const handleCreateTask = async () => {
+    if (!newTaskTitle.trim()) return
+    setCreating(true)
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ title: newTaskTitle.trim(), description: newTaskDesc.trim(), status: 'todo' }),
+      })
+      if (res.ok) {
+        const newTask = await res.json()
+        setTasks([...useAgentStore.getState().tasks, newTask])
+        toast.success(`Task "${newTaskTitle.trim()}" created`)
+        setNewTaskTitle('')
+        setNewTaskDesc('')
+        setShowCreateModal(false)
+      } else {
+        toast.error('Failed to create task. Try again.')
+      }
+    } catch {
+      toast.error('Failed to create task. Try again.')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   // Filter state
   const [searchInput, setSearchInput] = useState('')
@@ -820,7 +854,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           title="No tasks yet"
           subtitle="Create your first task and assign it to an agent"
           ctaLabel="+ New Task"
-          onCTA={() => {}}
+          onCTA={() => setShowCreateModal(true)}
         />
       )}
       {!showEmpty && isLoaded && (
