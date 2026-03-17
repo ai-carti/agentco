@@ -1,0 +1,34 @@
+[build]
+builder = "nixpacks"
+
+# Railway deploys backend by default.
+# Frontend is built as a static site — serve via Railway Static or Vercel/Netlify.
+
+[[services]]
+name = "backend"
+root = "backend"
+
+[services.build]
+buildCommand = "pip install uv && uv sync --frozen --no-dev"
+
+[services.deploy]
+startCommand = "uv run uvicorn agentco.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
+[services.variables]
+PYTHONPATH = "src"
+AGENTCO_DB_URL = "sqlite:///./data/agentco.db"
+
+[[services]]
+name = "frontend"
+root = "frontend"
+
+[services.build]
+buildCommand = "npm ci && npm run build"
+
+[services.deploy]
+# Static output in frontend/out — serve with a static host or Railway static service
+startCommand = "npx serve out -l $PORT"
