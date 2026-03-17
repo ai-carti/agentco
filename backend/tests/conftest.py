@@ -18,6 +18,8 @@ import agentco.orm.task        # noqa: F401
 import agentco.orm.run         # noqa: F401
 import agentco.orm.user        # noqa: F401
 import agentco.orm.credential  # noqa: F401
+import agentco.orm.agent_library  # noqa: F401
+import agentco.orm.agent_library  # noqa: F401
 from agentco.db.session import get_session
 
 
