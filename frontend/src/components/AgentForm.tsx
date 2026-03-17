@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { getStoredToken } from '../api/client'
+import SystemPromptEditor from './SystemPromptEditor'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -9,6 +10,7 @@ export interface AgentFormData {
   name: string
   role: string
   model: string
+  system_prompt: string
 }
 
 interface AgentFormProps {
@@ -20,6 +22,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [role, setRole] = useState(initialValues?.role ?? '')
   const [model, setModel] = useState(initialValues?.model ?? '')
+  const [systemPrompt, setSystemPrompt] = useState(initialValues?.system_prompt ?? '')
   const [models, setModels] = useState<string[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
   const [error, setError] = useState('')
@@ -52,7 +55,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
       return
     }
     setError('')
-    onSubmit({ name, role, model })
+    onSubmit({ name, role, model, system_prompt: systemPrompt })
   }
 
   const inputStyle: React.CSSProperties = {
@@ -130,6 +133,12 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         {error && (
           <p style={{ color: '#f87171', fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>
         )}
+      </div>
+
+      {/* System Prompt */}
+      <div>
+        <label style={labelStyle}>System Prompt</label>
+        <SystemPromptEditor value={systemPrompt} onChange={setSystemPrompt} />
       </div>
 
       <button

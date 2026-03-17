@@ -31,7 +31,7 @@ export default function AgentPage() {
   useEffect(() => {
     if (!companyId || !agentId) return
     const token = getStoredToken()
-    fetch(`${BASE_URL}/api/v1/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
+    fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => (res.ok ? res.json() : []))
@@ -48,7 +48,7 @@ export default function AgentPage() {
     try {
       const token = getStoredToken()
       const res = await fetch(
-        `${BASE_URL}/api/v1/companies/${companyId}/agents/${agentId}`,
+        `${BASE_URL}/api/companies/${companyId}/agents/${agentId}`,
         {
           method: 'PUT',
           headers: {

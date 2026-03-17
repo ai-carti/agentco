@@ -26,7 +26,7 @@ export default function CompanySettingsPage() {
   useEffect(() => {
     if (!companyId) return
     const token = getStoredToken()
-    fetch(`${BASE_URL}/api/v1/companies/${companyId}`, {
+    fetch(`${BASE_URL}/api/companies/${companyId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -68,7 +68,7 @@ export default function CompanySettingsPage() {
   const handleDelete = async () => {
     try {
       const token = getStoredToken()
-      const res = await fetch(`${BASE_URL}/api/v1/companies/${companyId}`, {
+      const res = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })

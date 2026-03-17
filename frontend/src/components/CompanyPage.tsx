@@ -25,7 +25,7 @@ export default function CompanyPage() {
     const token = getStoredToken()
     const headers = token ? { Authorization: `Bearer ${token}` } : {}
 
-    fetch(`${BASE_URL}/api/v1/companies/${id}`, { headers })
+    fetch(`${BASE_URL}/api/companies/${id}`, { headers })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setCurrentCompany({ id: data.id, name: data.name })
@@ -44,7 +44,7 @@ export default function CompanyPage() {
       })
 
     setAgentsLoaded(false)
-    fetch(`${BASE_URL}/api/v1/companies/${id}/agents`, { headers })
+    fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
@@ -71,7 +71,7 @@ export default function CompanyPage() {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
     try {
-      const res = await fetch(`${BASE_URL}/api/v1/companies/${id}/agents`, {
+      const res = await fetch(`${BASE_URL}/api/companies/${id}/agents`, {
         method: 'POST',
         headers,
         body: JSON.stringify(data),

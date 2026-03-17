@@ -25,7 +25,7 @@ export default function CompaniesPage() {
     setLoading(true)
     try {
       const token = getStoredToken()
-      const res = await fetch(`${BASE_URL}/api/v1/companies`, {
+      const res = await fetch(`${BASE_URL}/api/companies`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (res.ok) {
@@ -46,7 +46,7 @@ export default function CompaniesPage() {
     setCreating(true)
     try {
       const token = getStoredToken()
-      const res = await fetch(`${BASE_URL}/api/v1/companies`, {
+      const res = await fetch(`${BASE_URL}/api/companies`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

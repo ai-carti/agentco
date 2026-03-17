@@ -117,3 +117,71 @@ describe('AgentForm - model selector', () => {
     expect(placeholder).toBeDisabled()
   })
 })
+
+describe('AgentForm - BUG-026: SystemPromptEditor integration', () => {
+  it('renders SystemPromptEditor textarea in the form', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: ['gpt-4o'] }),
+    })
+    render(<AgentForm onSubmit={vi.fn()} />)
+    await waitFor(() => screen.getByTestId('model-select'))
+    expect(screen.getByTestId('system-prompt-textarea')).toBeInTheDocument()
+  })
+
+  it('submits form with system_prompt value', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: ['gpt-4o'] }),
+    })
+    const onSubmit = vi.fn()
+    render(<AgentForm onSubmit={onSubmit} />)
+    await waitFor(() => screen.getByTestId('model-select'))
+
+    fireEvent.change(screen.getByTestId('agent-name-input'), { target: { value: 'Test Agent' } })
+    fireEvent.change(screen.getByTestId('model-select'), { target: { value: 'gpt-4o' } })
+    fireEvent.change(screen.getByTestId('system-prompt-textarea'), {
+      target: { value: 'You are a helpful assistant.' },
+    })
+    fireEvent.click(screen.getByTestId('agent-form-submit'))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system_prompt: 'You are a helpful assistant.',
+      })
+    )
+  })
+
+  it('submits system_prompt as empty string when not filled', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: ['gpt-4o'] }),
+    })
+    const onSubmit = vi.fn()
+    render(<AgentForm onSubmit={onSubmit} />)
+    await waitFor(() => screen.getByTestId('model-select'))
+
+    fireEvent.change(screen.getByTestId('agent-name-input'), { target: { value: 'Agent' } })
+    fireEvent.change(screen.getByTestId('model-select'), { target: { value: 'gpt-4o' } })
+    fireEvent.click(screen.getByTestId('agent-form-submit'))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ system_prompt: '' })
+    )
+  })
+
+  it('populates system_prompt from initialValues', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ models: ['gpt-4o'] }),
+    })
+    render(
+      <AgentForm
+        onSubmit={vi.fn()}
+        initialValues={{ system_prompt: 'You are a CEO.' }}
+      />
+    )
+    await waitFor(() => screen.getByTestId('system-prompt-textarea'))
+    expect(screen.getByTestId('system-prompt-textarea')).toHaveValue('You are a CEO.')
+  })
+})

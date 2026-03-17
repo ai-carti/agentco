@@ -125,7 +125,7 @@ describe('UX-004: Agent History', () => {
     renderAgentPage('agent-1', 'c1')
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/companies/c1/agents/agent-1/tasks?status=done'),
+        expect.stringContaining('/api/companies/c1/agents/agent-1/tasks?status=done'),
         expect.any(Object),
       )
     })
