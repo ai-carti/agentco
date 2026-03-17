@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
+import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -38,13 +39,17 @@ export default function WarRoomPage() {
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const navigate = useNavigate()
+  const { runId } = useParams<{ runId?: string }>()
+
+  // WebSocket connection for real-time events
+  const { isConnected } = useWarRoomSocket(runId ?? 'mock-run')
 
   // Load mock data on mount
   useEffect(() => {
     loadMockData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mock WS: setInterval ~3 sec cycling agent statuses + adding messages
+  // Mock WS fallback: setInterval ~3 sec cycling agent statuses + adding messages
   useEffect(() => {
     if (agents.length === 0) return
 
@@ -178,6 +183,18 @@ export default function WarRoomPage() {
           <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
             War Room
           </h1>
+          <span
+            data-testid="ws-status-indicator"
+            title={isConnected ? 'Connected' : 'Disconnected'}
+            style={{
+              display: 'inline-block',
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: isConnected ? '#22c55e' : '#6b7280',
+              flexShrink: 0,
+            }}
+          />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
