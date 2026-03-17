@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import WarRoom from './WarRoom'
+import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
 import AgentCard from './AgentCard'
 import AgentForm, { type AgentFormData } from './AgentForm'
@@ -88,7 +88,7 @@ export default function CompanyPage() {
 
   return (
     <div data-testid="company-page">
-      <WarRoom />
+      <WarRoomPage />
 
       {/* Agent creation modal */}
       {isAgentFormOpen && (

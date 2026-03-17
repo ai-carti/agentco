@@ -89,7 +89,7 @@ describe('Routing', () => {
 
     it('renders war room + kanban at /companies/:id', () => {
       renderWithRouter('/companies/abc')
-      expect(screen.getByTestId('war-room')).toBeInTheDocument()
+      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
       expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
     })
 
@@ -124,7 +124,7 @@ describe('Routing', () => {
 
     it('directly navigating to /companies/:id renders company page', () => {
       renderWithRouter('/companies/deep-link-id')
-      expect(screen.getByTestId('war-room')).toBeInTheDocument()
+      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
     })
 
     it('directly navigating to /companies/:id/agents/:agentId renders agent page', () => {
@@ -157,7 +157,7 @@ describe('Routing', () => {
       mockAuthStore.user = { id: '1', email: 'siri@agentco.dev' }
       mockAuthStore.isInitialized = true
       renderWithRouter('/companies/deep-link-id')
-      expect(screen.getByTestId('war-room')).toBeInTheDocument()
+      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
     })
   })
 })
