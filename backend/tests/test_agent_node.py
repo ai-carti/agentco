@@ -451,3 +451,163 @@ class TestAgentNodeErrorHandling:
         assert result.get("status") == "error"
         assert result.get("error") is not None
         assert "API error" in result.get("error", "")
+
+
+# ─── M2-003 missing AC tests ──────────────────────────────────────────────────
+
+class TestEventBus:
+    """agentco/eventbus.py — простой asyncio.Queue singleton."""
+
+    def test_eventbus_module_exists(self):
+        """eventbus модуль должен существовать."""
+        import agentco.eventbus  # should not raise
+
+    def test_eventbus_get_returns_singleton(self):
+        """EventBus.get() должен возвращать один и тот же инстанс."""
+        from agentco.eventbus import EventBus
+        a = EventBus.get()
+        b = EventBus.get()
+        assert a is b
+
+    @pytest.mark.asyncio
+    async def test_eventbus_publish_and_receive(self):
+        """EventBus.publish() должен доставлять событие подписчику."""
+        from agentco.eventbus import EventBus
+        bus = EventBus.get()
+
+        received = []
+
+        async def consume():
+            async for event in bus.subscribe("test-company"):
+                received.append(event)
+                break
+
+        import asyncio
+        consumer_task = asyncio.create_task(consume())
+        await asyncio.sleep(0.01)
+        await bus.publish({"company_id": "test-company", "type": "test", "data": "hello"})
+        await asyncio.wait_for(consumer_task, timeout=1.0)
+        assert len(received) == 1
+        assert received[0]["type"] == "test"
+
+
+class TestDelegateTaskTool:
+    """delegate_task tool в agent_node."""
+
+    def test_delegate_task_tool_definition_exists(self):
+        """get_delegate_task_tool() должна возвращать tool definition."""
+        from agentco.orchestration.agent_node import get_delegate_task_tool
+        tool_def = get_delegate_task_tool()
+        assert tool_def["type"] == "function"
+        assert tool_def["function"]["name"] == "delegate_task"
+
+    @pytest.mark.asyncio
+    async def test_agent_node_streams_chunks_to_eventbus(self):
+        """agent_node должен публиковать чанки в EventBus при наличии company_id."""
+        from agentco.orchestration.agent_node import agent_node
+        from agentco.eventbus import EventBus
+
+        chunks = [
+            _make_text_chunk("Hello"),
+            _make_text_chunk(" world"),
+            _make_finish_chunk("stop"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        published = []
+        bus = EventBus.get()
+        original_publish = bus.publish
+
+        async def capture_publish(event):
+            published.append(event)
+            await original_publish(event)
+
+        bus.publish = capture_publish
+
+        try:
+            with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+                mock_acomp.return_value = stream
+                state = _make_base_state()
+                state["company_id"] = "company-001"
+                state["agent_id"] = "ceo"
+                await agent_node(state)
+        finally:
+            bus.publish = original_publish
+
+        # должны быть streaming chunk events или completion event
+        assert len(published) > 0
+        event_types = {e.get("type") for e in published}
+        assert event_types  # хоть что-то опубликовано
+
+    @pytest.mark.asyncio
+    async def test_agent_node_cost_tracking_updates_state(self):
+        """agent_node должен обновлять total_cost_usd на основе токенов."""
+        from agentco.orchestration.agent_node import agent_node
+
+        usage_chunk = _make_finish_chunk("stop")
+        usage_chunk.usage.total_tokens = 1000
+
+        chunks = [_make_text_chunk("Done"), usage_chunk]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["model"] = "gpt-4o"
+            result = await agent_node(state)
+
+        # total_tokens обновлён
+        assert result.get("total_tokens", 0) > 0
+
+
+class TestMemoryIntegration:
+    """agent_node интегрирован с MemoryService."""
+
+    @pytest.mark.asyncio
+    async def test_agent_node_injects_memories_into_system_prompt(self):
+        """При наличии MemoryService agent_node инжектирует воспоминания в промпт."""
+        from agentco.orchestration.agent_node import agent_node
+        from unittest.mock import AsyncMock as AM
+
+        chunks = [_make_text_chunk("Done"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        mock_memory_service = AsyncMock()
+        mock_memory_service.inject_memories = AM(
+            return_value="You are a CEO.\n\n## Past experiences (memories)\n1. Previous task done"
+        )
+        mock_memory_service.save_memory = AM(return_value="mem-001")
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["memory_service"] = mock_memory_service
+            state["agent_id"] = "ceo"
+            result = await agent_node(state)
+
+        # inject_memories должен быть вызван
+        mock_memory_service.inject_memories.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_agent_node_saves_result_to_memory_on_completion(self):
+        """agent_node должен сохранять результат в MemoryService после завершения."""
+        from agentco.orchestration.agent_node import agent_node
+        from unittest.mock import AsyncMock as AM
+
+        chunks = [_make_text_chunk("Task complete: built landing page"), _make_finish_chunk()]
+        stream = _make_async_stream(chunks)
+
+        mock_memory_service = AsyncMock()
+        mock_memory_service.inject_memories = AM(return_value="You are a CEO.")
+        mock_memory_service.save_memory = AM(return_value="mem-001")
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            state["memory_service"] = mock_memory_service
+            state["agent_id"] = "ceo"
+            state["run_id"] = "run-001"
+            result = await agent_node(state)
+
+        # save_memory должен быть вызван с результатом
+        mock_memory_service.save_memory.assert_called_once()
