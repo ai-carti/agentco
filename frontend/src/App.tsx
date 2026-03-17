@@ -24,7 +24,8 @@ function AppLayout() {
           <Routes>
             <Route path="/" element={<CompaniesPage />} />
             <Route path="/companies/:id" element={<CompanyPage />} />
-            <Route path="/companies/:id/runs/:runId" element={<WarRoomPage />} />
+            <Route path="/war-room" element={<WarRoomPage />} />
+            <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
             <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
             <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

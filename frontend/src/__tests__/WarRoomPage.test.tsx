@@ -4,62 +4,38 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import WarRoomPage from '../components/WarRoomPage'
 import { useWarRoomStore } from '../store/warRoomStore'
 
-// --- Mock fetch ---
-const fetchMock = vi.fn()
-vi.stubGlobal('fetch', fetchMock)
-
-// --- Mock WebSocket ---
-class MockWebSocket {
-  static instances: MockWebSocket[] = []
-  url: string
-  readyState = 1
-  onopen: (() => void) | null = null
-  onmessage: ((e: { data: string }) => void) | null = null
-  onclose: ((e?: { code?: number }) => void) | null = null
-  onerror: ((e?: unknown) => void) | null = null
-  close = vi.fn()
-  send = vi.fn()
-
-  constructor(url: string) {
-    this.url = url
-    MockWebSocket.instances.push(this)
-    setTimeout(() => this.onopen?.(), 0)
-  }
-}
-
-function renderWarRoom(runId = 'run-1', companyId = 'comp-1') {
+function renderWarRoom(companyId = 'comp-1') {
   return render(
-    <MemoryRouter initialEntries={[`/companies/${companyId}/runs/${runId}`]}>
+    <MemoryRouter initialEntries={[`/companies/${companyId}/warroom`]}>
       <Routes>
-        <Route path="/companies/:id/runs/:runId" element={<WarRoomPage />} />
+        <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
       </Routes>
     </MemoryRouter>,
   )
 }
 
 beforeEach(() => {
-  MockWebSocket.instances = []
-  vi.stubGlobal('WebSocket', MockWebSocket)
-  fetchMock.mockReset()
+  vi.useFakeTimers()
   useWarRoomStore.getState().reset()
 })
 
 afterEach(() => {
-  vi.restoreAllMocks()
+  vi.useRealTimers()
 })
 
-function lastWs(): MockWebSocket {
-  return MockWebSocket.instances[MockWebSocket.instances.length - 1]
-}
-
 describe('WarRoomPage', () => {
-  // --- AC: Agent cards with name, role, status, avatar ---
-  it('renders mock agents with name, role, and status', () => {
+  // --- AC 1: Component renders at /companies/:id/warroom ---
+  it('renders war room page', () => {
     renderWarRoom()
-    const store = useWarRoomStore.getState()
-    expect(store.agents.length).toBeGreaterThanOrEqual(3)
+    expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
+  })
 
-    // Agent panel should contain agent names
+  // --- AC 2: Agent cards with live status ---
+  it('renders agent cards with name, role, and status', () => {
+    renderWarRoom()
+    // Mock data loads on mount after interval ticks
+    act(() => { vi.advanceTimersByTime(100) })
+
     const panel = screen.getByTestId('agent-panel')
     expect(within(panel).getByText('CEO Agent')).toBeInTheDocument()
     expect(within(panel).getByText('Dev Agent')).toBeInTheDocument()
@@ -68,38 +44,39 @@ describe('WarRoomPage', () => {
 
   it('shows agent roles on cards', () => {
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
     expect(screen.getByText('Chief Executive Officer')).toBeInTheDocument()
     expect(screen.getByText('Software Developer')).toBeInTheDocument()
     expect(screen.getByText('Quality Assurance')).toBeInTheDocument()
   })
 
-  // --- AC: Status thinking/running — animated pulsing dot ---
-  it('shows pulsing indicator for thinking/running agents', () => {
+  it('shows animate-pulse for thinking agents', () => {
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
     const dots = screen.getAllByTestId('agent-status-dot')
-    const pulsingDots = dots.filter(
-      (d) => d.className.includes('animate-pulse'),
-    )
+    const pulsingDots = dots.filter((d) => d.className.includes('animate-pulse'))
     expect(pulsingDots.length).toBeGreaterThan(0)
   })
 
   it('shows idle status without pulsing', () => {
-    // Render first (loads mock data), then set all to idle
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
     act(() => {
       const store = useWarRoomStore.getState()
       store.agents.forEach((a) => store.updateAgentStatus(a.id, 'idle'))
     })
     const dots = screen.getAllByTestId('agent-status-dot')
-    const pulsingDots = dots.filter(
-      (d) => d.className.includes('animate-pulse'),
-    )
+    const pulsingDots = dots.filter((d) => d.className.includes('animate-pulse'))
     expect(pulsingDots.length).toBe(0)
   })
 
-  // --- AC: Activity Feed ---
+  // --- AC 3: Activity feed with timestamps ---
   it('renders activity feed with messages', () => {
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
     expect(screen.getByTestId('activity-feed')).toBeInTheDocument()
     const messages = screen.getAllByTestId('feed-message')
     expect(messages.length).toBeGreaterThan(0)
@@ -107,13 +84,155 @@ describe('WarRoomPage', () => {
 
   it('shows sender → target format in messages', () => {
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
     const feed = screen.getByTestId('activity-feed')
     expect(within(feed).getAllByText('→').length).toBeGreaterThan(0)
   })
 
-  it('truncates messages longer than 120 characters', () => {
-    // Render first to load mock data, then add a long message
+  it('shows timestamps on messages', () => {
     renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const timestamps = screen.getAllByTestId('message-timestamp')
+    expect(timestamps.length).toBeGreaterThan(0)
+  })
+
+  // --- AC 4: Stop button (stub, console.log) ---
+  it('renders Stop button', () => {
+    renderWarRoom()
+    const stopBtn = screen.getByTestId('stop-btn')
+    expect(stopBtn).toBeInTheDocument()
+    expect(stopBtn.textContent).toContain('Stop')
+  })
+
+  it('Stop button logs "stop clicked" on click', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    renderWarRoom()
+    const stopBtn = screen.getByTestId('stop-btn')
+    fireEvent.click(stopBtn)
+    expect(consoleSpy).toHaveBeenCalledWith('stop clicked')
+    consoleSpy.mockRestore()
+  })
+
+  // --- AC 5: Cost counter ---
+  it('displays cost counter with $X.XXXX format', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const counter = screen.getByTestId('cost-counter')
+    expect(counter).toBeInTheDocument()
+    expect(counter.textContent).toMatch(/\$\d+\.\d{4}/)
+  })
+
+  it('cost counter accumulates over time', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const initialCost = useWarRoomStore.getState().cost
+    act(() => {
+      useWarRoomStore.getState().addCost(0.01)
+    })
+    expect(useWarRoomStore.getState().cost).toBeGreaterThan(initialCost)
+  })
+
+  // --- AC 6: Mock WS — setInterval ~3 sec cycling ---
+  it('cycles agent statuses via setInterval every ~3 seconds', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const statusBefore = useWarRoomStore.getState().agents.map((a) => a.status)
+
+    // Advance 3 seconds — interval should fire
+    act(() => { vi.advanceTimersByTime(3000) })
+
+    const statusAfter = useWarRoomStore.getState().agents.map((a) => a.status)
+    // At least one agent status should have changed
+    const changed = statusBefore.some((s, i) => s !== statusAfter[i])
+    expect(changed).toBe(true)
+  })
+
+  it('adds new feed messages via setInterval', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const msgCountBefore = useWarRoomStore.getState().messages.length
+
+    act(() => { vi.advanceTimersByTime(3000) })
+
+    const msgCountAfter = useWarRoomStore.getState().messages.length
+    expect(msgCountAfter).toBeGreaterThan(msgCountBefore)
+  })
+
+  // --- AC 7: Green flash on thinking → done ---
+  it('flashes green when agent transitions from thinking to done', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // Set agent to thinking first
+    act(() => {
+      useWarRoomStore.getState().updateAgentStatus('agent-1', 'thinking')
+    })
+
+    // Transition to done
+    act(() => {
+      useWarRoomStore.getState().updateAgentStatus('agent-1', 'done')
+    })
+
+    const card = screen.getByTestId('agent-card-agent-1')
+    // Card should have green flash class or style
+    expect(
+      card.className.includes('flash-green') ||
+      card.style.animation?.includes('flash') ||
+      card.getAttribute('data-flash') === 'true'
+    ).toBe(true)
+  })
+
+  // --- AC 8: Hierarchy — CEO on top, subordinates indented ---
+  it('renders CEO agent at the top of the list', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const panel = screen.getByTestId('agent-panel')
+    const cards = within(panel).getAllByTestId(/^agent-card-/)
+    expect(cards[0].textContent).toContain('CEO Agent')
+  })
+
+  it('indents subordinate agents below CEO', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const panel = screen.getByTestId('agent-panel')
+    const cards = within(panel).getAllByTestId(/^agent-card-/)
+    // CEO should have no indent (level 0), others should be indented
+    expect(cards[0].style.marginLeft).toBe('0px')
+    expect(parseInt(cards[1].style.marginLeft)).toBeGreaterThan(0)
+  })
+
+  // --- AC 9: Empty state ---
+  it('shows empty state when no agents/data', () => {
+    // Override loadMockData to be a no-op so agents stay empty
+    const original = useWarRoomStore.getState().loadMockData
+    useWarRoomStore.setState({ loadMockData: () => {} } as any)
+
+    render(
+      <MemoryRouter initialEntries={['/companies/comp-1/warroom']}>
+        <Routes>
+          <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(screen.getByText(/No active runs/i)).toBeInTheDocument()
+    expect(screen.getByText(/Start a task to see the magic/i)).toBeInTheDocument()
+
+    // Restore
+    useWarRoomStore.setState({ loadMockData: original })
+  })
+
+  // --- AC: truncates long messages ---
+  it('truncates messages longer than 120 characters', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
     act(() => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-long',
@@ -131,141 +250,10 @@ describe('WarRoomPage', () => {
     expect(contentEl?.textContent?.length).toBeLessThanOrEqual(123)
   })
 
-  it('shows timestamp on messages', () => {
+  // --- Store tests ---
+  it('initializes with 3-4 mock agents when loadMockData called', () => {
     renderWarRoom()
-    const timestamps = screen.getAllByTestId('message-timestamp')
-    expect(timestamps.length).toBeGreaterThan(0)
-  })
-
-  // --- AC: Cost counter ---
-  it('displays cost counter', () => {
-    renderWarRoom()
-    expect(screen.getByTestId('cost-counter')).toBeInTheDocument()
-    expect(screen.getByTestId('cost-counter').textContent).toMatch(
-      /\$\d+\.\d{4}\s*spent/,
-    )
-  })
-
-  // --- AC: Stop Run button ---
-  it('renders Stop Run button', () => {
-    renderWarRoom()
-    const stopBtn = screen.getByTestId('stop-run-btn')
-    expect(stopBtn).toBeInTheDocument()
-    expect(stopBtn.textContent).toContain('Stop Run')
-  })
-
-  it('Stop Run button calls POST /api/companies/:id/runs/:runId/stop', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-    renderWarRoom('run-1', 'comp-1')
-    const stopBtn = screen.getByTestId('stop-run-btn')
-
-    await act(async () => {
-      fireEvent.click(stopBtn)
-    })
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/companies/comp-1/runs/run-1/stop'),
-      expect.objectContaining({ method: 'POST' }),
-    )
-  })
-
-  it('Stop Run button is disabled when run is not active', () => {
-    // Render first, then change status
-    renderWarRoom()
-    act(() => {
-      useWarRoomStore.getState().setRunStatus('stopped')
-    })
-    const stopBtn = screen.getByTestId('stop-run-btn')
-    expect(stopBtn).toBeDisabled()
-  })
-
-  // --- AC: WebSocket hook ---
-  it('connects WebSocket to ws://localhost:8000/ws/runs/{runId}', () => {
-    renderWarRoom('run-42')
-    expect(MockWebSocket.instances.length).toBe(1)
-    expect(lastWs().url).toBe('ws://localhost:8000/ws/runs/run-42')
-  })
-
-  it('updates activity feed on WS message event', () => {
-    renderWarRoom()
-    const initialCount = screen.getAllByTestId('feed-message').length
-
-    act(() => {
-      lastWs().onmessage?.({
-        data: JSON.stringify({
-          type: 'agent.message',
-          id: 'ws-msg-1',
-          sender_id: 'agent-1',
-          sender_name: 'CEO Agent',
-          target_id: 'agent-2',
-          target_name: 'Dev Agent',
-          content: 'Please review the PR',
-          timestamp: new Date().toISOString(),
-        }),
-      })
-    })
-
-    const newCount = screen.getAllByTestId('feed-message').length
-    expect(newCount).toBe(initialCount + 1)
-  })
-
-  it('updates agent status on WS agent.status event', () => {
-    renderWarRoom()
-
-    act(() => {
-      lastWs().onmessage?.({
-        data: JSON.stringify({
-          type: 'agent.status',
-          agent_id: 'agent-1',
-          status: 'done',
-        }),
-      })
-    })
-
-    const store = useWarRoomStore.getState()
-    const agent = store.agents.find((a) => a.id === 'agent-1')
-    expect(agent?.status).toBe('done')
-  })
-
-  it('retries WebSocket connection up to 3 times on disconnect', () => {
-    vi.useFakeTimers()
-    renderWarRoom()
-    expect(MockWebSocket.instances.length).toBe(1)
-
-    // First disconnect
-    act(() => { lastWs().onclose?.() })
-    act(() => { vi.advanceTimersByTime(3000) })
-    expect(MockWebSocket.instances.length).toBe(2)
-
-    // Second disconnect
-    act(() => { lastWs().onclose?.() })
-    act(() => { vi.advanceTimersByTime(3000) })
-    expect(MockWebSocket.instances.length).toBe(3)
-
-    // Third disconnect
-    act(() => { lastWs().onclose?.() })
-    act(() => { vi.advanceTimersByTime(3000) })
-    expect(MockWebSocket.instances.length).toBe(4)
-
-    // Fourth disconnect — should NOT retry (3 retries exhausted)
-    act(() => { lastWs().onclose?.() })
-    act(() => { vi.advanceTimersByTime(3000) })
-    expect(MockWebSocket.instances.length).toBe(4)
-
-    vi.useRealTimers()
-  })
-
-  it('closes WebSocket on unmount', () => {
-    const { unmount } = renderWarRoom()
-    const ws = lastWs()
-    unmount()
-    expect(ws.close).toHaveBeenCalled()
-  })
-
-  // --- AC: Mock data store ---
-  it('initializes with 3-4 mock agents when no real WebSocket data', () => {
-    // Render triggers loadMockData
-    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
     const store = useWarRoomStore.getState()
     expect(store.agents.length).toBeGreaterThanOrEqual(3)
     expect(store.agents.length).toBeLessThanOrEqual(4)

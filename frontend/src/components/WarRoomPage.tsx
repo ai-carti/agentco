@@ -1,10 +1,5 @@
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { useWarRoomStore, type WarRoomAgentStatus } from '../store/warRoomStore'
-import { useRunWebSocket } from '../hooks/useRunWebSocket'
-import { getStoredToken } from '../api/client'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+import { useEffect, useRef } from 'react'
+import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -31,42 +26,84 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
 }
 
 export default function WarRoomPage() {
-  const { id: companyId, runId } = useParams<{ id: string; runId: string }>()
   const agents = useWarRoomStore((s) => s.agents)
   const messages = useWarRoomStore((s) => s.messages)
   const cost = useWarRoomStore((s) => s.cost)
-  const runStatus = useWarRoomStore((s) => s.runStatus)
+  const flashingAgents = useWarRoomStore((s) => s.flashingAgents)
   const loadMockData = useWarRoomStore((s) => s.loadMockData)
-  const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
+  const addMessage = useWarRoomStore((s) => s.addMessage)
+  const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
+  const addCost = useWarRoomStore((s) => s.addCost)
+  const clearFlash = useWarRoomStore((s) => s.clearFlash)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Connect WebSocket
-  useRunWebSocket(runId)
-
-  // Load mock data on mount if no agents
+  // Load mock data on mount
   useEffect(() => {
-    if (agents.length === 0) {
-      loadMockData()
-    }
+    loadMockData()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleStop = async () => {
-    if (!companyId || !runId) return
-    const token = getStoredToken()
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (token) headers['Authorization'] = `Bearer ${token}`
+  // Mock WS: setInterval ~3 sec cycling agent statuses + adding messages
+  useEffect(() => {
+    if (agents.length === 0) return
 
-    try {
-      await fetch(`${BASE_URL}/api/companies/${companyId}/runs/${runId}/stop`, {
-        method: 'POST',
-        headers,
-      })
-      setRunStatus('stopped')
-    } catch {
-      // silently fail
+    intervalRef.current = setInterval(() => {
+      const store = useWarRoomStore.getState()
+      const event = getNextMockEvent(store.agents)
+
+      addMessage(event.message)
+      addCost(0.0012)
+
+      if (event.statusUpdate) {
+        updateAgentStatus(event.statusUpdate.agentId, event.statusUpdate.status)
+      }
+    }, 3000)
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
     }
+  }, [agents.length > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear flash after animation
+  useEffect(() => {
+    if (flashingAgents.size === 0) return
+    const timer = setTimeout(() => {
+      flashingAgents.forEach((id) => clearFlash(id))
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [flashingAgents, clearFlash])
+
+  const handleStop = () => {
+    console.log('stop clicked')
   }
 
-  const isActive = runStatus === 'active'
+  // Empty state
+  if (agents.length === 0) {
+    return (
+      <div
+        data-testid="war-room-page"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 'calc(100vh - 49px)',
+          background: '#0a0f1a',
+          color: '#e2e8f0',
+        }}
+      >
+        <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎯</div>
+        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+          No active runs
+        </div>
+        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+          Start a task to see the magic
+        </div>
+      </div>
+    )
+  }
+
+  // Sort agents: level 0 (CEO) first, then by level
+  const sortedAgents = [...agents].sort((a, b) => a.level - b.level)
 
   return (
     <div
@@ -92,8 +129,11 @@ export default function WarRoomPage() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
-            ⚡ War Room
+            War Room
           </h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span
             data-testid="cost-counter"
             style={{
@@ -105,31 +145,29 @@ export default function WarRoomPage() {
               borderRadius: 6,
             }}
           >
-            ${cost.toFixed(4)} spent
+            ${cost.toFixed(4)}
           </span>
-        </div>
 
-        <button
-          data-testid="stop-run-btn"
-          onClick={handleStop}
-          disabled={!isActive}
-          style={{
-            background: isActive ? '#dc2626' : '#4b5563',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            padding: '8px 20px',
-            fontSize: '0.9rem',
-            fontWeight: 700,
-            cursor: isActive ? 'pointer' : 'not-allowed',
-            opacity: isActive ? 1 : 0.6,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          ⏹ Stop Run
-        </button>
+          <button
+            data-testid="stop-btn"
+            onClick={handleStop}
+            style={{
+              background: '#dc2626',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 20px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            Stop
+          </button>
+        </div>
       </div>
 
       {/* Main content: agent sidebar + activity feed */}
@@ -149,52 +187,63 @@ export default function WarRoomPage() {
             Agents ({agents.length})
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {agents.map((agent) => (
-              <div
-                key={agent.id}
-                data-testid={`agent-card-${agent.id}`}
-                style={{
-                  background: agent.status === 'thinking' || agent.status === 'running'
-                    ? 'rgba(34,197,94,0.06)'
-                    : 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: '1.4rem' }}>{agent.avatar}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f1f5f9' }}>
-                      {agent.name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
-                      {agent.role}
-                    </div>
-                  </div>
-                  <span
-                    data-testid="agent-status-dot"
-                    className={statusDotStyle[agent.status]}
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                    }}
-                  />
-                </div>
+            {sortedAgents.map((agent) => {
+              const isFlashing = flashingAgents.has(agent.id)
+              return (
                 <div
+                  key={agent.id}
+                  data-testid={`agent-card-${agent.id}`}
+                  data-flash={isFlashing ? 'true' : 'false'}
+                  className={isFlashing ? 'flash-green' : ''}
                   style={{
-                    marginTop: 8,
-                    fontSize: '0.7rem',
-                    color: agent.status === 'thinking' || agent.status === 'running' ? '#4ade80' : '#64748b',
-                    fontWeight: 500,
+                    marginLeft: `${agent.level * 24}px`,
+                    background: isFlashing
+                      ? 'rgba(34,197,94,0.25)'
+                      : agent.status === 'thinking' || agent.status === 'running'
+                        ? 'rgba(34,197,94,0.06)'
+                        : 'rgba(255,255,255,0.03)',
+                    border: isFlashing
+                      ? '1px solid rgba(34,197,94,0.5)'
+                      : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    transition: 'background 0.3s, border-color 0.3s',
                   }}
                 >
-                  {statusLabel[agent.status]}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: '1.4rem' }}>{agent.avatar}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f1f5f9' }}>
+                        {agent.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                        {agent.role}
+                      </div>
+                    </div>
+                    <span
+                      data-testid="agent-status-dot"
+                      className={statusDotStyle[agent.status]}
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: '0.7rem',
+                      color: agent.status === 'thinking' || agent.status === 'running' ? '#4ade80' : '#64748b',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {statusLabel[agent.status]}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -235,7 +284,6 @@ export default function WarRoomPage() {
               <div
                 key={msg.id}
                 data-testid="feed-message"
-                {...{ 'data-testid-msg': msg.id }}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   borderRadius: 8,
@@ -243,7 +291,6 @@ export default function WarRoomPage() {
                   border: '1px solid rgba(255,255,255,0.05)',
                 }}
               >
-                {/* Use a unique testid wrapper for long-message tests */}
                 <div data-testid={`feed-message-${msg.id}`}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#60a5fa' }}>
