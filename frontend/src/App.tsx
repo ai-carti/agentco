@@ -10,6 +10,7 @@ import CompanyPage from './components/CompanyPage'
 import AgentPage from './components/AgentPage'
 import SettingsPage from './components/SettingsPage'
 import CompanySettingsPage from './components/CompanySettingsPage'
+import WarRoomPage from './components/WarRoomPage'
 import { useAuthStore } from './store/authStore'
 
 function AppLayout() {
@@ -23,6 +24,7 @@ function AppLayout() {
           <Routes>
             <Route path="/" element={<CompaniesPage />} />
             <Route path="/companies/:id" element={<CompanyPage />} />
+            <Route path="/companies/:id/runs/:runId" element={<WarRoomPage />} />
             <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
             <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

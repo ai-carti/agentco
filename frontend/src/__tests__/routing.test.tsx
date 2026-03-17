@@ -13,6 +13,9 @@ vi.mock('../components/WarRoom', () => ({
 vi.mock('../components/KanbanBoard', () => ({
   default: () => <div data-testid="kanban-board">KanbanBoard</div>,
 }))
+vi.mock('../components/WarRoomPage', () => ({
+  default: () => <div data-testid="war-room-page">WarRoomPage</div>,
+}))
 
 // We'll control the token value per-test
 const mockAuthStore = {
@@ -93,6 +96,11 @@ describe('Routing', () => {
     it('renders agent page at /companies/:id/agents/:agentId', () => {
       renderWithRouter('/companies/abc/agents/agent-1')
       expect(screen.getByTestId('agent-page')).toBeInTheDocument()
+    })
+
+    it('renders war room page at /companies/:id/runs/:runId', () => {
+      renderWithRouter('/companies/abc/runs/run-1')
+      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
     })
 
     it('renders settings page at /settings', () => {
