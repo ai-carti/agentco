@@ -121,7 +121,7 @@ describe('WarRoom empty state CTA', () => {
 
 // --- WarRoomPage empty state ---
 describe('WarRoomPage empty state (no agents)', () => {
-  it('shows SVG illustration and navigation button when no agents', async () => {
+  it('shows 💤 All quiet here empty state when no agents', async () => {
     // Import dynamically to avoid circular deps
     const { default: WarRoomPage } = await import('../components/WarRoomPage')
     const { useWarRoomStore } = await import('../store/warRoomStore')
@@ -137,8 +137,9 @@ describe('WarRoomPage empty state (no agents)', () => {
       </MemoryRouter>,
     )
     expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
-    expect(screen.getByText(/No agents running/i)).toBeInTheDocument()
-    expect(screen.getByTestId('war-room-goto-companies-btn')).toBeInTheDocument()
+    expect(screen.getByText(/All quiet here/i)).toBeInTheDocument()
+    expect(screen.getByText(/No agents are running/i)).toBeInTheDocument()
+    expect(screen.getByTestId('war-room-run-task-btn')).toBeInTheDocument()
 
     // Restore
     useWarRoomStore.setState({ loadMockData: originalLoad } as any)

@@ -47,9 +47,9 @@ describe('WarRoom', () => {
   it('creates WebSocket with correct URL on mount', () => {
     renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(1)
-    expect(lastWs().url).toBe(
-      'ws://localhost:8000/ws/companies/comp-1/events?token=jwt-tok-123',
-    )
+    // URL should use ws:// scheme and include the correct path
+    expect(lastWs().url).toMatch(/^ws:\/\//)
+    expect(lastWs().url).toContain('/ws/companies/comp-1/events?token=jwt-tok-123')
   })
 
   it('shows empty state when no runs', () => {
@@ -149,6 +149,17 @@ describe('WarRoom', () => {
     useAuthStore.setState({ token: null })
     renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(0)
+  })
+
+  // BUG-038: WS URL built from VITE_API_URL (not hardcoded)
+  it('builds WS URL using ws:// protocol derived from env', () => {
+    renderWarRoom()
+    // URL must use ws:// protocol (derived from http:// via replace)
+    expect(lastWs().url).toMatch(/^ws:\/\//)
+    // URL must include the correct WS path
+    expect(lastWs().url).toContain('/ws/companies/comp-1/events')
+    // URL must include auth token
+    expect(lastWs().url).toContain('token=jwt-tok-123')
   })
 
   it('reconnects after onclose with delay', () => {

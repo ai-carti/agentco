@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
 import AgentCard from './AgentCard'
@@ -8,14 +8,96 @@ import EmptyState from './EmptyState'
 import { useAgentStore, type Agent } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 
+const AVATAR_COLORS = [
+  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
+  '#f97316', '#eab308', '#22c55e', '#06b6d4',
+]
+
+function hashCode(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
+}
+
+function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
+  const colorIndex = hashCode(name) % 8
+  const avatarColor = AVATAR_COLORS[colorIndex]
+  const initials = name.slice(0, 2).toUpperCase()
+
+  return (
+    <div
+      data-testid="company-header"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: 'rgba(17,24,39,0.8)',
+        backdropFilter: 'blur(8px)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        height: 48,
+        padding: '0 16px',
+      }}
+    >
+      {/* Breadcrumb */}
+      <button
+        data-testid="company-header-home-link"
+        onClick={onHomeClick}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#94a3b8',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+          padding: 0,
+        }}
+      >
+        AgentCo
+      </button>
+      <span style={{ color: '#475569', fontSize: '0.875rem' }}>/</span>
+
+      {/* Avatar */}
+      <div
+        data-testid="company-avatar"
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: '50%',
+          background: avatarColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          color: '#fff',
+          flexShrink: 0,
+        }}
+      >
+        {initials}
+      </div>
+
+      {/* Company name */}
+      <span
+        data-testid="company-header-name"
+        style={{ fontWeight: 600, fontSize: '0.95rem', color: '#f1f5f9' }}
+      >
+        {name}
+      </span>
+    </div>
+  )
+}
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export default function CompanyPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const setCurrentCompany = useAgentStore((s) => s.setCurrentCompany)
   const setTasks = useAgentStore((s) => s.setTasks)
   const setAgents = useAgentStore((s) => s.setAgents)
   const agents = useAgentStore((s) => s.agents)
+  const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
   const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
@@ -88,6 +170,12 @@ export default function CompanyPage() {
 
   return (
     <div data-testid="company-page">
+      {currentCompany && (
+        <CompanyHeader
+          name={currentCompany.name}
+          onHomeClick={() => navigate('/')}
+        />
+      )}
       <WarRoomPage />
 
       {/* Agent creation modal */}

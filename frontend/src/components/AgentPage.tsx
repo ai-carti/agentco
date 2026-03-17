@@ -184,6 +184,46 @@ export default function AgentPage() {
         )}
       </div>
 
+      {/* Memory section */}
+      <div data-testid="agent-memory-section" style={{ marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Memory</h2>
+
+        {!memoriesLoaded ? (
+          <SkeletonCard variant="task" count={2} />
+        ) : memories.length === 0 ? (
+          <EmptyState
+            emoji="🧠"
+            title="No memories yet"
+            subtitle="This agent hasn't stored any memories"
+          />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {memories.map((entry) => (
+              <div
+                key={entry.id}
+                data-testid="memory-entry"
+                style={{
+                  padding: '0.625rem 0.875rem',
+                  background: '#1f2937',
+                  border: '1px solid #374151',
+                  borderRadius: 6,
+                  fontSize: '0.875rem',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <span style={{ color: '#e5e7eb', flex: 1 }}>{entry.content}</span>
+                  {entry.created_at && (
+                    <span style={{ color: '#6b7280', fontSize: '0.75rem', flexShrink: 0 }}>
+                      {new Date(entry.created_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* History section */}
       <div style={{ marginTop: '2rem' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>History</h2>

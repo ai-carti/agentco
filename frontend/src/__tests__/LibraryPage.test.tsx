@@ -332,7 +332,8 @@ describe('AgentPage Save to Library', () => {
   it('shows success message after Save to Library', async () => {
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })  // task history
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })  // memory
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'lib-1' }) })
     renderAgentPage('agent-1', 'c1')
     await waitFor(() => {
