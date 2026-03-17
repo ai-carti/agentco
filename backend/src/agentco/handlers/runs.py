@@ -2,17 +2,19 @@
 Runs API — M2-004.
 
 Endpoints:
-    POST  /api/companies/{company_id}/tasks/{task_id}/run  → run_id
-    GET   /api/companies/{company_id}/runs                 → list
-    GET   /api/companies/{company_id}/runs/{run_id}        → Run
-    POST  /api/companies/{company_id}/runs/{run_id}/stop   → Run
+    POST  /api/companies/{company_id}/runs                  → create run with goal
+    GET   /api/companies/{company_id}/runs                  → list runs
+    GET   /api/companies/{company_id}/runs/{run_id}         → run details (+ events_count)
+    PATCH /api/companies/{company_id}/runs/{run_id}/stop    → stop run (+ POST backward compat)
+    GET   /api/companies/{company_id}/runs/{run_id}/events  → list run events
+    POST  /api/companies/{company_id}/tasks/{task_id}/run   → legacy: run from task
 """
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session, SessionLocal
@@ -29,18 +31,47 @@ router = APIRouter(
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+class RunCreate(BaseModel):
+    goal: str = Field(min_length=1)
+
+    @field_validator("goal", mode="before")
+    @classmethod
+    def strip_goal(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+
 class RunOut(BaseModel):
     id: str
     company_id: str
-    task_id: str
-    agent_id: Optional[str]
+    goal: Optional[str] = None
+    task_id: Optional[str] = None
+    agent_id: Optional[str] = None
     status: str
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
-    result: Optional[str]
-    error: Optional[str]
+    total_cost_usd: float = 0.0
+    total_tokens: int = 0
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    result: Optional[str] = None
+    error: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class RunDetailOut(RunOut):
+    events_count: int = 0
+
+
+class RunEventOut(BaseModel):
+    id: str
+    run_id: str
+    agent_id: Optional[str] = None
+    task_id: Optional[str] = None
+    event_type: str
+    payload: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 class RunCreatedOut(BaseModel):
@@ -61,28 +92,28 @@ def _session_ctx():
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post(
-    "/tasks/{task_id}/run",
-    response_model=RunCreatedOut,
+    "/runs",
+    response_model=RunOut,
     status_code=status.HTTP_201_CREATED,
 )
-async def run_task(
+async def create_run(
     company_id: str,
-    task_id: str,
+    body: RunCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Создаёт Run и запускает агента в background."""
+    """Create a run with a goal."""
     try:
-        run = RunService(session).create_and_start(
+        run = RunService(session).create_with_goal(
             company_id=company_id,
-            task_id=task_id,
-            session_factory=_session_ctx,
+            goal=body.goal,
+            owner_id=current_user.id,
         )
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except ConflictError as e:
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Company not found")
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return RunCreatedOut(run_id=run.id)
+    return RunOut(**run.model_dump())
 
 
 @router.get("/runs", response_model=list[RunOut])
@@ -94,23 +125,52 @@ async def list_runs(
     current_user: User = Depends(get_current_user),
 ):
     """Список ранов компании с пагинацией."""
-    runs = RunService(session).list_by_company(company_id, limit=limit, offset=offset)
+    try:
+        runs = RunService(session).list_by_company_owned(
+            company_id, owner_id=current_user.id, limit=limit, offset=offset,
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Company not found")
     return [RunOut(**r.model_dump()) for r in runs]
 
 
-@router.get("/runs/{run_id}", response_model=RunOut)
+@router.get("/runs/{run_id}", response_model=RunDetailOut)
 async def get_run(
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Статус и результат рана."""
+    """Run details with events count."""
     try:
-        run = RunService(session).get(company_id=company_id, run_id=run_id)
+        detail = RunService(session).get_detail(
+            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return RunDetailOut(**detail)
+
+
+async def _do_stop_run(company_id: str, run_id: str, session: Session, current_user: User) -> RunOut:
+    """Shared stop logic for both POST and PATCH."""
+    try:
+        run = RunService(session).stop(
+            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Run not found")
     return RunOut(**run.model_dump())
+
+
+@router.patch("/runs/{run_id}/stop", response_model=RunOut)
+async def patch_stop_run(
+    company_id: str,
+    run_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Stop a running run (PATCH — per M2-004 spec)."""
+    return await _do_stop_run(company_id, run_id, session, current_user)
 
 
 @router.post("/runs/{run_id}/stop", response_model=RunOut)
@@ -120,9 +180,88 @@ async def stop_run(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Останавливает running ран."""
+    """Stop a running run (POST — backward compat)."""
+    return await _do_stop_run(company_id, run_id, session, current_user)
+
+
+@router.get("/runs/{run_id}/events", response_model=list[RunEventOut])
+async def list_run_events(
+    company_id: str,
+    run_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """List events for a run."""
     try:
-        run = RunService(session).stop(company_id=company_id, run_id=run_id)
+        events = RunService(session).list_events(
+            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Run not found")
-    return RunOut(**run.model_dump())
+    return [RunEventOut(**e.model_dump()) for e in events]
+
+
+@router.post(
+    "/tasks/{task_id}/run",
+    response_model=RunCreatedOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def run_task(
+    company_id: str,
+    task_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Создаёт Run для задачи и запускает агента в background."""
+    try:
+        run = RunService(session).create_and_start(
+            company_id=company_id,
+            task_id=task_id,
+            owner_id=current_user.id,
+            session_factory=_session_ctx,
+        )
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ConflictError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    return RunCreatedOut(run_id=run.id)
+
+
+@router.get("/tasks/{task_id}/runs", response_model=list[RunOut])
+async def list_task_runs(
+    company_id: str,
+    task_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Список ранов задачи."""
+    try:
+        runs = RunService(session).list_by_task_owned(
+            company_id=company_id,
+            task_id=task_id,
+            owner_id=current_user.id,
+        )
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return [RunOut(**r.model_dump()) for r in runs]
+
+
+@router.get("/tasks/{task_id}/runs/{run_id}", response_model=RunDetailOut)
+async def get_task_run(
+    company_id: str,
+    task_id: str,
+    run_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Детали рана задачи."""
+    try:
+        detail = RunService(session).get_task_run_detail(
+            company_id=company_id,
+            task_id=task_id,
+            run_id=run_id,
+            owner_id=current_user.id,
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return RunDetailOut(**detail)

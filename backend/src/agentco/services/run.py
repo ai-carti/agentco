@@ -2,15 +2,14 @@
 RunService — business logic для Runs API (M2-004).
 
 Lifecycle:
+    POST /companies/{id}/runs:
+        1. Создаёт Run(status=pending, goal=...) в БД
+        2. LangGraph подключится позже — tasks пока не создаются
+
     POST /tasks/{id}/run:
         1. Создаёт Run(status=pending) в БД
         2. Запускает _execute_agent как asyncio background task
         3. Возвращает run_id
-
-    Background task:
-        - Обновляет статус → running
-        - Выполняет агента (заглушка — реальный вызов через agent_node позже)
-        - Обновляет статус → done/failed + result/error
 
     POST /runs/{id}/stop:
         - Отменяет asyncio task если running
@@ -23,8 +22,9 @@ from typing import Callable, Optional
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from ..models.run import Run
+from ..models.run import Run, RunEvent
 from ..repositories.run import RunRepository
+from ..repositories.company import CompanyRepository
 from ..repositories.task import TaskRepository
 from ..repositories.base import NotFoundError, ConflictError
 from ..core.event_bus import EventBus
@@ -40,17 +40,40 @@ class RunService:
         self._session = session
         self._repo = RunRepository(session)
         self._task_repo = TaskRepository(session)
+        self._company_repo = CompanyRepository(session)
+
+    def create_with_goal(self, company_id: str, goal: str, owner_id: str) -> Run:
+        """Create a run with a goal. Validates company ownership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+
+        run = Run(
+            company_id=company_id,
+            goal=goal.strip(),
+            status="pending",
+            started_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        run = self._repo.add(run)
+        self._session.commit()
+        return run
 
     def create_and_start(
         self,
         company_id: str,
         task_id: str,
+        owner_id: str,
         session_factory: Callable[[], Session],
     ) -> Run:
         """
         Создаёт Run в БД (pending), стартует background task.
         Возвращает созданный Run.
         """
+        # 0. Проверяем ownership компании
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+
         # 1. Проверяем что task существует и принадлежит компании
         try:
             task = self._task_repo.get(task_id)
@@ -136,7 +159,7 @@ class RunService:
                 if run_orm and run_orm.status == "running":
                     run_orm.status = "done"
                     run_orm.result = result
-                    run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     session.commit()
 
             await bus.publish({
@@ -151,7 +174,7 @@ class RunService:
                 if run_orm:
                     run_orm.status = "failed"
                     run_orm.error = str(exc)
-                    run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     session.commit()
 
             await bus.publish({
@@ -173,12 +196,66 @@ class RunService:
             raise NotFoundError(f"Run {run_id!r} not found in company {company_id!r}")
         return run
 
+    def get_detail(self, company_id: str, run_id: str, owner_id: str) -> dict:
+        """Run details with events count. Validates ownership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+        run = self.get(company_id, run_id)
+        events_count = self._repo.get_events_count(run_id)
+        return {**run.model_dump(), "events_count": events_count}
+
     def list_by_company(self, company_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
         """Список ранов компании с пагинацией."""
         return self._repo.list_by_company(company_id, limit=limit, offset=offset)
 
-    def stop(self, company_id: str, run_id: str) -> Run:
+    def list_by_company_owned(self, company_id: str, owner_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
+        """Список ранов компании — с проверкой ownership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+        return self._repo.list_by_company(company_id, limit=limit, offset=offset)
+
+    def list_by_task_owned(self, company_id: str, task_id: str, owner_id: str) -> list[Run]:
+        """Список ранов задачи — с проверкой ownership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+        try:
+            task = self._task_repo.get(task_id)
+        except NotFoundError:
+            raise NotFoundError(f"Task {task_id!r} not found")
+        if task.company_id != company_id:
+            raise NotFoundError(f"Task {task_id!r} not found in company {company_id!r}")
+        return self._repo.list_by_task(task_id)
+
+    def get_task_run_detail(self, company_id: str, task_id: str, run_id: str, owner_id: str) -> dict:
+        """Run details for a specific task. Validates ownership and task membership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+        run = self.get(company_id, run_id)
+        if run.task_id != task_id:
+            raise NotFoundError(f"Run {run_id!r} not found for task {task_id!r}")
+        events_count = self._repo.get_events_count(run_id)
+        return {**run.model_dump(), "events_count": events_count}
+
+    def list_events(self, company_id: str, run_id: str, owner_id: str) -> list[RunEvent]:
+        """Events list for a run. Validates ownership."""
+        company = self._company_repo.get(company_id)
+        if company.owner_id != owner_id:
+            raise NotFoundError(f"Company {company_id!r} not found")
+        # Validate run belongs to company
+        self.get(company_id, run_id)
+        return self._repo.list_events(run_id)
+
+    def stop(self, company_id: str, run_id: str, owner_id: str | None = None) -> Run:
         """Останавливает running ран."""
+        if owner_id is not None:
+            company = self._company_repo.get(company_id)
+            if company.owner_id != owner_id:
+                raise NotFoundError(f"Company {company_id!r} not found")
+
         try:
             run_orm = self._session.get(self._repo.orm_model, run_id)
         except Exception:
@@ -194,7 +271,7 @@ class RunService:
 
         # Обновляем статус → stopped (независимо от текущего)
         run_orm.status = "stopped"
-        run_orm.finished_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         self._session.flush()
         self._session.commit()
 
