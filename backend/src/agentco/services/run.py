@@ -249,6 +249,97 @@ class RunService:
         self.get(company_id, run_id)
         return self._repo.list_events(run_id)
 
+    async def execute_run(self, run_id: str) -> str:
+        """
+        M2-002 AC: RunService.execute_run(run_id) запускает граф для конкретного рана.
+
+        Загружает ран из БД, строит и запускает LangGraph граф через AsyncSqliteSaver checkpointer.
+        Эмитирует события в EventBus при смене статуса агента.
+        """
+        from ..orchestration.graph import compile as compile_graph
+        from ..orchestration.checkpointer import create_checkpointer
+        from ..orchestration.state import AgentState
+        import uuid
+
+        bus = EventBus.get()
+
+        # Получаем ран из БД
+        run_orm = self._session.get(self._repo.orm_model, run_id)
+        if run_orm is None:
+            raise ValueError(f"Run {run_id!r} not found")
+
+        # Обновляем статус → running
+        run_orm.status = "running"
+        self._session.commit()
+
+        await bus.publish({
+            "type": "run.status_changed",
+            "company_id": run_orm.company_id,
+            "run_id": run_id,
+            "payload": {"status": "running"},
+        })
+
+        # Строим начальный state
+        initial_state: AgentState = {
+            "run_id": run_id,
+            "company_id": str(run_orm.company_id),
+            "input": run_orm.goal or (run_orm.task_id or ""),
+            "messages": [],
+            "pending_tasks": [],
+            "active_tasks": {},
+            "results": {},
+            "iteration_count": 0,
+            "total_tokens": 0,
+            "total_cost_usd": 0.0,
+            "status": "running",
+            "error": None,
+            "final_result": None,
+            "agent_id": "ceo",
+            "level": 0,
+        }
+
+        try:
+            async with create_checkpointer("agentco.db") as checkpointer:
+                compiled = compile_graph(checkpointer=checkpointer)
+                config = {"configurable": {"thread_id": run_id}}
+                final_state = await compiled.ainvoke(initial_state, config=config)
+
+            result = final_state.get("final_result", "")
+            final_status = final_state.get("status", "done")
+
+            run_orm = self._session.get(self._repo.orm_model, run_id)
+            if run_orm:
+                run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
+                run_orm.result = result
+                run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                self._session.commit()
+
+            await bus.publish({
+                "type": "run.completed",
+                "company_id": run_orm.company_id if run_orm else "",
+                "run_id": run_id,
+                "payload": {"status": final_status, "result": result},
+            })
+
+            return result
+
+        except Exception as exc:
+            logger.error("execute_run failed for %s: %s", run_id, exc)
+            run_orm = self._session.get(self._repo.orm_model, run_id)
+            if run_orm:
+                run_orm.status = "failed"
+                run_orm.error = str(exc)
+                run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                self._session.commit()
+
+            await bus.publish({
+                "type": "run.failed",
+                "company_id": run_orm.company_id if run_orm else "",
+                "run_id": run_id,
+                "payload": {"error": str(exc)},
+            })
+            raise
+
     def stop(self, company_id: str, run_id: str, owner_id: str | None = None) -> Run:
         """Останавливает running ран."""
         if owner_id is not None:

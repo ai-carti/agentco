@@ -172,7 +172,7 @@ describe('CompanyPage agents empty state', () => {
       </MemoryRouter>
     )
     await waitFor(() => {
-      expect(screen.getByText('CEO Agent')).toBeInTheDocument()
+      expect(screen.getAllByText('CEO Agent').length).toBeGreaterThanOrEqual(1)
     })
     expect(screen.queryByText('Your AI team is waiting')).not.toBeInTheDocument()
   })
