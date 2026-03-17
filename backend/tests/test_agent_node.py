@@ -537,7 +537,7 @@ class TestDelegateTaskTool:
         # должны быть streaming chunk events или completion event
         assert len(published) > 0
         event_types = {e.get("type") for e in published}
-        assert event_types  # хоть что-то опубликовано
+        assert "llm_token" in event_types  # проверяем конкретный тип события
 
     @pytest.mark.asyncio
     async def test_agent_node_cost_tracking_updates_state(self):

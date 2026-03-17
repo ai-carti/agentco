@@ -139,7 +139,7 @@ async def _publish_chunk(state: AgentState, content: str) -> None:
         bus = EventBus.get()
         await bus.publish({
             "company_id": company_id,
-            "type": "token",
+            "type": "llm_token",
             "agent_id": state.get("agent_id", "unknown"),
             "run_id": state.get("run_id", ""),
             "data": content,
