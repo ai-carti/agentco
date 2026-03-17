@@ -74,8 +74,8 @@ describe('UX-018: Company Settings page', () => {
 
   it('shows loading state on Save button while saving', async () => {
     let resolveFetch: (v: unknown) => void
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/api/companies/c1') && !url.includes('/api/companies/c1/')) {
+    global.fetch = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (!opts?.method || opts.method === 'GET') {
         // GET company data
         return Promise.resolve({
           ok: true,
