@@ -222,8 +222,8 @@ describe('WarRoomPage', () => {
         </Routes>
       </MemoryRouter>,
     )
-    expect(screen.getByText(/No active runs/i)).toBeInTheDocument()
-    expect(screen.getByText(/Start a task to see the magic/i)).toBeInTheDocument()
+    expect(screen.getByText(/No agents running/i)).toBeInTheDocument()
+    expect(screen.getByText(/Assign tasks to agents/i)).toBeInTheDocument()
 
     // Restore
     useWarRoomStore.setState({ loadMockData: original })

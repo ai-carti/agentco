@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 
 function formatTime(iso: string): string {
@@ -36,6 +37,7 @@ export default function WarRoomPage() {
   const addCost = useWarRoomStore((s) => s.addCost)
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const navigate = useNavigate()
 
   // Load mock data on mount
   useEffect(() => {
@@ -89,15 +91,60 @@ export default function WarRoomPage() {
           height: 'calc(100vh - 49px)',
           background: '#0a0f1a',
           color: '#e2e8f0',
+          gap: '1.5rem',
         }}
       >
-        <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎯</div>
-        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-          No active runs
+        {/* SVG illustration */}
+        <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="10" y="20" width="30" height="40" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+          <rect x="15" y="28" width="20" height="4" rx="2" fill="#475569"/>
+          <rect x="15" y="36" width="14" height="3" rx="1.5" fill="#334155"/>
+          <circle cx="25" cy="52" r="5" fill="#1d4ed8" opacity="0.6"/>
+
+          <rect x="80" y="20" width="30" height="40" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+          <rect x="85" y="28" width="20" height="4" rx="2" fill="#475569"/>
+          <rect x="85" y="36" width="14" height="3" rx="1.5" fill="#334155"/>
+          <circle cx="95" cy="52" r="5" fill="#7c3aed" opacity="0.6"/>
+
+          <rect x="45" y="35" width="30" height="40" rx="6" fill="#1e2d40" stroke="#2563eb" strokeWidth="1.5" strokeDasharray="4 2"/>
+          <rect x="50" y="43" width="20" height="4" rx="2" fill="#2563eb" opacity="0.5"/>
+          <rect x="50" y="51" width="12" height="3" rx="1.5" fill="#334155"/>
+
+          <line x1="40" y1="45" x2="45" y2="55" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 2"/>
+          <line x1="80" y1="55" x2="75" y2="45" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 2"/>
+
+          <circle cx="60" cy="85" r="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
+          <circle cx="60" cy="85" r="2" fill="#475569"/>
+          <line x1="60" y1="75" x2="60" y2="79" stroke="#334155" strokeWidth="1.5"/>
+        </svg>
+
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+            No agents running
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: 280 }}>
+            Assign tasks to agents and run them to see live activity here
+          </div>
         </div>
-        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-          Start a task to see the magic
-        </div>
+
+        <button
+          data-testid="war-room-goto-companies-btn"
+          onClick={() => navigate('/')}
+          style={{
+            padding: '0.6rem 1.5rem',
+            background: '#2563eb',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
+        >
+          ← Back to Companies
+        </button>
       </div>
     )
   }

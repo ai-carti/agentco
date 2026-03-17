@@ -6,5 +6,6 @@ from .credentials import router as credentials_router
 from .runs import router as runs_router
 from .ws_events import router as ws_events_router
 from .templates import router as templates_router
+from .memory import router as memory_router
 
-__all__ = ["companies_router", "agents_router", "tasks_router", "auth_router", "credentials_router", "runs_router", "ws_events_router", "templates_router"]
+__all__ = ["companies_router", "agents_router", "tasks_router", "auth_router", "credentials_router", "runs_router", "ws_events_router", "templates_router", "memory_router"]

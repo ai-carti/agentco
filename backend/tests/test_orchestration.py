@@ -213,13 +213,13 @@ class TestAgentNodes:
 class TestLoopDetection:
     """Loop detection: MAX_ITERATIONS + MAX_COST_USD."""
 
-    def test_exceeding_max_iterations_sets_status_error(self):
-        """При iteration_count >= MAX_ITERATIONS статус должен стать 'error'."""
+    def test_exceeding_max_iterations_sets_status_failed(self):
+        """При iteration_count >= MAX_ITERATIONS статус должен стать 'failed' (M2-007)."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
 
         # Устанавливаем iteration_count равным MAX_ITERATIONS
-        max_iter = int(os.environ.get("MAX_AGENT_ITERATIONS", "10"))
+        max_iter = int(os.environ.get("MAX_AGENT_ITERATIONS", "20"))
         state: AgentState = {
             "run_id": "run-001",
             "company_id": "company-001",
@@ -236,11 +236,11 @@ class TestLoopDetection:
             "final_result": None,
         }
         result = ceo_node(state)
-        assert result.get("status") == "error", f"Expected 'error', got {result.get('status')}"
-        assert result.get("error") is not None
+        assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
+        assert result.get("error") == "loop_detected"
 
-    def test_exceeding_max_cost_sets_status_error(self):
-        """При total_cost_usd >= MAX_RUN_COST_USD статус должен стать 'error'."""
+    def test_exceeding_max_cost_sets_status_failed(self):
+        """При total_cost_usd >= MAX_RUN_COST_USD статус должен стать 'failed' (M2-007)."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
 
@@ -261,13 +261,13 @@ class TestLoopDetection:
             "final_result": None,
         }
         result = ceo_node(state)
-        assert result.get("status") == "error", f"Expected 'error', got {result.get('status')}"
-        assert result.get("error") is not None
+        assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
+        assert result.get("error") == "cost_limit_exceeded"
 
     def test_loop_detection_via_full_graph_run(self, tmp_path):
-        """Граф должен остановиться с status='error' при превышении MAX_ITERATIONS."""
+        """Граф должен остановиться с status='failed' при превышении MAX_ITERATIONS (M2-007)."""
         import os
-        os.environ["MAX_AGENT_ITERATIONS"] = "1"  # лимит 1: CEO делегирует (iter=1), затем → error
+        os.environ["MAX_AGENT_ITERATIONS"] = "1"  # лимит 1: CEO делегирует (iter=1), затем → failed
 
         try:
             from agentco.orchestration.graph import build_orchestration_graph
@@ -293,7 +293,8 @@ class TestLoopDetection:
             }
 
             final_state = compiled.invoke(initial_state)
-            assert final_state["status"] == "error", f"Expected 'error', got {final_state['status']}"
+            assert final_state["status"] == "failed", f"Expected 'failed', got {final_state['status']}"
+            assert final_state["error"] == "loop_detected"
         finally:
             # restore
             del os.environ["MAX_AGENT_ITERATIONS"]

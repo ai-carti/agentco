@@ -1,8 +1,16 @@
 import { render, screen, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import WarRoom from '../components/WarRoom'
 import { useAuthStore } from '../store/authStore'
 import { useAgentStore } from '../store/agentStore'
+
+const renderWarRoom = () =>
+  render(
+    <MemoryRouter>
+      <WarRoom />
+    </MemoryRouter>,
+  )
 
 // --- Mock WebSocket ---
 class MockWebSocket {
@@ -37,7 +45,7 @@ function lastWs(): MockWebSocket {
 
 describe('WarRoom', () => {
   it('creates WebSocket with correct URL on mount', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(1)
     expect(lastWs().url).toBe(
       'ws://localhost:8000/ws/companies/comp-1/events?token=jwt-tok-123',
@@ -45,12 +53,12 @@ describe('WarRoom', () => {
   })
 
   it('shows empty state when no runs', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     expect(screen.getByText(/all quiet here/i)).toBeInTheDocument()
   })
 
   it('run.started adds a run card', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     act(() => {
       lastWs().onmessage?.({
         data: JSON.stringify({
@@ -68,7 +76,7 @@ describe('WarRoom', () => {
   })
 
   it('run.done updates status to done', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     act(() => {
       lastWs().onmessage?.({
         data: JSON.stringify({
@@ -89,7 +97,7 @@ describe('WarRoom', () => {
   })
 
   it('run.failed updates status to failed', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     act(() => {
       lastWs().onmessage?.({
         data: JSON.stringify({
@@ -110,7 +118,7 @@ describe('WarRoom', () => {
   })
 
   it('run.stopped updates status to stopped', () => {
-    render(<WarRoom />)
+    renderWarRoom()
     act(() => {
       lastWs().onmessage?.({
         data: JSON.stringify({
@@ -131,7 +139,7 @@ describe('WarRoom', () => {
   })
 
   it('closes WebSocket on unmount', () => {
-    const { unmount } = render(<WarRoom />)
+    const { unmount } = renderWarRoom()
     const ws = lastWs()
     unmount()
     expect(ws.close).toHaveBeenCalled()
@@ -139,13 +147,13 @@ describe('WarRoom', () => {
 
   it('does not create WebSocket when token or companyId is missing', () => {
     useAuthStore.setState({ token: null })
-    render(<WarRoom />)
+    renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(0)
   })
 
   it('reconnects after onclose with delay', () => {
     vi.useFakeTimers()
-    render(<WarRoom />)
+    renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(1)
     act(() => {
       lastWs().onclose?.()

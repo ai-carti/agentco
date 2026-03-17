@@ -73,19 +73,17 @@ describe('CompaniesPage empty state', () => {
   it('shows loading indicator initially', () => {
     global.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
     render(<MemoryRouter><ToastProvider><CompaniesPage /></ToastProvider></MemoryRouter>)
-    // Should show loading or nothing yet (not the empty state)
-    expect(screen.queryByText('No companies yet')).not.toBeInTheDocument()
+    // Should show loading or nothing yet (not the onboarding page)
+    expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument()
   })
 
-  it('shows empty state when API returns empty array', async () => {
+  it('shows onboarding when API returns empty array (M3-003)', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     render(<MemoryRouter><ToastProvider><CompaniesPage /></ToastProvider></MemoryRouter>)
     await waitFor(() => {
-      expect(screen.getByText('No companies yet')).toBeInTheDocument()
+      expect(screen.getByTestId('onboarding-page')).toBeInTheDocument()
     })
-    expect(screen.getByText('🏢')).toBeInTheDocument()
-    // Both header button and EmptyState CTA exist
-    expect(screen.getAllByRole('button', { name: /new company/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/Welcome to AgentCo/i)).toBeInTheDocument()
   })
 
   it('shows company list when data loaded', async () => {
@@ -97,7 +95,7 @@ describe('CompaniesPage empty state', () => {
     await waitFor(() => {
       expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     })
-    expect(screen.queryByText('No companies yet')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument()
   })
 })
 
@@ -129,7 +127,7 @@ describe('KanbanBoard empty state', () => {
 // --- WarRoom empty state ---
 describe('WarRoom empty state', () => {
   it('shows styled empty state when no runs', () => {
-    render(<WarRoom />)
+    render(<MemoryRouter><WarRoom /></MemoryRouter>)
     expect(screen.getByText('💤')).toBeInTheDocument()
     expect(screen.getByText('All quiet here')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /run a task/i })).toBeInTheDocument()

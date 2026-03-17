@@ -11,6 +11,7 @@ import AgentPage from './components/AgentPage'
 import SettingsPage from './components/SettingsPage'
 import CompanySettingsPage from './components/CompanySettingsPage'
 import WarRoomPage from './components/WarRoomPage'
+import OnboardingPage from './components/OnboardingPage'
 import { useAuthStore } from './store/authStore'
 
 function AppLayout() {
@@ -23,6 +24,7 @@ function AppLayout() {
           <Breadcrumb />
           <Routes>
             <Route path="/" element={<CompaniesPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/companies/:id" element={<CompanyPage />} />
             <Route path="/war-room" element={<WarRoomPage />} />
             <Route path="/companies/:id/warroom" element={<WarRoomPage />} />

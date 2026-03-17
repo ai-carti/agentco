@@ -33,9 +33,9 @@ describe('BUG-021: Toast integration in create/delete operations', () => {
   describe('CompaniesPage.handleCreate', () => {
     it('shows success toast after company creation', async () => {
       global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => ([]) }) // load
+        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }]) }) // load
         .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'c1', name: 'Acme Corp' }) }) // create
-        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'c1', name: 'Acme Corp' }]) }) // reload
+        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }, { id: 'c1', name: 'Acme Corp' }]) }) // reload
 
       renderCompaniesPage()
 
@@ -59,7 +59,7 @@ describe('BUG-021: Toast integration in create/delete operations', () => {
 
     it('shows error toast when company creation fails', async () => {
       global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => ([]) }) // load
+        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }]) }) // load
         .mockResolvedValueOnce({ ok: false, status: 500 }) // create fails
 
       renderCompaniesPage()

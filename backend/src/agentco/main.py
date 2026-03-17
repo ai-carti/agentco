@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from .handlers import companies_router, agents_router, tasks_router, auth_router, credentials_router, runs_router, ws_events_router, templates_router
+from .handlers import companies_router, agents_router, tasks_router, auth_router, credentials_router, runs_router, ws_events_router, templates_router, memory_router
 
 app = FastAPI(title="AgentCo", version="0.1.0")
 
@@ -23,6 +23,7 @@ app.include_router(credentials_router)
 app.include_router(runs_router)
 app.include_router(ws_events_router)
 app.include_router(templates_router)
+app.include_router(memory_router)
 
 
 # AC2: GET /health → {"status": "ok"}

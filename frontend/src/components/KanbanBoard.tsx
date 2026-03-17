@@ -929,6 +929,66 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
       {selectedTask && (
         <TaskDetailSidebar task={selectedTask} companyId={companyId} onClose={handleClose} />
       )}
+
+      {/* Create Task Modal */}
+      {showCreateModal && (
+        <div
+          data-testid="create-task-modal"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCreateModal(false) }}
+        >
+          <div style={{
+            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
+            border: '1px solid #374151',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>New Task</h2>
+            <input
+              autoFocus
+              data-testid="create-task-title-input"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+              placeholder="Task title"
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
+              }}
+            />
+            <textarea
+              data-testid="create-task-desc-input"
+              value={newTaskDesc}
+              onChange={(e) => setNewTaskDesc(e.target.value)}
+              placeholder="Description (optional)"
+              rows={3}
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                data-testid="create-task-submit-btn"
+                onClick={handleCreateTask}
+                disabled={creating || !newTaskTitle.trim()}
+                style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                {creating ? 'Creating…' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

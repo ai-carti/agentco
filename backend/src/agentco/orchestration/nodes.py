@@ -2,8 +2,9 @@
 orchestration/nodes.py — CEO node и SubAgent node.
 
 Mock LLM через litellm.mock_completion — реальный LLM не вызывается в этом тикете.
-Loop detection: MAX_ITERATIONS (env MAX_AGENT_ITERATIONS, default=10)
+Loop detection: MAX_ITERATIONS (env MAX_AGENT_ITERATIONS, default=20)
               + MAX_COST_USD (env MAX_RUN_COST_USD, default=1.0)
+              + MAX_TOKENS (env MAX_RUN_TOKENS, default=100000)
 """
 from __future__ import annotations
 
@@ -18,11 +19,15 @@ from agentco.orchestration.state import AgentState, TaskMessage, TaskResult
 # ─── Константы loop detection ─────────────────────────────────────────────────
 
 def _get_max_iterations() -> int:
-    return int(os.environ.get("MAX_AGENT_ITERATIONS", "10"))
+    return int(os.environ.get("MAX_AGENT_ITERATIONS", "20"))
 
 
 def _get_max_cost_usd() -> float:
     return float(os.environ.get("MAX_RUN_COST_USD", "1.0"))
+
+
+def _get_max_tokens() -> int:
+    return int(os.environ.get("MAX_RUN_TOKENS", "100000"))
 
 
 # ─── Mock LLM helper ──────────────────────────────────────────────────────────
@@ -57,18 +62,35 @@ def ceo_node(state: AgentState) -> dict:
     max_iter = _get_max_iterations()
     max_cost = _get_max_cost_usd()
 
+    max_tokens = _get_max_tokens()
+
     # ── Loop detection: лимит итераций ────────────────────────────────────────
     if state["iteration_count"] >= max_iter:
         return {
-            "status": "error",
-            "error": f"Max iterations ({max_iter}) exceeded",
+            "status": "failed",
+            "error": "loop_detected",
+            "error_detail": f"Max iterations ({max_iter}) exceeded at iteration {state['iteration_count']}",
         }
 
-    # ── Loop detection: лимит стоимости ───────────────────────────────────────
+    # ── Loop detection: лимит стоимости (USD или токены) ──────────────────────
     if state["total_cost_usd"] >= max_cost:
         return {
-            "status": "error",
-            "error": f"Cost limit ${max_cost} exceeded (spent ${state['total_cost_usd']:.4f})",
+            "status": "failed",
+            "error": "cost_limit_exceeded",
+            "error_detail": (
+                f"Cost limit ${max_cost:.4f} exceeded "
+                f"(spent ${state['total_cost_usd']:.4f})"
+            ),
+        }
+
+    if state["total_tokens"] >= max_tokens:
+        return {
+            "status": "failed",
+            "error": "cost_limit_exceeded",
+            "error_detail": (
+                f"Token limit {max_tokens} exceeded "
+                f"(used {state['total_tokens']} tokens)"
+            ),
         }
 
     # ── Если есть результаты от subagent-ов — финализировать ─────────────────

@@ -1,0 +1,253 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getStoredToken } from '../api/client'
+import { useToast } from '../context/ToastContext'
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
+// Templates defined in code, not in DB
+export const COMPANY_TEMPLATES = [
+  {
+    id: 'startup-team',
+    name: 'Startup Team',
+    description: 'CEO, CPO, and SWE — ready to ship your idea',
+    emoji: '🚀',
+    agents: [
+      {
+        name: 'CEO',
+        role: 'Chief Executive Officer',
+        model: 'gpt-4o',
+        system_prompt:
+          'You are the CEO of a fast-moving startup. Your job is to set strategy, prioritize ruthlessly, and unblock your team. Think big, move fast. Always output structured plans.',
+      },
+      {
+        name: 'CPO',
+        role: 'Chief Product Officer',
+        model: 'gpt-4o',
+        system_prompt:
+          'You are the CPO. You own the product roadmap, user research, and feature specs. Translate business goals into actionable product requirements. Write crisp PRDs.',
+      },
+      {
+        name: 'SWE',
+        role: 'Software Engineer',
+        model: 'gpt-4o',
+        system_prompt:
+          'You are a senior software engineer. You implement features, review code, write tests, and fix bugs. You prefer clean, simple solutions over clever ones. Output working code.',
+      },
+    ],
+  },
+]
+
+interface OnboardingPageProps {
+  onCompanyCreated?: (companyId: string) => void
+}
+
+export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps) {
+  const navigate = useNavigate()
+  const toast = useToast()
+  const [loading, setLoading] = useState(false)
+  const [companyName, setCompanyName] = useState('My Startup')
+
+  const template = COMPANY_TEMPLATES[0]
+
+  const handleUseTemplate = async () => {
+    if (!companyName.trim()) return
+    setLoading(true)
+    try {
+      const token = getStoredToken()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      // Try the from-template endpoint first
+      let companyId: string | null = null
+      const templateRes = await fetch(`${BASE_URL}/api/companies/from-template`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ template_id: template.id, name: companyName.trim() }),
+      }).catch(() => null)
+
+      if (templateRes?.ok) {
+        const data = await templateRes.json()
+        companyId = data.id ?? data.company_id ?? null
+      }
+
+      // Fallback: create company manually then add agents
+      if (!companyId) {
+        const coRes = await fetch(`${BASE_URL}/api/companies`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ name: companyName.trim() }),
+        })
+        if (!coRes.ok) {
+          toast.error('Failed to create company. Try again.')
+          return
+        }
+        const co = await coRes.json()
+        companyId = co.id
+
+        // Create agents in parallel
+        await Promise.allSettled(
+          template.agents.map((agent) =>
+            fetch(`${BASE_URL}/api/companies/${companyId}/agents`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(agent),
+            }),
+          ),
+        )
+      }
+
+      toast.success(`🚀 "${companyName.trim()}" created! Welcome to AgentCo.`)
+      if (onCompanyCreated && companyId) {
+        onCompanyCreated(companyId)
+      } else if (companyId) {
+        navigate(`/companies/${companyId}`)
+      } else {
+        navigate('/')
+      }
+    } catch {
+      toast.error('Something went wrong. Try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div
+      data-testid="onboarding-page"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        padding: '2rem 1rem',
+        textAlign: 'center',
+        animation: 'fadeIn 0.4s ease-in',
+      }}
+    >
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+
+      {/* Hero */}
+      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🦄</div>
+      <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#f8fafc' }}>
+        Welcome to AgentCo
+      </h1>
+      <p style={{ fontSize: '1rem', color: '#9ca3af', margin: '0 0 2.5rem', maxWidth: 420 }}>
+        Launch your first AI team in seconds. Pick a template and go.
+      </p>
+
+      {/* Template card */}
+      <div
+        data-testid="template-card-startup-team"
+        style={{
+          background: 'linear-gradient(135deg, #1e293b 0%, #1a2540 100%)',
+          border: '1px solid #2563eb',
+          borderRadius: 16,
+          padding: '1.75rem',
+          width: '100%',
+          maxWidth: 440,
+          marginBottom: '1.5rem',
+          boxShadow: '0 0 40px rgba(37,99,235,0.15)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          <span style={{ fontSize: '2rem' }}>{template.emoji}</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f1f5f9' }}>{template.name}</div>
+            <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>{template.description}</div>
+          </div>
+        </div>
+
+        {/* Agent pills */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+          {template.agents.map((agent) => (
+            <span
+              key={agent.name}
+              style={{
+                padding: '0.25rem 0.75rem',
+                background: 'rgba(37,99,235,0.15)',
+                border: '1px solid rgba(37,99,235,0.3)',
+                borderRadius: 20,
+                fontSize: '0.8rem',
+                color: '#93c5fd',
+                fontWeight: 500,
+              }}
+            >
+              {agent.name}
+            </span>
+          ))}
+        </div>
+
+        {/* Company name input */}
+        <input
+          data-testid="onboarding-company-name-input"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleUseTemplate()}
+          placeholder="Your company name"
+          style={{
+            width: '100%',
+            padding: '0.6rem 0.9rem',
+            background: '#0f172a',
+            border: '1px solid #374151',
+            borderRadius: 8,
+            color: '#f8fafc',
+            fontSize: '0.9rem',
+            boxSizing: 'border-box',
+            marginBottom: '1rem',
+            outline: 'none',
+          }}
+        />
+
+        <button
+          data-testid="onboarding-use-template-btn"
+          onClick={handleUseTemplate}
+          disabled={loading || !companyName.trim()}
+          style={{
+            width: '100%',
+            padding: '0.75rem',
+            background: loading ? '#1d4ed8' : '#2563eb',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 10,
+            fontSize: '1rem',
+            fontWeight: 700,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+          }}
+          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#1d4ed8' }}
+          onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#2563eb' }}
+        >
+          {loading ? (
+            <>⏳ Creating…</>
+          ) : (
+            <>🚀 Запустить демо</>
+          )}
+        </button>
+      </div>
+
+      {/* Skip link */}
+      <button
+        data-testid="onboarding-skip-btn"
+        onClick={() => navigate('/')}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#6b7280',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+          textDecoration: 'underline',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = '#9ca3af')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}
+      >
+        Skip, I'll set up manually
+      </button>
+    </div>
+  )
+}

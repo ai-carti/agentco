@@ -18,6 +18,7 @@ dependencies = [
     { name = "pydantic", extra = ["email"] },
     { name = "pyjwt" },
     { name = "sqlalchemy" },
+    { name = "sqlite-vec" },
     { name = "typer" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -51,6 +52,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "sqlite-vec", specifier = ">=0.1.6" },
     { name = "typer", specifier = ">=0.9" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]

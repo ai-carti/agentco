@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useAgentStore } from '../store/agentStore'
 import EmptyState from './EmptyState'
@@ -38,6 +39,7 @@ export default function WarRoom() {
   const [runs, setRuns] = useState<Run[]>([])
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const navigate = useNavigate()
 
   const connect = useCallback(() => {
     if (!token || !companyId) return
@@ -100,7 +102,7 @@ export default function WarRoom() {
           title="All quiet here"
           subtitle="No agents are running. Start a task to see the magic"
           ctaLabel="▶ Run a Task"
-          onCTA={() => {}}
+          onCTA={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
         />
       ) : (
         <div className="space-y-3">

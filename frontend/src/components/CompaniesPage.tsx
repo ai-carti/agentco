@@ -4,6 +4,7 @@ import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
+import OnboardingPage from './OnboardingPage'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -20,6 +21,8 @@ export default function CompaniesPage() {
   const [showNewModal, setShowNewModal] = useState(false)
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
+  // Track whether this is the first load (for onboarding)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -36,6 +39,7 @@ export default function CompaniesPage() {
       // ignore
     } finally {
       setLoading(false)
+      setHasLoadedOnce(true)
     }
   }
 
@@ -67,6 +71,15 @@ export default function CompaniesPage() {
     } finally {
       setCreating(false)
     }
+  }
+
+  // M3-003: First visit with no companies → show onboarding
+  if (hasLoadedOnce && !loading && companies.length === 0) {
+    return (
+      <div data-testid="companies-page">
+        <OnboardingPage onCompanyCreated={(id) => navigate(`/companies/${id}`)} />
+      </div>
+    )
   }
 
   return (
