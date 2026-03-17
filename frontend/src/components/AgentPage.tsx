@@ -22,6 +22,8 @@ export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [savedToLibrary, setSavedToLibrary] = useState(false)
+  const [saveToLibraryError, setSaveToLibraryError] = useState('')
   const toast = useToast()
   const [history, setHistory] = useState<TaskHistoryItem[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
@@ -41,6 +43,34 @@ export default function AgentPage() {
       })
       .catch(() => setHistoryLoaded(true))
   }, [companyId, agentId])
+
+  const handleSaveToLibrary = async () => {
+    setSavedToLibrary(false)
+    setSaveToLibraryError('')
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/library`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ agent_id: agentId }),
+      })
+      if (!res.ok) {
+        const msg = `Failed to save to library (${res.status})`
+        setSaveToLibraryError(msg)
+        toast.error(msg)
+        return
+      }
+      setSavedToLibrary(true)
+      toast.success('Agent saved to library')
+    } catch {
+      const msg = 'Network error — could not save to library'
+      setSaveToLibraryError(msg)
+      toast.error(msg)
+    }
+  }
 
   const handleSubmit = async (data: AgentFormData) => {
     setSaveError('')
@@ -100,6 +130,41 @@ export default function AgentPage() {
           {saveError}
         </p>
       )}
+
+      <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          data-testid="save-to-library-btn"
+          onClick={handleSaveToLibrary}
+          style={{
+            padding: '0.5rem 1.25rem',
+            background: '#7c3aed',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Save to Library
+        </button>
+        {savedToLibrary && (
+          <span
+            data-testid="save-to-library-success"
+            style={{ color: '#4ade80', fontSize: '0.875rem' }}
+          >
+            Saved to library ✓
+          </span>
+        )}
+        {saveToLibraryError && (
+          <span
+            data-testid="save-to-library-error"
+            style={{ color: '#f87171', fontSize: '0.875rem' }}
+          >
+            {saveToLibraryError}
+          </span>
+        )}
+      </div>
 
       {/* History section */}
       <div style={{ marginTop: '2rem' }}>

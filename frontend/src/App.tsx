@@ -12,6 +12,8 @@ import SettingsPage from './components/SettingsPage'
 import CompanySettingsPage from './components/CompanySettingsPage'
 import WarRoomPage from './components/WarRoomPage'
 import OnboardingPage from './components/OnboardingPage'
+import LibraryPage from './components/LibraryPage'
+import LibraryPortfolioPage from './components/LibraryPortfolioPage'
 import { useAuthStore } from './store/authStore'
 
 function AppLayout() {
@@ -31,6 +33,8 @@ function AppLayout() {
             <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
             <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/library/:id/portfolio" element={<LibraryPortfolioPage />} />
           </Routes>
         </div>
       </div>
