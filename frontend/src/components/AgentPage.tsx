@@ -18,6 +18,12 @@ interface TaskHistoryItem {
   created_at?: string
 }
 
+interface MemoryEntry {
+  id: string
+  content: string
+  created_at: string
+}
+
 export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const [saved, setSaved] = useState(false)
@@ -29,6 +35,8 @@ export default function AgentPage() {
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [memories, setMemories] = useState<MemoryEntry[]>([])
+  const [memoriesLoaded, setMemoriesLoaded] = useState(false)
 
   useEffect(() => {
     if (!companyId || !agentId) return
@@ -42,6 +50,16 @@ export default function AgentPage() {
         setHistoryLoaded(true)
       })
       .catch(() => setHistoryLoaded(true))
+
+    fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/memory`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        setMemories(Array.isArray(data) ? data : [])
+        setMemoriesLoaded(true)
+      })
+      .catch(() => setMemoriesLoaded(true))
   }, [companyId, agentId])
 
   const handleSaveToLibrary = async () => {

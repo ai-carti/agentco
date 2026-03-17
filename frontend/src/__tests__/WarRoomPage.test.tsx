@@ -222,8 +222,9 @@ describe('WarRoomPage', () => {
         </Routes>
       </MemoryRouter>,
     )
-    expect(screen.getByText(/No agents running/i)).toBeInTheDocument()
-    expect(screen.getByText(/Assign tasks to agents/i)).toBeInTheDocument()
+    expect(screen.getByText(/All quiet here/i)).toBeInTheDocument()
+    expect(screen.getByText(/No agents are running/i)).toBeInTheDocument()
+    expect(screen.getByText(/▶ Run a Task/)).toBeInTheDocument()
 
     // Restore
     useWarRoomStore.setState({ loadMockData: original })
@@ -258,4 +259,6 @@ describe('WarRoomPage', () => {
     expect(store.agents.length).toBeGreaterThanOrEqual(3)
     expect(store.agents.length).toBeLessThanOrEqual(4)
   })
+
+
 })

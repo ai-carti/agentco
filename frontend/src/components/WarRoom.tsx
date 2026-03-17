@@ -43,8 +43,9 @@ export default function WarRoom() {
 
   const connect = useCallback(() => {
     if (!token || !companyId) return
+    const BASE_WS_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/^http/, 'ws')
     const ws = new WebSocket(
-      `ws://localhost:8000/ws/companies/${companyId}/events?token=${token}`,
+      `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
     )
 
     ws.onmessage = (e) => {

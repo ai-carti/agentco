@@ -50,8 +50,17 @@ export default function WarRoomPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mock WS fallback: setInterval ~3 sec cycling agent statuses + adding messages
+  // Only run when not connected to real WS
   useEffect(() => {
     if (agents.length === 0) return
+    if (isConnected) {
+      // Stop interval if running
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      return
+    }
 
     intervalRef.current = setInterval(() => {
       const store = useWarRoomStore.getState()
@@ -68,7 +77,7 @@ export default function WarRoomPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [agents.length > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agents.length > 0, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear flash after animation
   useEffect(() => {
@@ -99,42 +108,20 @@ export default function WarRoomPage() {
           gap: '1.5rem',
         }}
       >
-        {/* SVG illustration */}
-        <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="10" y="20" width="30" height="40" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-          <rect x="15" y="28" width="20" height="4" rx="2" fill="#475569"/>
-          <rect x="15" y="36" width="14" height="3" rx="1.5" fill="#334155"/>
-          <circle cx="25" cy="52" r="5" fill="#1d4ed8" opacity="0.6"/>
-
-          <rect x="80" y="20" width="30" height="40" rx="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-          <rect x="85" y="28" width="20" height="4" rx="2" fill="#475569"/>
-          <rect x="85" y="36" width="14" height="3" rx="1.5" fill="#334155"/>
-          <circle cx="95" cy="52" r="5" fill="#7c3aed" opacity="0.6"/>
-
-          <rect x="45" y="35" width="30" height="40" rx="6" fill="#1e2d40" stroke="#2563eb" strokeWidth="1.5" strokeDasharray="4 2"/>
-          <rect x="50" y="43" width="20" height="4" rx="2" fill="#2563eb" opacity="0.5"/>
-          <rect x="50" y="51" width="12" height="3" rx="1.5" fill="#334155"/>
-
-          <line x1="40" y1="45" x2="45" y2="55" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 2"/>
-          <line x1="80" y1="55" x2="75" y2="45" stroke="#334155" strokeWidth="1.5" strokeDasharray="3 2"/>
-
-          <circle cx="60" cy="85" r="6" fill="#1e293b" stroke="#334155" strokeWidth="1.5"/>
-          <circle cx="60" cy="85" r="2" fill="#475569"/>
-          <line x1="60" y1="75" x2="60" y2="79" stroke="#334155" strokeWidth="1.5"/>
-        </svg>
+        <div style={{ fontSize: '3rem' }}>💤</div>
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
-            No agents running
+            All quiet here
           </div>
           <div style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: 280 }}>
-            Assign tasks to agents and run them to see live activity here
+            No agents are running. Start a task to see the magic
           </div>
         </div>
 
         <button
-          data-testid="war-room-goto-companies-btn"
-          onClick={() => navigate('/')}
+          data-testid="war-room-run-task-btn"
+          onClick={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
           style={{
             padding: '0.6rem 1.5rem',
             background: '#2563eb',
@@ -148,7 +135,7 @@ export default function WarRoomPage() {
           onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
         >
-          ← Back to Companies
+          ▶ Run a Task
         </button>
       </div>
     )
