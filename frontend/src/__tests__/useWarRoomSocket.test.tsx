@@ -67,9 +67,9 @@ afterEach(() => {
 
 describe('useWarRoomSocket', () => {
   it('connects to correct WebSocket URL', () => {
-    renderHook(() => useWarRoomSocket('run-123'))
+    renderHook(() => useWarRoomSocket('comp-123'))
     expect(MockWebSocket.instances.length).toBe(1)
-    expect(MockWebSocket.instances[0].url).toMatch(/ws:\/\/.+:8000\/ws\/runs\/run-123\/events/)
+    expect(MockWebSocket.instances[0].url).toMatch(/ws:\/\/.+:8000\/ws\/companies\/comp-123\/events/)
   })
 
   it('returns isConnected=false initially', () => {

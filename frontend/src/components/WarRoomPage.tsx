@@ -39,10 +39,10 @@ export default function WarRoomPage() {
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const navigate = useNavigate()
-  const { runId } = useParams<{ runId?: string }>()
+  const { id: companyId } = useParams<{ id?: string }>()
 
   // WebSocket connection for real-time events
-  const { isConnected } = useWarRoomSocket(runId ?? 'mock-run')
+  const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')
 
   // Load mock data on mount
   useEffect(() => {

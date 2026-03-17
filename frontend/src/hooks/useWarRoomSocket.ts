@@ -18,7 +18,7 @@ interface UseWarRoomSocketResult {
   error: string | null
 }
 
-export function useWarRoomSocket(runId: string): UseWarRoomSocketResult {
+export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const [events, setEvents] = useState<WsEvent[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +34,7 @@ export function useWarRoomSocket(runId: string): UseWarRoomSocketResult {
   const connect = useCallback(() => {
     if (unmountedRef.current) return
 
-    const url = `${BASE_WS_URL}/ws/runs/${runId}/events`
+    const url = `${BASE_WS_URL}/ws/companies/${companyId}/events`
     const ws = new WebSocket(url)
     wsRef.current = ws
 
@@ -80,7 +80,7 @@ export function useWarRoomSocket(runId: string): UseWarRoomSocketResult {
         }
       }, delay)
     }
-  }, [runId, addMessage, updateAgentStatus])
+  }, [companyId, addMessage, updateAgentStatus])
 
   useEffect(() => {
     unmountedRef.current = false
