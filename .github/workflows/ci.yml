@@ -56,3 +56,8 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # E2E tests require a running backend — skipped in CI until backend can be started
+      - name: Run E2E tests
+        if: false # requires running backend
+        run: npm run e2e -- --reporter=dot
