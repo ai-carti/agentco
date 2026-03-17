@@ -98,8 +98,8 @@ describe('Routing', () => {
       expect(screen.getByTestId('agent-page')).toBeInTheDocument()
     })
 
-    it('renders war room page at /companies/:id/runs/:runId', () => {
-      renderWithRouter('/companies/abc/runs/run-1')
+    it('renders war room page at /companies/:id/warroom', () => {
+      renderWithRouter('/companies/abc/warroom')
       expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
     })
 

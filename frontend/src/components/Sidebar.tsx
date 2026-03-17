@@ -9,6 +9,7 @@ const MOBILE_BREAKPOINT = 640
 
 const NAV_ITEMS = [
   { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies' },
+  { to: '/war-room', label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom' },
   { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
 ]
 
