@@ -307,8 +307,10 @@ describe('AgentPage Save to Library', () => {
 
   it('calls POST /api/library when Save to Library clicked', async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // history
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ name: 'Test Agent', role: 'Engineer', model: 'gpt-4o' }) }) // agent data
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) }) // models
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // history
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // memory
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // save to library
     globalThis.fetch = fetchMock
     renderAgentPage('agent-1', 'c1')
@@ -331,10 +333,11 @@ describe('AgentPage Save to Library', () => {
 
   it('shows success message after Save to Library', async () => {
     globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ name: 'Test Agent', role: 'Engineer', model: 'gpt-4o' }) }) // agent data
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) }) // models
       .mockResolvedValueOnce({ ok: true, json: async () => [] })  // task history
       .mockResolvedValueOnce({ ok: true, json: async () => [] })  // memory
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'lib-1' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'lib-1' }) }) // save to library
     renderAgentPage('agent-1', 'c1')
     await waitFor(() => {
       expect(screen.getByTestId('save-to-library-btn')).toBeInTheDocument()

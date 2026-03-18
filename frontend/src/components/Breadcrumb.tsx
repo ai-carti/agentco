@@ -6,10 +6,13 @@ function getSection(pathname: string): string | null {
   if (pathname === '/settings/billing') return 'Billing'
   if (pathname.startsWith('/settings')) return 'Settings'
   if (pathname.startsWith('/library')) return 'Library'
+  if (pathname.startsWith('/war-room')) return 'War Room'
+  if (pathname.startsWith('/onboarding')) return 'Onboarding'
   if (/^\/companies\/[^/]+\/agents\/[^/]+\/edit/.test(pathname)) return 'Edit Agent'
   if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
   if (/^\/companies\/[^/]+\/settings/.test(pathname)) return 'Settings'
-  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'
+  if (/^\/companies\/[^/]+\/warroom/.test(pathname)) return 'War Room'
+  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'  // Default section for company pages
   return null
 }
 

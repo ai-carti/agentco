@@ -26,9 +26,19 @@ interface MemoryEntry {
   created_at: string
 }
 
+interface AgentData {
+  id: string
+  name: string
+  role?: string
+  model?: string
+  system_prompt?: string
+}
+
 export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const navigate = useNavigate()
+  const [agentData, setAgentData] = useState<AgentData | null>(null)
+  const [agentLoading, setAgentLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [savedToLibrary, setSavedToLibrary] = useState(false)
@@ -45,6 +55,17 @@ export default function AgentPage() {
     if (!companyId || !agentId) return
     const token = getStoredToken()
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+
+    // Load agent data for pre-populating the form
+    fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}`, {
+      headers: authHeaders,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setAgentData(data)
+        setAgentLoading(false)
+      })
+      .catch(() => setAgentLoading(false))
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
       headers: authHeaders,
@@ -129,11 +150,18 @@ export default function AgentPage() {
   const visibleHistory = history.slice(0, visibleCount)
   const hasMore = history.length > visibleCount
 
+  const agentInitialValues = agentData ? {
+    name: agentData.name,
+    role: agentData.role ?? '',
+    model: agentData.model ?? '',
+    system_prompt: agentData.system_prompt ?? '',
+  } : undefined
+
   return (
     <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-          Agent
+          {agentData?.name ?? 'Agent'}
         </h1>
         <Button
           data-testid="agent-edit-btn"
@@ -144,7 +172,11 @@ export default function AgentPage() {
         </Button>
       </div>
 
-      <AgentForm onSubmit={handleSubmit} />
+      {agentLoading ? (
+        <SkeletonCard variant="agent" count={1} />
+      ) : (
+        <AgentForm onSubmit={handleSubmit} initialValues={agentInitialValues} />
+      )}
 
       {saved && (
         <p

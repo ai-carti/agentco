@@ -7,6 +7,7 @@ import Button from './Button'
 import EmptyState from './EmptyState'
 import { useAgentStore } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
+import { useToast } from '../context/ToastContext'
 import { Bot } from 'lucide-react'
 
 const AVATAR_COLORS = [
@@ -110,6 +111,7 @@ export default function CompanyPage() {
   const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
+  const toast = useToast()
 
   useEffect(() => {
     if (!id) return
@@ -168,9 +170,12 @@ export default function CompanyPage() {
         const newAgent = await res.json()
         setAgents([...agents, newAgent])
         setIsAgentFormOpen(false)
+        toast.success(`Agent ${data.name} created`)
+      } else {
+        toast.error('Failed to create agent. Try again.')
       }
     } catch {
-      // silently fail
+      toast.error('Network error — could not create agent')
     }
   }
 

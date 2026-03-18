@@ -1,6 +1,7 @@
 """FastAPI dependencies for auth."""
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session
@@ -24,7 +25,8 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = session.query(User).filter_by(id=user_id).first()
+    # ALEX-TD-005 fix: use modern select() instead of legacy session.query()
+    user = session.scalars(select(User).where(User.id == user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

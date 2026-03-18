@@ -2,6 +2,7 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session
