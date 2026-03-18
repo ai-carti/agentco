@@ -9,7 +9,7 @@ function getSection(pathname: string): string | null {
   if (/^\/companies\/[^/]+\/agents\/[^/]+\/edit/.test(pathname)) return 'Edit Agent'
   if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
   if (/^\/companies\/[^/]+\/settings/.test(pathname)) return 'Settings'
-  if (/^\/companies\/[^/]+/.test(pathname)) return null  // CompanyPage has its own header
+  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'
   return null
 }
 
