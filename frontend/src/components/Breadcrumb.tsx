@@ -1,7 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAgentStore } from '../store/agentStore'
 
-function getSection(pathname: string): string | null {
+const TAB_SECTION_LABELS: Record<string, string> = {
+  'war-room': 'War Room',
+  'board': 'Board',
+  'agents': 'Agents',
+}
+
+function getSection(pathname: string, activeSection?: string): string | null {
   if (pathname === '/' || pathname === '') return null
   if (pathname === '/settings/billing') return 'Billing'
   if (pathname.startsWith('/settings')) return 'Settings'
@@ -12,7 +18,13 @@ function getSection(pathname: string): string | null {
   if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
   if (/^\/companies\/[^/]+\/settings/.test(pathname)) return 'Settings'
   if (/^\/companies\/[^/]+\/warroom/.test(pathname)) return 'War Room'
-  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'  // Default section for company pages
+  if (/^\/companies\/[^/]+/.test(pathname)) {
+    // Use activeSection prop if provided to sync with tab state
+    if (activeSection && TAB_SECTION_LABELS[activeSection]) {
+      return TAB_SECTION_LABELS[activeSection]
+    }
+    return 'War Room'
+  }
   return null
 }
 
@@ -20,10 +32,17 @@ function requiresCompany(pathname: string): boolean {
   return /^\/companies\/[^/]+/.test(pathname)
 }
 
-export default function Breadcrumb() {
+interface BreadcrumbProps {
+  activeSection?: string
+}
+
+export default function Breadcrumb({ activeSection }: BreadcrumbProps = {}) {
   const location = useLocation()
   const currentCompany = useAgentStore((s) => s.currentCompany)
-  const section = getSection(location.pathname)
+  const activeCompanyTab = useAgentStore((s) => s.activeCompanyTab)
+  // activeSection prop takes priority, then store value
+  const resolvedSection = activeSection ?? activeCompanyTab ?? undefined
+  const section = getSection(location.pathname, resolvedSection)
   const hasCompany = currentCompany !== null
   const showCompanyBlock = requiresCompany(location.pathname) || location.pathname === '/'
 

@@ -1,18 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAgentStore } from '../store/agentStore'
 
 const EXPANDED_WIDTH = 240
 const COLLAPSED_WIDTH = 48
 const STORAGE_KEY = 'sidebar:collapsed'
 const TABLET_BREAKPOINT = 1024
 const MOBILE_BREAKPOINT = 640
-
-const NAV_ITEMS = [
-  { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies' },
-  { to: '/war-room', label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom' },
-  { to: '/library', label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library' },
-  { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
-]
 
 function getInitialCollapsed(): boolean {
   if (typeof window === 'undefined') return false
@@ -28,6 +22,16 @@ function isMobile(): boolean {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
   const [mobile, setMobile] = useState(isMobile)
+  const currentCompany = useAgentStore((s) => s.currentCompany)
+
+  const warRoomTo = currentCompany ? `/companies/${currentCompany.id}` : '/'
+
+  const NAV_ITEMS = [
+    { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies' },
+    { to: warRoomTo, label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom' },
+    { to: '/library', label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library' },
+    { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
+  ]
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,7 +100,7 @@ export default function Sidebar() {
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem' }}>
           {NAV_ITEMS.map((item) => (
             <NavLink
-              key={item.to}
+              key={item.testId}
               to={item.to}
               data-testid={item.testId}
               title={item.label}

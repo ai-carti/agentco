@@ -54,7 +54,8 @@ class MeResponse(BaseModel):
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, session: Session = Depends(get_session)):
     """Register a new user. Returns user id."""
-    existing = session.query(User).filter_by(email=body.email).first()
+    # ALEX-TD-005 fix: modern select() API
+    existing = session.scalars(select(User).where(User.email == body.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -71,7 +72,8 @@ def register(body: RegisterRequest, session: Session = Depends(get_session)):
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, session: Session = Depends(get_session)):
     """Authenticate user and return JWT access token."""
-    user = session.query(User).filter_by(email=body.email).first()
+    # ALEX-TD-005 fix: modern select() API
+    user = session.scalars(select(User).where(User.email == body.email)).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
 import AgentForm, { type AgentFormData } from './AgentForm'
+import AgentCard from './AgentCard'
 import Button from './Button'
 import EmptyState from './EmptyState'
+import SkeletonCard from './SkeletonCard'
 import { useAgentStore } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -90,11 +92,12 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
   )
 }
 
-type TabId = 'war-room' | 'board'
+type TabId = 'war-room' | 'board' | 'agents'
 
 const TAB_LABELS: { id: TabId; label: string }[] = [
   { id: 'war-room', label: 'War Room' },
   { id: 'board', label: 'Board' },
+  { id: 'agents', label: 'Agents' },
 ]
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -105,12 +108,19 @@ export default function CompanyPage() {
   const setCurrentCompany = useAgentStore((s) => s.setCurrentCompany)
   const setTasks = useAgentStore((s) => s.setTasks)
   const setAgents = useAgentStore((s) => s.setAgents)
+  const setActiveCompanyTab = useAgentStore((s) => s.setActiveCompanyTab)
   const agents = useAgentStore((s) => s.agents)
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
   const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
+
+  useEffect(() => {
+    setActiveCompanyTab('war-room')
+    return () => setActiveCompanyTab(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
   const toast = useToast()
 
   useEffect(() => {
@@ -152,8 +162,9 @@ export default function CompanyPage() {
       setTasks([])
       setAgents([])
       setAgentsLoaded(false)
+      setActiveCompanyTab(null)
     }
-  }, [id, setCurrentCompany, setTasks, setAgents])
+  }, [id, setCurrentCompany, setTasks, setAgents, setActiveCompanyTab])
 
   const handleCreateAgent = async (data: AgentFormData) => {
     if (!id) return
@@ -210,7 +221,7 @@ export default function CompanyPage() {
               role="tab"
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
               style={{
                 padding: '10px 18px',
                 background: 'transparent',
@@ -262,6 +273,49 @@ export default function CompanyPage() {
         >
           {activeTab === 'board' && (
             <KanbanBoard companyId={id ?? ''} isLoaded={tasksLoaded} />
+          )}
+        </div>
+
+        {/* Agents panel */}
+        <div
+          role="tabpanel"
+          id="tabpanel-agents"
+          hidden={activeTab !== 'agents'}
+          style={{ height: '100%', overflowY: 'auto', padding: '1.25rem' }}
+        >
+          {activeTab === 'agents' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>
+                  Team
+                </h2>
+                <Button variant="primary" onClick={() => setIsAgentFormOpen(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}>
+                  + Add Agent
+                </Button>
+              </div>
+              {!agentsLoaded ? (
+                <SkeletonCard variant="agent" count={3} />
+              ) : agents.length === 0 ? (
+                <EmptyState
+                  icon={<Bot className="w-12 h-12 text-gray-400" />}
+                  title="Your AI team is waiting"
+                  subtitle="Add agents to start automating"
+                  ctaLabel="+ Add Agent"
+                  onCTA={() => setIsAgentFormOpen(true)}
+                />
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                  {agents.map((agent) => (
+                    <AgentCard
+                      key={agent.id}
+                      agent={agent}
+                      companyId={id ?? ''}
+                      onEdit={() => id && navigate(`/companies/${id}/agents/${agent.id}/edit`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

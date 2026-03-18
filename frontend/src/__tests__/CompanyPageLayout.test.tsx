@@ -42,6 +42,7 @@ vi.mock('../store/agentStore', () => ({
       setCurrentCompany: vi.fn(),
       setTasks: vi.fn(),
       setAgents: vi.fn(),
+      setActiveCompanyTab: vi.fn(),
     }
     return selector(store)
   }),

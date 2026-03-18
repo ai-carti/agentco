@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import AgentForm, { type AgentFormData } from './AgentForm'
 import Button from './Button'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -34,13 +33,30 @@ interface AgentData {
   system_prompt?: string
 }
 
+const fieldStyle: React.CSSProperties = {
+  padding: '0.5rem 0.75rem',
+  background: '#1f2937',
+  border: '1px solid #374151',
+  borderRadius: 6,
+  color: '#f8fafc',
+  fontSize: '0.875rem',
+  wordBreak: 'break-word',
+  whiteSpace: 'pre-wrap',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.75rem',
+  color: '#9ca3af',
+  marginBottom: '0.3rem',
+  fontWeight: 500,
+}
+
 export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const navigate = useNavigate()
   const [agentData, setAgentData] = useState<AgentData | null>(null)
   const [agentLoading, setAgentLoading] = useState(true)
-  const [saved, setSaved] = useState(false)
-  const [saveError, setSaveError] = useState('')
   const [savedToLibrary, setSavedToLibrary] = useState(false)
   const [saveToLibraryError, setSaveToLibraryError] = useState('')
   const toast = useToast()
@@ -56,7 +72,6 @@ export default function AgentPage() {
     const token = getStoredToken()
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
 
-    // Load agent data for pre-populating the form
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}`, {
       headers: authHeaders,
     })
@@ -116,46 +131,8 @@ export default function AgentPage() {
     }
   }
 
-  const handleSubmit = async (data: AgentFormData) => {
-    setSaveError('')
-    setSaved(false)
-    try {
-      const token = getStoredToken()
-      const res = await fetch(
-        `${BASE_URL}/api/companies/${companyId}/agents/${agentId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(data),
-        },
-      )
-      if (!res.ok) {
-        const msg = `Failed to save agent (${res.status})`
-        setSaveError(msg)
-        toast.error(msg)
-        return
-      }
-      setSaved(true)
-      toast.success(`Agent saved`)
-    } catch {
-      const msg = 'Network error — could not save agent'
-      setSaveError(msg)
-      toast.error(msg)
-    }
-  }
-
   const visibleHistory = history.slice(0, visibleCount)
   const hasMore = history.length > visibleCount
-
-  const agentInitialValues = agentData ? {
-    name: agentData.name,
-    role: agentData.role ?? '',
-    model: agentData.model ?? '',
-    system_prompt: agentData.system_prompt ?? '',
-  } : undefined
 
   return (
     <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>
@@ -175,24 +152,32 @@ export default function AgentPage() {
       {agentLoading ? (
         <SkeletonCard variant="agent" count={1} />
       ) : (
-        <AgentForm onSubmit={handleSubmit} initialValues={agentInitialValues} />
-      )}
-
-      {saved && (
-        <p
-          data-testid="agent-save-success"
-          style={{ color: '#4ade80', fontSize: '0.875rem', marginTop: '0.75rem' }}
-        >
-          Agent saved
-        </p>
-      )}
-      {saveError && (
-        <p
-          data-testid="agent-save-error"
-          style={{ color: '#f87171', fontSize: '0.875rem', marginTop: '0.75rem' }}
-        >
-          {saveError}
-        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label style={labelStyle}>Name</label>
+            <div data-testid="agent-name-display" style={fieldStyle}>
+              {agentData?.name ?? '—'}
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Role</label>
+            <div data-testid="agent-role-display" style={fieldStyle}>
+              {agentData?.role ?? '—'}
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Model</label>
+            <div data-testid="agent-model-display" style={fieldStyle}>
+              {agentData?.model ?? '—'}
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>System Prompt</label>
+            <div data-testid="agent-system-prompt-display" style={{ ...fieldStyle, minHeight: 80 }}>
+              {agentData?.system_prompt ?? '—'}
+            </div>
+          </div>
+        </div>
       )}
 
       <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -220,7 +205,6 @@ export default function AgentPage() {
           </span>
         )}
       </div>
-
 
       {/* Memory section */}
       <div data-testid="agent-memory-section" style={{ marginTop: '2rem' }}>

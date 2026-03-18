@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
+import { useToast } from '../context/ToastContext'
 import Button from './Button'
 import { Moon } from 'lucide-react'
 
@@ -42,6 +43,7 @@ export default function WarRoomPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const navigate = useNavigate()
   const { id: companyId } = useParams<{ id?: string }>()
+  const toast = useToast()
 
   // WebSocket connection for real-time events
   const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')

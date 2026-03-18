@@ -162,28 +162,23 @@ async def validate_llm_key(
 
     test_model = PROVIDER_TEST_MODEL[provider]
 
-    # Temporarily set API key in environment for LiteLLM
-    env_key_map = {
-        "openai": "OPENAI_API_KEY",
-        "anthropic": "ANTHROPIC_API_KEY",
-        "gemini": "GEMINI_API_KEY",
+    # ALEX-TD-009 fix: pass api_key directly to LiteLLM instead of mutating os.environ
+    # (os.environ mutation is NOT thread-safe in async context — concurrent requests
+    #  can end up using each other's keys)
+    litellm_kwargs: dict = {
+        "model": test_model,
+        "messages": [{"role": "user", "content": "Hi"}],
+        "max_tokens": 1,
     }
-    env_var = env_key_map[provider]
-    original_value = os.environ.get(env_var)
-    os.environ[env_var] = body.api_key
+    if provider == "openai":
+        litellm_kwargs["api_key"] = body.api_key
+    elif provider == "anthropic":
+        litellm_kwargs["api_key"] = body.api_key
+    elif provider == "gemini":
+        litellm_kwargs["api_key"] = body.api_key
 
     try:
-        await acompletion(
-            model=test_model,
-            messages=[{"role": "user", "content": "Hi"}],
-            max_tokens=1,
-        )
+        await acompletion(**litellm_kwargs)
         return ValidateKeyResponse(valid=True)
     except Exception as e:
         return ValidateKeyResponse(valid=False, error=str(e))
-    finally:
-        # Restore original env value
-        if original_value is None:
-            os.environ.pop(env_var, None)
-        else:
-            os.environ[env_var] = original_value

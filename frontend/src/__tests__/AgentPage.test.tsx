@@ -1,9 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AgentPage from '../components/AgentPage'
 
-// BUG-017: AgentPage integrates AgentForm for create/edit agent
+// SIRI-UX-007: AgentPage is now view-only; editing goes through AgentEditPage
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -19,58 +19,44 @@ function renderAgentPage(agentId = 'agent-1', companyId = 'c1') {
   )
 }
 
-describe('BUG-017: AgentPage integrates AgentForm', () => {
+describe('SIRI-UX-007: AgentPage view-only', () => {
   it('renders agent page', () => {
     renderAgentPage()
     expect(screen.getByTestId('agent-page')).toBeInTheDocument()
   })
 
-  it('renders AgentForm with model selector dropdown', async () => {
+  it('shows read-only display fields (no editable inputs)', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o', 'claude-sonnet-4-5'] }),
+      json: async () => ({ id: 'a1', name: 'My Agent', role: 'Engineer', model: 'gpt-4o', system_prompt: 'Be helpful' }),
     })
     renderAgentPage()
     await waitFor(() => {
-      expect(screen.getByTestId('model-select')).toBeInTheDocument()
+      expect(screen.getByTestId('agent-name-display')).toBeInTheDocument()
     })
-    expect(screen.getByTestId('model-select').tagName).toBe('SELECT')
+    expect(screen.getByTestId('agent-role-display')).toBeInTheDocument()
+    expect(screen.getByTestId('agent-model-display')).toBeInTheDocument()
+    expect(screen.getByTestId('agent-system-prompt-display')).toBeInTheDocument()
   })
 
-  it('AgentForm is accessible to user — name and role inputs present', async () => {
+  it('does NOT render editable AgentForm on the page', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o'] }),
     })
     renderAgentPage()
-    await waitFor(() => {
-      expect(screen.getByTestId('agent-name-input')).toBeInTheDocument()
-      expect(screen.getByTestId('agent-role-input')).toBeInTheDocument()
-    })
+    // Wait briefly for any async operations
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByTestId('agent-name-input')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('agent-form-submit')).not.toBeInTheDocument()
   })
 
-  it('user can submit agent form', async () => {
+  it('renders Edit button', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }),
+      json: async () => ({ id: 'a1', name: 'My Agent' }),
     })
     renderAgentPage()
-    await waitFor(() => screen.getByTestId('model-select'))
-
-    fireEvent.change(screen.getByTestId('agent-name-input'), {
-      target: { value: 'Test Agent' },
-    })
-    fireEvent.change(screen.getByTestId('agent-role-input'), {
-      target: { value: 'Engineer' },
-    })
-    fireEvent.change(screen.getByTestId('model-select'), {
-      target: { value: 'gpt-4o' },
-    })
-    fireEvent.click(screen.getByTestId('agent-form-submit'))
-
-    // Form submitted without crash — success state or just no error
-    await waitFor(() => {
-      expect(screen.getByTestId('agent-page')).toBeInTheDocument()
-    })
+    expect(screen.getByTestId('agent-edit-btn')).toBeInTheDocument()
   })
 })

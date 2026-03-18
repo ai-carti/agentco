@@ -1,12 +1,23 @@
 """Password hashing and JWT utilities."""
+import logging
 import os
 import jwt
 import bcrypt
 from datetime import datetime, timedelta, timezone
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production-x32")
+logger = logging.getLogger(__name__)
+
+_DEV_SECRET = "dev-secret-change-in-production-x32"
+SECRET_KEY = os.getenv("SECRET_KEY", _DEV_SECRET)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+
+# ALEX-TD-010: warn if running with dev secret in prod
+if SECRET_KEY == _DEV_SECRET:
+    logger.warning(
+        "SECURITY WARNING: SECRET_KEY is not set — using insecure dev default. "
+        "Set SECRET_KEY env var in production."
+    )
 
 
 def hash_password(plain: str) -> str:

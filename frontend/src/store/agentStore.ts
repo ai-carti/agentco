@@ -36,9 +36,11 @@ interface AgentStore {
   agents: Agent[]
   tasks: Task[]
   currentCompany: Company | null
+  activeCompanyTab: string | null
   setAgents: (agents: Agent[]) => void
   setTasks: (tasks: Task[]) => void
   setCurrentCompany: (company: Company | null) => void
+  setActiveCompanyTab: (tab: string | null) => void
   updateAgentStatus: (id: string, status: AgentStatus) => void
   updateTaskStatus: (id: string, status: TaskStatus) => void
 }
@@ -47,9 +49,11 @@ export const useAgentStore = create<AgentStore>((set) => ({
   agents: [],
   tasks: [],
   currentCompany: null,
+  activeCompanyTab: null,
   setAgents: (agents) => set({ agents }),
   setTasks: (tasks) => set({ tasks }),
   setCurrentCompany: (company) => set({ currentCompany: company }),
+  setActiveCompanyTab: (tab) => set({ activeCompanyTab: tab }),
   updateAgentStatus: (id, status) =>
     set((state) => ({
       agents: state.agents.map((a) => (a.id === id ? { ...a, status } : a)),

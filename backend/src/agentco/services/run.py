@@ -137,38 +137,21 @@ class RunService:
         session_factory: Callable[[], Session],
     ) -> str:
         """
-        Background execution stub.
-        M2-003 agent_node вызывается здесь; для M2-004 — заглушка.
+        ALEX-TD-008 fix: wire _execute_agent to real execute_run() (LangGraph).
+
+        Previously this was a stub that faked completion.
+        Now delegates to execute_run() which runs the full LangGraph graph.
+        session_factory is used to update run status — execute_run manages its own session.
         """
-        bus = EventBus.get()
-
-        with session_factory() as session:
-            run_orm = session.get(self._repo.orm_model, run_id)
-            if run_orm is None:
-                return ""
-            run_orm.status = "running"
-            session.commit()
-
-        # TODO: реальный вызов agent_node через LangGraph
-        await asyncio.sleep(0)  # yield control
-
-        result = f"Agent completed task {task_id}"
         try:
-            with session_factory() as session:
-                run_orm = session.get(self._repo.orm_model, run_id)
-                if run_orm and run_orm.status == "running":
-                    run_orm.status = "done"
-                    run_orm.result = result
-                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                    session.commit()
-
-            await bus.publish({
-                "type": "run.done",
-                "company_id": company_id,
-                "run_id": run_id,
-                "payload": {"result": result},
-            })
+            # execute_run uses self._session which was created in create_and_start context.
+            # For background task, we need a fresh session — delegate to execute_run
+            # which creates its own session via checkpointer context.
+            result = await self.execute_run(run_id)
+            return result
         except Exception as exc:
+            bus = EventBus.get()
+            logger.error("_execute_agent failed for run %s: %s", run_id, exc)
             with session_factory() as session:
                 run_orm = session.get(self._repo.orm_model, run_id)
                 if run_orm:
@@ -183,8 +166,7 @@ class RunService:
                 "run_id": run_id,
                 "payload": {"error": str(exc)},
             })
-
-        return result
+            raise
 
     def get(self, company_id: str, run_id: str) -> Run:
         """Возвращает Run по id, проверяет принадлежность компании."""
