@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
-import AgentCard from './AgentCard'
 import AgentForm, { type AgentFormData } from './AgentForm'
-import EmptyState from './EmptyState'
+import Button from './Button'
 import { useAgentStore, type Agent } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
-import { Bot } from 'lucide-react'
 
 const AVATAR_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
@@ -89,6 +87,13 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
   )
 }
 
+type TabId = 'war-room' | 'board'
+
+const TAB_LABELS: { id: TabId; label: string }[] = [
+  { id: 'war-room', label: 'War Room' },
+  { id: 'board', label: 'Board' },
+]
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 export default function CompanyPage() {
@@ -100,8 +105,8 @@ export default function CompanyPage() {
   const agents = useAgentStore((s) => s.agents)
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
-  const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabId>('war-room')
 
   useEffect(() => {
     if (!id) return
@@ -126,16 +131,12 @@ export default function CompanyPage() {
         setTasksLoaded(true)
       })
 
-    setAgentsLoaded(false)
     fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
-        setAgentsLoaded(true)
       })
-      .catch(() => {
-        setAgentsLoaded(true)
-      })
+      .catch(() => {})
 
     return () => {
       setCurrentCompany(null)
@@ -143,10 +144,6 @@ export default function CompanyPage() {
       setAgents([])
     }
   }, [id, setCurrentCompany, setTasks, setAgents])
-
-  const handleEditAgent = (_agent: Agent) => {
-    // TODO: open edit modal
-  }
 
   const handleCreateAgent = async (data: AgentFormData) => {
     if (!id) return
@@ -170,14 +167,80 @@ export default function CompanyPage() {
   }
 
   return (
-    <div data-testid="company-page">
+    <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Company header breadcrumb */}
       {currentCompany && (
         <CompanyHeader
           name={currentCompany.name}
           onHomeClick={() => navigate('/')}
         />
       )}
-      <WarRoomPage />
+
+      {/* Tab navigation */}
+      <div
+        role="tablist"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0,
+          background: '#0d1321',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '0 16px',
+          flexShrink: 0,
+        }}
+      >
+        {TAB_LABELS.map((tab) => {
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`tabpanel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
+                color: isActive ? '#f1f5f9' : '#64748b',
+                fontSize: '0.875rem',
+                fontWeight: isActive ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'color 0.15s, border-color 0.15s',
+                marginBottom: -1,
+              }}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tab panels */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* War Room panel */}
+        <div
+          role="tabpanel"
+          id="tabpanel-war-room"
+          hidden={activeTab !== 'war-room'}
+          style={{ height: '100%' }}
+        >
+          {activeTab === 'war-room' && <WarRoomPage />}
+        </div>
+
+        {/* Board panel */}
+        <div
+          role="tabpanel"
+          id="tabpanel-board"
+          hidden={activeTab !== 'board'}
+          style={{ height: '100%', overflowY: 'auto' }}
+        >
+          {activeTab === 'board' && (
+            <KanbanBoard companyId={id ?? ''} isLoaded={tasksLoaded} />
+          )}
+        </div>
+      </div>
 
       {/* Agent creation modal */}
       {isAgentFormOpen && (
@@ -207,43 +270,19 @@ export default function CompanyPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#f1f5f9', fontWeight: 700 }}>Add Agent</h3>
-              <button
+              <Button
                 data-testid="agent-form-modal-close"
+                variant="secondary"
                 onClick={() => setIsAgentFormOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.4rem' }}
+                style={{ padding: '0.25rem 0.5rem', fontSize: '1.2rem' }}
               >
                 ×
-              </button>
+              </Button>
             </div>
             <AgentForm onSubmit={handleCreateAgent} />
           </div>
         </div>
       )}
-
-      {/* Agents section */}
-      {agentsLoaded && agents.length === 0 && (
-        <EmptyState
-          icon={<Bot className="w-12 h-12 text-gray-400" />}
-          title="Your AI team is waiting"
-          subtitle="Add agents to start automating"
-          ctaLabel="+ Add Agent"
-          onCTA={() => setIsAgentFormOpen(true)}
-        />
-      )}
-      {agents.length > 0 && (
-        <div style={{ padding: '0 1rem', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#e5e7eb', marginBottom: '0.75rem' }}>
-            Agents ({agents.length})
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
-            {agents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} companyId={id ?? ''} onEdit={handleEditAgent} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <KanbanBoard companyId={id ?? ''} isLoaded={tasksLoaded} />
     </div>
   )
 }

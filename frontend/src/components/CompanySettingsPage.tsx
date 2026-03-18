@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
+import Button from './Button'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -126,17 +127,14 @@ export default function CompanySettingsPage() {
           />
         </div>
 
-        <button
+        <Button
+          variant="primary"
           onClick={handleSave}
           disabled={saving}
-          style={{
-            padding: '0.5rem 1.25rem', background: '#2563eb', color: '#fff',
-            border: 'none', borderRadius: 6, cursor: saving ? 'not-allowed' : 'pointer',
-            fontWeight: 600, fontSize: '0.875rem',
-          }}
+          style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}
         >
           {saving ? 'Saving...' : 'Save changes'}
-        </button>
+        </Button>
       </div>
 
       {/* Danger Zone */}
@@ -152,16 +150,13 @@ export default function CompanySettingsPage() {
         <p style={{ color: '#9ca3af', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
           Once you delete a company, there is no going back.
         </p>
-        <button
+        <Button
+          variant="danger"
           onClick={() => setDeleteModalOpen(true)}
-          style={{
-            padding: '0.4rem 1rem', background: '#dc2626', color: '#fff',
-            border: 'none', borderRadius: 6, cursor: 'pointer',
-            fontWeight: 600, fontSize: '0.8rem',
-          }}
+          style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}
         >
           Delete this company
-        </button>
+        </Button>
       </div>
 
       {/* Delete confirmation modal */}
@@ -195,29 +190,22 @@ export default function CompanySettingsPage() {
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => { setDeleteModalOpen(false); setDeleteConfirm('') }}
-                style={{
-                  padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc',
-                  border: 'none', borderRadius: 6, cursor: 'pointer',
-                }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 data-testid="confirm-delete-company-btn"
+                variant="danger"
                 onClick={handleDelete}
                 disabled={deleteConfirm !== company?.name}
-                style={{
-                  padding: '0.4rem 0.9rem',
-                  background: deleteConfirm === company?.name ? '#dc2626' : '#374151',
-                  color: '#fff', border: 'none', borderRadius: 6,
-                  cursor: deleteConfirm === company?.name ? 'pointer' : 'not-allowed',
-                  fontWeight: 600,
-                }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Delete permanently
-              </button>
+              </Button>
             </div>
           </div>
         </div>

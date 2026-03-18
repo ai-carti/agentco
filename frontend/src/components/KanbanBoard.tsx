@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useAgentStore, type Task, type TaskStatus, type TaskPriority } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import TaskDetailSidebar from './TaskDetailSidebar'
+import Button from './Button'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
@@ -335,24 +336,19 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
 
       {/* Run button — only for todo/backlog */}
       {canRun && (
-        <button
+        <Button
           data-testid={`run-btn-${task.id}`}
+          variant="primary"
           onClick={handleRun}
           disabled={running}
           style={{
             width: '100%', padding: '0.3rem 0.5rem',
-            background: running ? '#065f46' : '#059669',
-            color: '#fff', border: 'none', borderRadius: 5,
-            fontSize: '0.75rem', fontWeight: 600,
-            cursor: running ? 'not-allowed' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem',
-            transition: 'background 0.15s',
+            fontSize: '0.75rem',
+            gap: '0.25rem',
           }}
-          onMouseEnter={(e) => { if (!running) e.currentTarget.style.background = '#047857' }}
-          onMouseLeave={(e) => { if (!running) e.currentTarget.style.background = '#059669' }}
         >
           {running ? '⏳' : '▶'} {running ? 'Running…' : 'Run'}
-        </button>
+        </Button>
       )}
 
       {runError && (
@@ -402,19 +398,21 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setEditOpen(false)}
-                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleEdit}
                 disabled={!editTitle.trim()}
-                style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Save
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -439,20 +437,22 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
               Are you sure you want to delete "{task.title}"? This action cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-              <button
+              <Button
                 data-testid="cancel-delete-btn"
+                variant="secondary"
                 onClick={() => setDeleteOpen(false)}
-                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 data-testid="confirm-delete-btn"
+                variant="danger"
                 onClick={handleDelete}
-                style={{ padding: '0.4rem 0.9rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>

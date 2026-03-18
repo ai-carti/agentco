@@ -136,9 +136,9 @@ describe('WarRoom empty state', () => {
   })
 })
 
-// --- CompanyPage agents empty state (BUG-020) ---
+// --- CompanyPage agents empty state (BUG-020, updated for UX-POLISH-003 tab layout) ---
 describe('CompanyPage agents empty state', () => {
-  it('shows agents empty state when no agents loaded', async () => {
+  it('shows tab navigation (War Room + Board) on company page', async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [] })
       if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
@@ -152,15 +152,15 @@ describe('CompanyPage agents empty state', () => {
         </Routes>
       </MemoryRouter>
     )
+    // UX-POLISH-003: company page now uses tabs instead of stacked layout
     await waitFor(() => {
-      expect(screen.getByText('Your AI team is waiting')).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /war room/i })).toBeInTheDocument()
     })
-    // UX-POLISH-002: emoji replaced with SVG icon
-    expect(screen.getAllByTestId('empty-state-icon').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByRole('button', { name: /add agent/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /board/i })).toBeInTheDocument()
+    expect(screen.getByRole('tablist')).toBeInTheDocument()
   })
 
-  it('does NOT show agents empty state when agents exist', async () => {
+  it('does NOT show duplicate agents section below War Room', async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [{ id: 'a1', name: 'CEO Agent', status: 'idle' }] })
       if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
@@ -175,9 +175,11 @@ describe('CompanyPage agents empty state', () => {
       </MemoryRouter>
     )
     await waitFor(() => {
-      expect(screen.getAllByText('CEO Agent').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByRole('tab', { name: /war room/i })).toBeInTheDocument()
     })
-    expect(screen.queryByText('Your AI team is waiting')).not.toBeInTheDocument()
+    // "Agents (N)" heading appears exactly once (inside War Room sidebar), not duplicated below
+    const agentsSections = screen.queryAllByText(/^Agents \(\d+\)$/)
+    expect(agentsSections.length).toBeLessThanOrEqual(1)
   })
 })
 

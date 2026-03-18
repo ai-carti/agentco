@@ -89,8 +89,10 @@ describe('Routing', () => {
 
     it('renders war room + kanban at /companies/:id', () => {
       renderWithRouter('/companies/abc')
+      // War Room tab is active by default
       expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
-      expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
+      // Kanban is in Board tab (not rendered by default, hidden behind tab)
+      expect(screen.getByRole('tab', { name: /board/i })).toBeInTheDocument()
     })
 
     it('renders agent page at /companies/:id/agents/:agentId', () => {

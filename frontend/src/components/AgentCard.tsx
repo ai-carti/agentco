@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { type Agent } from '../store/agentStore'
+import Button from './Button'
 
 const AVATAR_COLORS = [
   '#7c3aed', '#db2777', '#ea580c', '#16a34a',
@@ -142,45 +143,29 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button
+        <Button
           data-testid="agent-edit-btn"
+          variant="secondary"
           onClick={() => onEdit(agent)}
-          style={{
-            flex: 1,
-            padding: '0.3rem 0.6rem',
-            background: '#374151',
-            color: '#f8fafc',
-            border: 'none',
-            borderRadius: 5,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#4b5563')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#374151')}
+          style={{ flex: 1, fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
         >
           Edit
-        </button>
+        </Button>
         <Link
           data-testid="agent-history-btn"
           to={`/companies/${companyId}/agents/${agent.id}`}
           style={{
             flex: 1,
-            padding: '0.3rem 0.6rem',
-            background: '#374151',
-            color: '#f8fafc',
-            border: 'none',
-            borderRadius: 5,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: 'pointer',
             textDecoration: 'none',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
-          View History
+          <Button
+            variant="secondary"
+            style={{ flex: 1, fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+          >
+            View History
+          </Button>
         </Link>
       </div>
     </div>

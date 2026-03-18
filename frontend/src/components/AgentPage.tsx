@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import AgentForm, { type AgentFormData } from './AgentForm'
+import Button from './Button'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
@@ -151,22 +152,13 @@ export default function AgentPage() {
       )}
 
       <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
+        <Button
           data-testid="save-to-library-btn"
+          variant="secondary"
           onClick={handleSaveToLibrary}
-          style={{
-            padding: '0.5rem 1.25rem',
-            background: '#7c3aed',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
         >
           Save to Library
-        </button>
+        </Button>
         {savedToLibrary && (
           <span
             data-testid="save-to-library-success"
@@ -268,21 +260,13 @@ export default function AgentPage() {
               </div>
             ))}
             {hasMore && (
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                style={{
-                  padding: '0.5rem',
-                  background: '#374151',
-                  color: '#f8fafc',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                }}
+                style={{ width: '100%', fontSize: '0.8rem' }}
               >
                 Load more
-              </button>
+              </Button>
             )}
           </div>
         )}

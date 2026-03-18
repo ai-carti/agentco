@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
+import Button from './Button'
 import { Moon } from 'lucide-react'
 
 function formatTime(iso: string): string {
@@ -120,24 +121,14 @@ export default function WarRoomPage() {
           </div>
         </div>
 
-        <button
+        <Button
           data-testid="war-room-run-task-btn"
+          variant="primary"
           onClick={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
-          style={{
-            padding: '0.6rem 1.5rem',
-            background: '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
+          style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
         >
           ▶ Run a Task
-        </button>
+        </Button>
       </div>
     )
   }
@@ -200,25 +191,14 @@ export default function WarRoomPage() {
             ${cost.toFixed(4)}
           </span>
 
-          <button
+          <Button
             data-testid="stop-btn"
+            variant="danger"
             onClick={handleStop}
-            style={{
-              background: '#dc2626',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 20px',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            style={{ padding: '8px 20px', fontSize: '0.9rem' }}
           >
             Stop
-          </button>
+          </Button>
         </div>
       </div>
 

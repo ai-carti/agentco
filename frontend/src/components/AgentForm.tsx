@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { getStoredToken } from '../api/client'
 import SystemPromptEditor from './SystemPromptEditor'
+import Button from './Button'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -141,22 +142,14 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         <SystemPromptEditor value={systemPrompt} onChange={setSystemPrompt} />
       </div>
 
-      <button
+      <Button
         data-testid="agent-form-submit"
         type="submit"
-        style={{
-          padding: '0.5rem 1rem',
-          background: '#2563eb',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
+        variant="primary"
+        style={{ width: '100%' }}
       >
         Save Agent
-      </button>
+      </Button>
     </form>
   )
 }
