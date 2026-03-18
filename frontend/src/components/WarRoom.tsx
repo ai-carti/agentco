@@ -5,6 +5,8 @@ import { useAgentStore } from '../store/agentStore'
 import EmptyState from './EmptyState'
 import { Moon } from 'lucide-react'
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
 interface Run {
   run_id: string
   agent_name: string
@@ -38,16 +40,42 @@ export default function WarRoom() {
   const token = useAuthStore((s) => s.token)
   const companyId = useAgentStore((s) => s.currentCompany?.id)
   const [runs, setRuns] = useState<Run[]>([])
+  const [isConnecting, setIsConnecting] = useState(true)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const navigate = useNavigate()
 
+  // BUG-043: initial REST fetch to populate runs on mount / page refresh
+  useEffect(() => {
+    if (!token || !companyId) return
+    fetch(`${BASE_URL}/api/companies/${companyId}/runs`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return
+        return res.json()
+      })
+      .then((data: Run[] | undefined) => {
+        if (data && data.length > 0) {
+          setRuns(data)
+        }
+      })
+      .catch(() => {
+        // silently ignore fetch errors — WS will populate state anyway
+      })
+  }, [token, companyId])
+
   const connect = useCallback(() => {
     if (!token || !companyId) return
-    const BASE_WS_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/^http/, 'ws')
+    const BASE_WS_URL = BASE_URL.replace(/^http/, 'ws')
     const ws = new WebSocket(
       `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
     )
+
+    // BUG-043: track connecting state — hide empty state until WS is open
+    ws.onopen = () => {
+      setIsConnecting(false)
+    }
 
     ws.onmessage = (e) => {
       const event = JSON.parse(e.data)
@@ -98,7 +126,7 @@ export default function WarRoom() {
     <div data-testid="war-room" className="p-4">
       <h1 className="text-xl font-bold mb-4">War Room</h1>
 
-      {runs.length === 0 ? (
+      {runs.length === 0 && !isConnecting ? (
         <EmptyState
           icon={<Moon className="w-12 h-12 text-gray-400" />}
           title="All quiet here"
@@ -106,7 +134,7 @@ export default function WarRoom() {
           ctaLabel="▶ Run a Task"
           onCTA={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
         />
-      ) : (
+      ) : runs.length > 0 ? (
         <div className="space-y-3">
           {runs.map((run) => (
             <div
@@ -136,7 +164,7 @@ export default function WarRoom() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ToastProvider } from '../context/ToastContext'
@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/authStore'
 
 class MockWS {
   static instances: MockWS[] = []
+  onopen: (() => void) | null = null
   onmessage: ((e: { data: string }) => void) | null = null
   onclose: (() => void) | null = null
   close = vi.fn()
@@ -18,6 +19,7 @@ class MockWS {
 beforeEach(() => {
   MockWS.instances = []
   vi.stubGlobal('WebSocket', MockWS)
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }))
   useAuthStore.setState({ token: 'tok' })
   useAgentStore.setState({ currentCompany: { id: 'c1', name: 'TestCo' }, agents: [], tasks: [] })
   vi.clearAllMocks()
@@ -97,12 +99,16 @@ describe('KanbanBoard empty state CTA', () => {
 
 // --- WarRoom empty state CTA ---
 describe('WarRoom empty state CTA', () => {
-  it('shows Run a Task button when no runs', () => {
+  it('shows Run a Task button when no runs after WS connected', () => {
     render(
       <MemoryRouter>
         <WarRoom />
       </MemoryRouter>,
     )
+    // BUG-043: empty state shown only after WS connection is established
+    act(() => {
+      MockWS.instances[MockWS.instances.length - 1]?.onopen?.()
+    })
     expect(screen.getByRole('button', { name: /run a task/i })).toBeInTheDocument()
   })
 
@@ -113,6 +119,10 @@ describe('WarRoom empty state CTA', () => {
         <WarRoom />
       </MemoryRouter>,
     )
+    // BUG-043: fire onopen so empty state appears
+    act(() => {
+      MockWS.instances[MockWS.instances.length - 1]?.onopen?.()
+    })
     const btn = screen.getByRole('button', { name: /run a task/i })
     // Should not throw
     expect(() => fireEvent.click(btn)).not.toThrow()

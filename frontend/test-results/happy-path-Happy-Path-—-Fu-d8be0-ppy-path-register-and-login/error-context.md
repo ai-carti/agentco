@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: AgentCo
+      - link "Companies" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Settings" [ref=e8] [cursor=pointer]:
+        - /url: /settings
+    - generic [ref=e9]:
+      - button "🔍 Search Ctrl+K" [ref=e10] [cursor=pointer]:
+        - generic [ref=e11]: 🔍
+        - generic [ref=e12]: Search
+        - generic [ref=e13]: Ctrl+K
+      - generic [ref=e14]: e2e@example.com
+      - button "Logout" [ref=e15] [cursor=pointer]
+  - generic [ref=e16]:
+    - complementary [ref=e17]:
+      - button "←" [ref=e18] [cursor=pointer]
+      - navigation [ref=e19]:
+        - link "🏢 Companies" [ref=e20] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e21]: 🏢
+          - generic [ref=e22]: Companies
+        - link "⚔️ War Room" [ref=e23] [cursor=pointer]:
+          - /url: /war-room
+          - generic [ref=e24]: ⚔️
+          - generic [ref=e25]: War Room
+        - link "📚 Library" [ref=e26] [cursor=pointer]:
+          - /url: /library
+          - generic [ref=e27]: 📚
+          - generic [ref=e28]: Library
+        - link "⚙️ Settings" [ref=e29] [cursor=pointer]:
+          - /url: /settings
+          - generic [ref=e30]: ⚙️
+          - generic [ref=e31]: Settings
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - link "AgentCo" [ref=e34] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e35]: ">"
+        - generic [ref=e36]: Select company
+      - generic [ref=e38]:
+        - generic [ref=e39]: 🦄
+        - heading "Welcome to AgentCo" [level=1] [ref=e40]
+        - paragraph [ref=e41]: Launch your first AI team in seconds. Pick a template and go.
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]: 🚀
+            - generic [ref=e45]:
+              - generic [ref=e46]: Startup Team
+              - generic [ref=e47]: CEO, CPO, and SWE — ready to ship your idea
+          - generic [ref=e48]:
+            - generic [ref=e49]: CEO
+            - generic [ref=e50]: CPO
+            - generic [ref=e51]: SWE
+          - textbox "Your company name" [ref=e52]: My Startup
+          - button "Launch Demo" [ref=e53] [cursor=pointer]
+        - button "Skip, I'll set up manually" [ref=e54] [cursor=pointer]
+```

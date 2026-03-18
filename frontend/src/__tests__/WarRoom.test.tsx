@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import WarRoom from '../components/WarRoom'
@@ -31,6 +31,10 @@ class MockWebSocket {
 beforeEach(() => {
   MockWebSocket.instances = []
   vi.stubGlobal('WebSocket', MockWebSocket)
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => [],
+  }))
   useAuthStore.setState({ token: 'jwt-tok-123' })
   useAgentStore.setState({ currentCompany: { id: 'comp-1', name: 'TestCo' } })
 })
@@ -52,8 +56,11 @@ describe('WarRoom', () => {
     expect(lastWs().url).toContain('/ws/companies/comp-1/events?token=jwt-tok-123')
   })
 
-  it('shows empty state when no runs', () => {
+  it('shows empty state when no runs after WS connected', () => {
     renderWarRoom()
+    act(() => {
+      lastWs().onopen?.()
+    })
     expect(screen.getByText(/all quiet here/i)).toBeInTheDocument()
   })
 
@@ -175,5 +182,68 @@ describe('WarRoom', () => {
     })
     expect(MockWebSocket.instances.length).toBe(2)
     vi.useRealTimers()
+  })
+
+  // BUG-043: loading guard — no empty state until WS connected or timed out
+  it('does not show empty state while connecting (before WS open)', () => {
+    renderWarRoom()
+    // WS exists but has not fired onopen yet → still connecting
+    expect(MockWebSocket.instances.length).toBe(1)
+    expect(screen.queryByText(/all quiet here/i)).not.toBeInTheDocument()
+  })
+
+  it('shows empty state after WS connection is established and no runs', async () => {
+    renderWarRoom()
+    act(() => {
+      lastWs().onopen?.()
+    })
+    expect(screen.getByText(/all quiet here/i)).toBeInTheDocument()
+  })
+
+  // BUG-043: initial REST fetch GET /api/companies/{id}/runs on mount
+  it('fetches initial runs from REST on mount', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          run_id: 'r-init',
+          agent_name: 'InitAgent',
+          task_title: 'Initial Task',
+          status: 'running',
+          started_at: new Date().toISOString(),
+        },
+      ],
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWarRoom()
+    await waitFor(() => {
+      expect(screen.getByText('InitAgent')).toBeInTheDocument()
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/companies/comp-1/runs'),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer jwt-tok-123' }) }),
+    )
+  })
+
+  it('shows run cards from REST fetch even before WS open', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          run_id: 'r-rest',
+          agent_name: 'RestAgent',
+          task_title: 'Rest Task',
+          status: 'running',
+          started_at: new Date().toISOString(),
+        },
+      ],
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWarRoom()
+    await waitFor(() => {
+      expect(screen.getByText('RestAgent')).toBeInTheDocument()
+    })
+    // Empty state should NOT show since there are runs
+    expect(screen.queryByText(/all quiet here/i)).not.toBeInTheDocument()
   })
 })
