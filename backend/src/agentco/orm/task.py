@@ -9,8 +9,9 @@ class TaskORM(Base):
     __tablename__ = "tasks"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
-    company_id: Mapped[str] = mapped_column(Text, ForeignKey("companies.id"), nullable=False)
-    agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"))
+    # ALEX-TD-004 fix: index on FK columns used in WHERE filters
+    company_id: Mapped[str] = mapped_column(Text, ForeignKey("companies.id"), nullable=False, index=True)
+    agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"), index=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, default="todo")

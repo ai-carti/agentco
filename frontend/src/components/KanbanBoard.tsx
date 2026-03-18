@@ -207,6 +207,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
         padding: '0.75rem',
         cursor: 'pointer',
         border: '1px solid #374151',
+        position: 'relative',
         transition: 'box-shadow 0.15s, transform 0.15s, border-color 0.15s',
       }}
       onMouseEnter={(e) => {

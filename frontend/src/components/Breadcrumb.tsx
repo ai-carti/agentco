@@ -3,10 +3,13 @@ import { useAgentStore } from '../store/agentStore'
 
 function getSection(pathname: string): string | null {
   if (pathname === '/' || pathname === '') return null
+  if (pathname === '/settings/billing') return 'Billing'
   if (pathname.startsWith('/settings')) return 'Settings'
-  if (/^\/companies\/[^/]+\/agents\/[^/]+\/edit/.test(pathname)) return 'Edit'
+  if (pathname.startsWith('/library')) return 'Library'
+  if (/^\/companies\/[^/]+\/agents\/[^/]+\/edit/.test(pathname)) return 'Edit Agent'
   if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
-  if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'
+  if (/^\/companies\/[^/]+\/settings/.test(pathname)) return 'Settings'
+  if (/^\/companies\/[^/]+/.test(pathname)) return null  // CompanyPage has its own header
   return null
 }
 

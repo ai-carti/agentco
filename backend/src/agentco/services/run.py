@@ -347,10 +347,8 @@ class RunService:
             if company.owner_id != owner_id:
                 raise NotFoundError(f"Company {company_id!r} not found")
 
-        try:
-            run_orm = self._session.get(self._repo.orm_model, run_id)
-        except Exception:
-            run_orm = None
+        # ALEX-TD-006 fix: don't swallow DB exceptions — only handle the missing-run case
+        run_orm = self._session.get(self._repo.orm_model, run_id)
 
         if run_orm is None or run_orm.company_id != company_id:
             raise NotFoundError(f"Run {run_id!r} not found")

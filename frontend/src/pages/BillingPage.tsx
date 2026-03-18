@@ -1,3 +1,5 @@
+import React from 'react'
+
 // POST-005: Billing UI skeleton — pre-MVP Stripe integration preparation
 
 const CURRENT_PLAN = {

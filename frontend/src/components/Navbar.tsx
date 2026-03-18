@@ -21,6 +21,7 @@ export default function Navbar() {
         <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>AgentCo</span>
         <NavLink
           to="/"
+          end
           style={({ isActive }) => ({
             color: isActive ? '#f8fafc' : '#9ca3af',
             textDecoration: 'none',
@@ -57,6 +58,15 @@ export default function Navbar() {
             color: '#9ca3af',
             fontSize: '0.8rem',
             cursor: 'pointer',
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#6b7280'
+            e.currentTarget.style.color = '#e5e7eb'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#374151'
+            e.currentTarget.style.color = '#9ca3af'
           }}
         >
           Logout

@@ -104,7 +104,8 @@ export default function WarRoomPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: 'calc(100vh - 49px)',
+          height: '100%',
+          minHeight: 360,
           background: '#0a0f1a',
           color: '#e2e8f0',
           gap: '1.5rem',
@@ -142,7 +143,8 @@ export default function WarRoomPage() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 49px)',
+        height: '100%',
+        minHeight: 360,
         background: '#0a0f1a',
         color: '#e2e8f0',
       }}

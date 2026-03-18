@@ -9,10 +9,11 @@ class RunORM(Base):
     __tablename__ = "runs"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
-    company_id: Mapped[str] = mapped_column(Text, ForeignKey("companies.id"), nullable=False)
+    # ALEX-TD-004 fix: index on FK columns for list_by_company / find_active_by_task queries
+    company_id: Mapped[str] = mapped_column(Text, ForeignKey("companies.id"), nullable=False, index=True)
     goal: Mapped[str | None] = mapped_column(Text)
-    task_id: Mapped[str | None] = mapped_column(Text, ForeignKey("tasks.id"))
-    agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"))
+    task_id: Mapped[str | None] = mapped_column(Text, ForeignKey("tasks.id"), index=True)
+    agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"), index=True)
     status: Mapped[str] = mapped_column(Text, default="pending")
     total_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
     total_tokens: Mapped[int] = mapped_column(Integer, default=0)
@@ -30,7 +31,8 @@ class RunEventORM(Base):
     __tablename__ = "run_events"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
-    run_id: Mapped[str] = mapped_column(Text, ForeignKey("runs.id"), nullable=False)
+    # ALEX-TD-004 fix: index for list_events(run_id) query
+    run_id: Mapped[str] = mapped_column(Text, ForeignKey("runs.id"), nullable=False, index=True)
     agent_id: Mapped[str | None] = mapped_column(Text)
     task_id: Mapped[str | None] = mapped_column(Text)
     event_type: Mapped[str] = mapped_column(Text, nullable=False)

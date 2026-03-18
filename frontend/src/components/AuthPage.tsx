@@ -146,6 +146,7 @@ export default function AuthPage() {
         <form onSubmit={handleSubmit}>
           <input
             id="auth-email"
+            aria-label="Email address"
             style={styles.input}
             type="email"
             placeholder="Email"
@@ -157,6 +158,7 @@ export default function AuthPage() {
 
           <input
             id="auth-password"
+            aria-label="Password"
             style={styles.input}
             type="password"
             placeholder="Password"

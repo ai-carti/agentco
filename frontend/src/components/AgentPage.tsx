@@ -44,8 +44,10 @@ export default function AgentPage() {
   useEffect(() => {
     if (!companyId || !agentId) return
     const token = getStoredToken()
+    const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: authHeaders,
     })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
@@ -55,7 +57,7 @@ export default function AgentPage() {
       .catch(() => setHistoryLoaded(true))
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/memory`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: authHeaders,
     })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
@@ -186,6 +188,7 @@ export default function AgentPage() {
           </span>
         )}
       </div>
+
 
       {/* Memory section */}
       <div data-testid="agent-memory-section" style={{ marginTop: '2rem' }}>
