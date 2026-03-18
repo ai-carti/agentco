@@ -564,3 +564,22 @@ def test_create_task_whitespace_title_returns_422(auth_client):
         headers=_auth_headers(token),
     )
     assert resp.status_code == 422
+
+
+# ── ALEX-TD-013: TaskUpdate.title whitespace validation ──────────────────────
+
+def test_update_task_whitespace_title_returns_422(auth_client):
+    """ALEX-TD-013: PUT с title='   ' (только пробелы) должен вернуть 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="td013@example.com")
+    company_id = _create_company(client, token)
+    agent_id = _create_agent(client, token, company_id)
+    task_resp = _create_task(client, token, company_id, agent_id, title="Valid Title")
+    task_id = task_resp.json()["id"]
+
+    resp = client.put(
+        f"/api/companies/{company_id}/agents/{agent_id}/tasks/{task_id}",
+        json={"title": "   "},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422

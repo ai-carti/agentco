@@ -263,3 +263,29 @@ def test_delete_company_cross_user_returns_404(auth_client):
     # Alice's company still exists
     resp_check = client.get(f"/api/companies/{company_id}", headers=_auth_headers(token_alice))
     assert resp_check.status_code == 200
+
+
+# ── ALEX-TD-012: CompanyCreate/Update name validation ────────────────────────
+
+def test_create_company_empty_name_returns_422(auth_client):
+    """POST /companies with empty name → 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="td012a@example.com")
+    resp = client.post(
+        "/api/companies/",
+        json={"name": ""},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422
+
+
+def test_create_company_whitespace_name_returns_422(auth_client):
+    """POST /companies with whitespace-only name → 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="td012b@example.com")
+    resp = client.post(
+        "/api/companies/",
+        json={"name": "   "},
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422

@@ -666,3 +666,18 @@ def test_run_unauthorized_returns_401(auth_client):
         f"/api/companies/{company_id}/tasks/{task_id}/run",
     )
     assert resp.status_code == 401
+
+
+# ── ALEX-TD-014: limit upper bound on GET /runs ───────────────────────────────
+
+def test_runs_limit_capped_at_500(auth_client):
+    """ALEX-TD-014: GET /runs?limit=999999 → 422 (limit exceeds max)."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="td014@example.com")
+    company_id = _create_company(client, token)
+
+    resp = client.get(
+        f"/api/companies/{company_id}/runs?limit=999999",
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 422
