@@ -4,8 +4,10 @@ import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
 import AgentForm, { type AgentFormData } from './AgentForm'
 import Button from './Button'
+import EmptyState from './EmptyState'
 import { useAgentStore, type Agent } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
+import { Bot } from 'lucide-react'
 
 const AVATAR_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
@@ -105,6 +107,7 @@ export default function CompanyPage() {
   const agents = useAgentStore((s) => s.agents)
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
+  const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
 
@@ -131,17 +134,22 @@ export default function CompanyPage() {
         setTasksLoaded(true)
       })
 
+    setAgentsLoaded(false)
     fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
+        setAgentsLoaded(true)
       })
-      .catch(() => {})
+      .catch(() => {
+        setAgentsLoaded(true)
+      })
 
     return () => {
       setCurrentCompany(null)
       setTasks([])
       setAgents([])
+      setAgentsLoaded(false)
     }
   }, [id, setCurrentCompany, setTasks, setAgents])
 
@@ -226,7 +234,18 @@ export default function CompanyPage() {
           hidden={activeTab !== 'war-room'}
           style={{ height: '100%' }}
         >
-          {activeTab === 'war-room' && <WarRoomPage />}
+          {activeTab === 'war-room' && agentsLoaded && agents.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <EmptyState
+                data-testid="no-agents-empty-state"
+                icon={<Bot className="w-12 h-12 text-gray-400" />}
+                title="Add your first agent"
+                subtitle="Create an AI agent to start running tasks in this company"
+                ctaLabel="+ Add Agent"
+                onCTA={() => setIsAgentFormOpen(true)}
+              />
+            </div>
+          ) : activeTab === 'war-room' && <WarRoomPage />}
         </div>
 
         {/* Board panel */}
