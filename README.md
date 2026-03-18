@@ -65,6 +65,22 @@ See `.env.example` for the full list.
 **CI/CD:** Push to `main` → GitHub Actions runs tests → deploys to Railway automatically.
 Required secret in GitHub repo: `RAILWAY_TOKEN` (generate at [railway.app/account/tokens](https://railway.app/account/tokens)).
 
+### Setup Deploy Token
+
+To enable automatic deploys via GitHub Actions, you need to add `RAILWAY_TOKEN` as a GitHub Secret.
+
+**Step-by-step:** See [docs/DEPLOY-TOKEN-GUIDE.md](docs/DEPLOY-TOKEN-GUIDE.md)
+
+Quick summary:
+1. Go to [railway.app/account/tokens](https://railway.app/account/tokens) → create new token
+2. In GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**
+3. Name: `RAILWAY_TOKEN`, Value: your Railway token
+4. Push to `main` → CI will deploy automatically
+
+> ⚠️ **Data persistence:** SQLite on Railway loses data on restart without a persistent volume.
+> Set up Railway Volume (mount at `/data`) and set `AGENTCO_DB_URL=sqlite:////data/agentco.db`.
+> Full instructions: [docs/DEPLOY-TOKEN-GUIDE.md](docs/DEPLOY-TOKEN-GUIDE.md)
+
 ### Docker (self-hosted)
 
 ```bash

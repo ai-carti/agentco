@@ -159,6 +159,7 @@ def test_password_is_hashed_not_plaintext(auth_client):
     """Пароль в БД — bcrypt hash, не plaintext."""
     client, engine = auth_client
     from agentco.orm.user import User as UserORM
+    from sqlalchemy import select
 
     plain_password = "plaintext_check"
     client.post("/auth/register", json={"email": "user@example.com", "password": plain_password})
@@ -166,7 +167,7 @@ def test_password_is_hashed_not_plaintext(auth_client):
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        user = session.query(UserORM).filter_by(email="user@example.com").first()
+        user = session.scalars(select(UserORM).where(UserORM.email == "user@example.com")).first()
         assert user is not None
         assert user.hashed_password != plain_password
         assert user.hashed_password.startswith("$2b$")  # bcrypt prefix

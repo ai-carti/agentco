@@ -20,7 +20,11 @@ restartPolicyMaxRetries = 3
 
 [services.variables]
 PYTHONPATH = "src"
-AGENTCO_DB_URL = "sqlite:///./data/agentco.db"
+# AGENTCO_DB_URL is intentionally NOT hardcoded here.
+# Set it in Railway dashboard (Variables tab) to use a persistent volume:
+#   AGENTCO_DB_URL = sqlite:////data/agentco.db  (requires Railway Volume mounted at /data)
+# See docs/DEPLOY-TOKEN-GUIDE.md for setup instructions.
+# Fallback in code: sqlite:///./agentco.db (ephemeral — data lost on restart)
 
 [[services]]
 name = "frontend"
