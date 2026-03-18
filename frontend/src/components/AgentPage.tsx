@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import AgentForm, { type AgentFormData } from './AgentForm'
 import Button from './Button'
 import { getStoredToken } from '../api/client'
@@ -28,6 +28,7 @@ interface MemoryEntry {
 
 export default function AgentPage() {
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
+  const navigate = useNavigate()
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [savedToLibrary, setSavedToLibrary] = useState(false)
@@ -128,9 +129,18 @@ export default function AgentPage() {
 
   return (
     <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, marginBottom: '1.25rem' }}>
-        Edit Agent
-      </h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+          Agent
+        </h1>
+        <Button
+          data-testid="agent-edit-btn"
+          variant="secondary"
+          onClick={() => navigate(`/companies/${companyId}/agents/${agentId}/edit`)}
+        >
+          Edit
+        </Button>
+      </div>
 
       <AgentForm onSubmit={handleSubmit} />
 

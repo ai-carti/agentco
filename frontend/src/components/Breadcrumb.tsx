@@ -4,6 +4,7 @@ import { useAgentStore } from '../store/agentStore'
 function getSection(pathname: string): string | null {
   if (pathname === '/' || pathname === '') return null
   if (pathname.startsWith('/settings')) return 'Settings'
+  if (/^\/companies\/[^/]+\/agents\/[^/]+\/edit/.test(pathname)) return 'Edit'
   if (/^\/companies\/[^/]+\/agents\//.test(pathname)) return 'Agent'
   if (/^\/companies\/[^/]+/.test(pathname)) return 'War Room'
   return null

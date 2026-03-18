@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar'
 import CompaniesPage from './components/CompaniesPage'
 import CompanyPage from './components/CompanyPage'
 import AgentPage from './components/AgentPage'
+import AgentEditPage from './components/AgentEditPage'
 import SettingsPage from './components/SettingsPage'
 import CompanySettingsPage from './components/CompanySettingsPage'
 import WarRoomPage from './components/WarRoomPage'
@@ -31,6 +32,7 @@ function AppLayout() {
             <Route path="/war-room" element={<WarRoomPage />} />
             <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
             <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
+            <Route path="/companies/:id/agents/:agentId/edit" element={<AgentEditPage />} />
             <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/library" element={<LibraryPage />} />
