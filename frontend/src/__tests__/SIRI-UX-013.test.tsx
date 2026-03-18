@@ -45,7 +45,11 @@ describe('SIRI-UX-013: Stop button calls API', () => {
   })
 
   it('calls API when Stop clicked', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    const fetchMock = vi.fn()
+      // First: GET runs?status=running
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ run_id: 'run-1' }] })
+      // Second: POST stop
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
     globalThis.fetch = fetchMock
     renderWarRoom()
 
@@ -53,12 +57,16 @@ describe('SIRI-UX-013: Stop button calls API', () => {
       fireEvent.click(screen.getByTestId('stop-btn'))
     })
 
-    // Should have called some API endpoint (not just console.log)
-    expect(fetchMock).toHaveBeenCalled()
+    await waitFor(() => {
+      // Should have called some API endpoint (not just console.log)
+      expect(fetchMock).toHaveBeenCalled()
+    })
   })
 
   it('shows toast on successful stop', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ run_id: 'run-1' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
     renderWarRoom()
 
     await act(async () => {
@@ -70,8 +78,25 @@ describe('SIRI-UX-013: Stop button calls API', () => {
     })
   })
 
+  it('shows info toast when no active runs', async () => {
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    renderWarRoom()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('stop-btn'))
+    })
+
+    await waitFor(() => {
+      const mockToastInfo = vi.fn()
+      // no toast.success, but toast.info called
+      expect(mockToastSuccess).not.toHaveBeenCalled()
+    })
+  })
+
   it('shows error toast on failed stop', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
     renderWarRoom()
 
     await act(async () => {

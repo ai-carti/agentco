@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { Bot } from 'lucide-react'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -184,7 +185,7 @@ export default function LibraryPage() {
       </h1>
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Loading…</p>
+        <SkeletonCard variant="task" count={3} />
       ) : agents.length === 0 ? (
         <div
           data-testid="library-empty"

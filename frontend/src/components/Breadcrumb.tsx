@@ -29,6 +29,8 @@ function getSection(pathname: string, activeSection?: string): string | null {
 }
 
 function requiresCompany(pathname: string): boolean {
+  // Root `/` is the companies list — no company context needed in breadcrumb
+  if (pathname === '/' || pathname === '') return false
   return /^\/companies\/[^/]+/.test(pathname)
 }
 
@@ -44,7 +46,8 @@ export default function Breadcrumb({ activeSection }: BreadcrumbProps = {}) {
   const resolvedSection = activeSection ?? activeCompanyTab ?? undefined
   const section = getSection(location.pathname, resolvedSection)
   const hasCompany = currentCompany !== null
-  const showCompanyBlock = requiresCompany(location.pathname) || location.pathname === '/'
+  // SIRI-UX-011: Root `/` is companies list — no company context needed in breadcrumb
+  const showCompanyBlock = requiresCompany(location.pathname)
 
   return (
     <div

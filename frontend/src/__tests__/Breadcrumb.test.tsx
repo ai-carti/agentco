@@ -22,10 +22,11 @@ describe('Breadcrumb', () => {
     expect(screen.getByTestId('breadcrumb')).toBeInTheDocument()
   })
 
-  it('shows "AgentCo > Select company" when no company selected on root page', () => {
+  it('shows only "AgentCo" on root page (no "Select company" — root is companies list)', () => {
     renderBreadcrumb('/')
     expect(screen.getByText('AgentCo')).toBeInTheDocument()
-    expect(screen.getByText('Select company')).toBeInTheDocument()
+    // SIRI-UX-011: Root is companies list, no company context needed
+    expect(screen.queryByText('Select company')).not.toBeInTheDocument()
   })
 
   it('shows company name when on company page', () => {

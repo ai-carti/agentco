@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
 import { useToast } from '../context/ToastContext'
+import { getStoredToken } from '../api/client'
 import Button from './Button'
 import { Moon } from 'lucide-react'
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -44,6 +47,7 @@ export default function WarRoomPage() {
   const navigate = useNavigate()
   const { id: companyId } = useParams<{ id?: string }>()
   const toast = useToast()
+  const [stopping, setStopping] = useState(false)
 
   // WebSocket connection for real-time events
   const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')
@@ -92,8 +96,47 @@ export default function WarRoomPage() {
     return () => clearTimeout(timer)
   }, [flashingAgents, clearFlash])
 
-  const handleStop = () => {
-    console.log('stop clicked')
+  const handleStop = async () => {
+    if (!companyId || stopping) return
+    setStopping(true)
+    try {
+      const token = getStoredToken()
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+
+      // Fetch active runs and stop each
+      const runsRes = await fetch(`${BASE_URL}/api/companies/${companyId}/runs?status=running`, { headers })
+      if (!runsRes.ok) {
+        toast.error(`Failed to fetch runs (${runsRes.status})`)
+        return
+      }
+      const runs: { run_id: string }[] = await runsRes.json().catch(() => [])
+      const toStop = Array.isArray(runs) ? runs : []
+
+      if (toStop.length === 0) {
+        toast.info('No active runs to stop')
+        return
+      }
+
+      const results = await Promise.allSettled(
+        toStop.map((r) =>
+          fetch(`${BASE_URL}/api/companies/${companyId}/runs/${r.run_id}/stop`, {
+            method: 'POST',
+            headers,
+          }),
+        ),
+      )
+
+      const failures = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok))
+      if (failures.length > 0) {
+        toast.error(`Failed to stop ${failures.length} run(s)`)
+      } else {
+        toast.success('All runs stopped')
+      }
+    } catch {
+      toast.error('Failed to stop runs')
+    } finally {
+      setStopping(false)
+    }
   }
 
   // Empty state
@@ -199,9 +242,10 @@ export default function WarRoomPage() {
             data-testid="stop-btn"
             variant="danger"
             onClick={handleStop}
+            disabled={stopping}
             style={{ padding: '8px 20px', fontSize: '0.9rem' }}
           >
-            Stop
+            {stopping ? 'Stopping…' : 'Stop'}
           </Button>
         </div>
       </div>

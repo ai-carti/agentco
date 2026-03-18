@@ -106,13 +106,15 @@ describe('WarRoomPage', () => {
     expect(stopBtn.textContent).toContain('Stop')
   })
 
-  it('Stop button logs "stop clicked" on click', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  it('Stop button is clickable (SIRI-UX-013: now calls API instead of console.log)', () => {
+    // Provide a fetch mock so handleStop does not throw
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     renderWarRoom()
     const stopBtn = screen.getByTestId('stop-btn')
+    expect(stopBtn).toBeInTheDocument()
     fireEvent.click(stopBtn)
-    expect(consoleSpy).toHaveBeenCalledWith('stop clicked')
-    consoleSpy.mockRestore()
+    // Button is not disabled immediately on click
+    expect(stopBtn.textContent).toMatch(/Stop|Stopping/)
   })
 
   // --- AC 5: Cost counter ---

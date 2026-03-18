@@ -2,15 +2,21 @@
 WebSocket endpoint for real-time events (M2-005).
 
 GET /ws/companies/{company_id}/events?token=<jwt>
+
+ALEX-TD-011 fix: After JWT validation, verify that the authenticated user
+actually owns the requested company. Without this check, any valid user
+could subscribe to events from other users' companies.
 """
-import json
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from starlette.websockets import WebSocketState
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ..auth.security import decode_access_token
 from ..core.event_bus import EventBus
+from ..db.session import get_session
+from ..orm.company import CompanyORM
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +28,26 @@ async def ws_company_events(
     websocket: WebSocket,
     company_id: str,
     token: str = Query(default=""),
+    session: Session = Depends(get_session),
 ):
-    # Authenticate via query param token
+    # 1. Authenticate via query param token
     if not token:
         await websocket.close(code=1008, reason="Missing token")
         return
 
     try:
-        decode_access_token(token)
+        user_id = decode_access_token(token)
     except Exception:
         await websocket.close(code=1008, reason="Invalid token")
+        return
+
+    # 2. ALEX-TD-011: Verify company ownership — user must own the company
+    company = session.scalars(
+        select(CompanyORM).where(CompanyORM.id == company_id)
+    ).first()
+
+    if company is None or company.owner_id != user_id:
+        await websocket.close(code=1008, reason="Company not found or access denied")
         return
 
     await websocket.accept()

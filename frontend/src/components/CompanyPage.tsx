@@ -191,7 +191,7 @@ export default function CompanyPage() {
   }
 
   return (
-    <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Company header breadcrumb */}
       {currentCompany && (
         <CompanyHeader

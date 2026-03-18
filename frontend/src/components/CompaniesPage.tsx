@@ -120,7 +120,15 @@ export default function CompaniesPage() {
             <div
               key={co.id}
               data-testid={`company-item-${co.id}`}
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/companies/${co.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/companies/${co.id}`)
+                }
+              }}
               style={{
                 padding: '0.875rem 1rem',
                 background: '#1f2937',
@@ -129,9 +137,12 @@ export default function CompaniesPage() {
                 cursor: 'pointer',
                 fontWeight: 500,
                 transition: 'border-color 0.15s',
+                outline: 'none',
               }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6b7280')}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#374151')}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
             >
               {co.name}
             </div>
