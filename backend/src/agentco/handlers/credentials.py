@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from typing import Optional
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.credential import CredentialService
@@ -9,6 +10,30 @@ from ..auth.dependencies import get_current_user
 from ..orm.user import User
 
 router = APIRouter(tags=["credentials"])
+
+
+# ── LLM provider/model registry ───────────────────────────────────────────────
+
+PROVIDER_MODELS: dict[str, list[str]] = {
+    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+    "anthropic": [
+        "claude-3-5-sonnet-20241022",
+        "claude-3-5-haiku-20241022",
+        "claude-3-opus-20240229",
+        "claude-sonnet-4-5",
+    ],
+    "gemini": ["gemini/gemini-1.5-pro", "gemini/gemini-1.5-flash"],
+}
+
+# Flat model list for easy search
+ALL_MODELS: list[str] = [m for models in PROVIDER_MODELS.values() for m in models]
+
+# Canonical test model per provider (cheap, fast)
+PROVIDER_TEST_MODEL: dict[str, str] = {
+    "openai": "gpt-4o-mini",
+    "anthropic": "claude-3-5-haiku-20241022",
+    "gemini": "gemini/gemini-1.5-flash",
+}
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -88,7 +113,7 @@ def delete_credential(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-# ── LLM providers endpoint ────────────────────────────────────────────────────
+# ── LLM providers endpoints ───────────────────────────────────────────────────
 
 @router.get("/api/llm/providers", response_model=list[str])
 def list_llm_providers(
@@ -96,3 +121,69 @@ def list_llm_providers(
     current_user: User = Depends(get_current_user),
 ):
     return CredentialService(session).list_providers_for_user(owner_id=current_user.id)
+
+
+@router.get("/api/llm/providers/available")
+def list_available_providers(
+    current_user: User = Depends(get_current_user),
+):
+    """Return all supported providers with their model lists (no key required)."""
+    return {
+        "providers": [
+            {"provider": provider, "models": models}
+            for provider, models in PROVIDER_MODELS.items()
+        ],
+        "all_models": ALL_MODELS,
+    }
+
+
+class ValidateKeyRequest(BaseModel):
+    provider: str
+    api_key: str
+
+
+class ValidateKeyResponse(BaseModel):
+    valid: bool
+    error: Optional[str] = None
+
+
+@router.post("/api/llm/validate-key", response_model=ValidateKeyResponse)
+async def validate_llm_key(
+    body: ValidateKeyRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Validate an LLM API key by making a minimal test request."""
+    import os
+    from ..llm.client import acompletion
+
+    provider = body.provider.lower()
+    if provider not in PROVIDER_TEST_MODEL:
+        return ValidateKeyResponse(valid=False, error=f"Unknown provider: {body.provider}")
+
+    test_model = PROVIDER_TEST_MODEL[provider]
+
+    # Temporarily set API key in environment for LiteLLM
+    env_key_map = {
+        "openai": "OPENAI_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+    }
+    env_var = env_key_map[provider]
+    original_value = os.environ.get(env_var)
+    os.environ[env_var] = body.api_key
+
+    try:
+        await acompletion(
+            model=test_model,
+            messages=[{"role": "user", "content": "Hi"}],
+            max_tokens=1,
+        )
+        return ValidateKeyResponse(valid=True)
+    except Exception as e:
+        return ValidateKeyResponse(valid=False, error=str(e))
+    finally:
+        # Restore original env value
+        if original_value is None:
+            os.environ.pop(env_var, None)
+        else:
+            os.environ[env_var] = original_value
