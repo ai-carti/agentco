@@ -35,6 +35,16 @@ class AgentUpdate(BaseModel):
     system_prompt: str | None = None
     model: str | None = None
 
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_whitespace(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("name must not be empty or whitespace-only")
+        return stripped
+
 
 class AgentOut(BaseModel):
     id: str

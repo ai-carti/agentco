@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import select, or_, func
 
 from ..orm.run import RunORM, RunEventORM
@@ -40,7 +42,13 @@ class RunRepository(BaseRepository[RunORM, Run]):
             created_at=domain.created_at,
         )
 
-    def list_by_company(self, company_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
+    def list_by_company(
+        self,
+        company_id: str,
+        limit: int = 100,
+        offset: int = 0,
+        status_filter: Optional[str] = None,
+    ) -> list[Run]:
         stmt = (
             select(self.orm_model)
             .where(RunORM.company_id == company_id)
@@ -48,6 +56,8 @@ class RunRepository(BaseRepository[RunORM, Run]):
             .limit(limit)
             .offset(offset)
         )
+        if status_filter is not None:
+            stmt = stmt.where(RunORM.status == status_filter)
         return [self._to_domain(row) for row in self._session.scalars(stmt).all()]
 
     def list_by_task(self, task_id: str) -> list[Run]:

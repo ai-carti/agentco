@@ -31,6 +31,13 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
+// SIRI-UX-021: 2-char initials consistent with AgentCard and KanbanBoard
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
+
 interface LogEntry {
   timestamp: string
   message: string
@@ -255,7 +262,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                   flexShrink: 0,
                 }}
               >
-                {assigneeName.charAt(0).toUpperCase()}
+                {getInitials(assigneeName)}
               </div>
               <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>{assigneeName}</span>
             </div>

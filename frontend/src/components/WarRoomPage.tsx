@@ -33,6 +33,16 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
   done: 'Done',
 }
 
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < 640)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return mobile
+}
+
 export default function WarRoomPage() {
   const agents = useWarRoomStore((s) => s.agents)
   const messages = useWarRoomStore((s) => s.messages)
@@ -44,10 +54,13 @@ export default function WarRoomPage() {
   const addCost = useWarRoomStore((s) => s.addCost)
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const feedEndRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
   const { id: companyId } = useParams<{ id?: string }>()
   const toast = useToast()
   const [stopping, setStopping] = useState(false)
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   // WebSocket connection for real-time events
   const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')
@@ -86,6 +99,20 @@ export default function WarRoomPage() {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
   }, [agents.length > 0, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-scroll activity feed to bottom on new messages (SIRI-UX-016)
+  useEffect(() => {
+    if (feedEndRef.current && typeof feedEndRef.current.scrollIntoView === 'function') {
+      feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages.length])
+
+  // SIRI-UX-016: Auto-scroll activity feed to latest message
+  useEffect(() => {
+    if (feedEndRef.current && typeof feedEndRef.current.scrollIntoView === 'function') {
+      feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages.length])
 
   // Clear flash after animation
   useEffect(() => {
@@ -206,6 +233,25 @@ export default function WarRoomPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Mobile: agents toggle (SIRI-UX-017) */}
+          {isMobile && (
+            <button
+              data-testid="mobile-agents-toggle"
+              onClick={() => setAgentPanelOpen((v) => !v)}
+              aria-label="Toggle agents panel"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 6,
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                fontSize: '0.75rem',
+              }}
+            >
+              👥 {agents.length}
+            </button>
+          )}
           <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
             War Room
           </h1>
@@ -251,7 +297,15 @@ export default function WarRoomPage() {
       </div>
 
       {/* Main content: agent sidebar + activity feed */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Mobile agent panel backdrop */}
+        {isMobile && agentPanelOpen && (
+          <div
+            onClick={() => setAgentPanelOpen(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9 }}
+          />
+        )}
+
         {/* Agent cards sidebar */}
         <div
           data-testid="agent-panel"
@@ -261,6 +315,16 @@ export default function WarRoomPage() {
             padding: '16px 12px',
             overflowY: 'auto',
             background: '#0d1321',
+            // Mobile: slide-in drawer (SIRI-UX-017)
+            ...(isMobile ? {
+              position: 'absolute',
+              top: 0,
+              left: agentPanelOpen ? 0 : -290,
+              bottom: 0,
+              zIndex: 10,
+              transition: 'left 0.25s ease',
+              boxShadow: agentPanelOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none',
+            } : {}),
           }}
         >
           <h2 style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
@@ -401,6 +465,10 @@ export default function WarRoomPage() {
                 Waiting for agent activity...
               </div>
             )}
+            {/* SIRI-UX-016: sentinel for auto-scroll */}
+            <div ref={feedEndRef} />
+            {/* Scroll anchor (SIRI-UX-016) */}
+            <div ref={feedEndRef} />
           </div>
         </div>
       </div>

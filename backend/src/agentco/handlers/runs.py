@@ -120,14 +120,19 @@ async def create_run(
 async def list_runs(
     company_id: str,
     limit: int = Query(default=20, ge=1, le=500),
-    offset: int = 0,
+    offset: int = Query(default=0, ge=0),
+    status_filter: Optional[str] = Query(default=None, alias="status"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Список ранов компании с пагинацией."""
+    """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running"""
     try:
         runs = RunService(session).list_by_company_owned(
-            company_id, owner_id=current_user.id, limit=limit, offset=offset,
+            company_id,
+            owner_id=current_user.id,
+            limit=limit,
+            offset=offset,
+            status_filter=status_filter,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")

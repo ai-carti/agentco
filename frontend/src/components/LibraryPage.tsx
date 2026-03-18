@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { Bot } from 'lucide-react'
 import SkeletonCard from './SkeletonCard'
+import { useToast } from '../context/ToastContext'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -29,6 +30,7 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   const [loading, setLoading] = useState(true)
   const [forking, setForking] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const toast = useToast()
 
   useEffect(() => {
     const token = getStoredToken()
@@ -58,13 +60,17 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
       })
       if (!res.ok) {
         setError(`Failed to fork (${res.status})`)
+        toast.error(`Failed to fork agent (${res.status})`)
         setForking(null)
         return
       }
+      const companyName = companies.find((c) => c.id === companyId)?.name ?? 'company'
+      toast.success(`Agent forked to ${companyName}`)
       onForked()
       onClose()
     } catch {
       setError('Network error')
+      toast.error('Network error — could not fork agent')
       setForking(null)
     }
   }
@@ -249,7 +255,10 @@ export default function LibraryPage() {
                     fontWeight: 500,
                     textDecoration: 'none',
                     cursor: 'pointer',
+                    transition: 'border-color 0.15s, color 0.15s',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6b7280'; e.currentTarget.style.color = '#e2e8f0' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.color = '#94a3b8' }}
                 >
                   Portfolio
                 </Link>
@@ -265,7 +274,10 @@ export default function LibraryPage() {
                     fontSize: '0.8rem',
                     fontWeight: 600,
                     cursor: 'pointer',
+                    transition: 'background 0.15s',
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1d4ed8' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb' }}
                 >
                   Fork
                 </button>

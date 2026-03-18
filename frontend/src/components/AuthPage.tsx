@@ -152,6 +152,8 @@ export default function AuthPage() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#1e1e2e' }}
             required
             autoComplete="email"
           />
@@ -164,6 +166,8 @@ export default function AuthPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#1e1e2e' }}
             required
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           />

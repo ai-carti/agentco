@@ -222,6 +222,8 @@ export default function CompanyPage() {
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
               onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#94a3b8' }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#64748b' }}
               style={{
                 padding: '10px 18px',
                 background: 'transparent',

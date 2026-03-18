@@ -24,7 +24,7 @@ Usage:
 """
 import sqlite3
 import struct
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -79,7 +79,7 @@ class MemoryService:
             raise ValueError(f"Embedding must be {EMBEDDING_DIM}-dimensional, got {len(embedding)}")
 
         cursor = self._conn.cursor()
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         # Insert metadata first to get rowid
         cursor.execute(

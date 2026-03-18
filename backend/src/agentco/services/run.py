@@ -192,12 +192,19 @@ class RunService:
         """Список ранов компании с пагинацией."""
         return self._repo.list_by_company(company_id, limit=limit, offset=offset)
 
-    def list_by_company_owned(self, company_id: str, owner_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
-        """Список ранов компании — с проверкой ownership."""
+    def list_by_company_owned(
+        self,
+        company_id: str,
+        owner_id: str,
+        limit: int = 100,
+        offset: int = 0,
+        status_filter: Optional[str] = None,
+    ) -> list[Run]:
+        """Список ранов компании — с проверкой ownership. Опциональный фильтр по статусу."""
         company = self._company_repo.get(company_id)
         if company.owner_id != owner_id:
             raise NotFoundError(f"Company {company_id!r} not found")
-        return self._repo.list_by_company(company_id, limit=limit, offset=offset)
+        return self._repo.list_by_company(company_id, limit=limit, offset=offset, status_filter=status_filter)
 
     def list_by_task_owned(self, company_id: str, task_id: str, owner_id: str) -> list[Run]:
         """Список ранов задачи — с проверкой ownership."""

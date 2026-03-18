@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 from pydantic import BaseModel, Field
 import uuid
@@ -22,6 +22,6 @@ class Task(BaseModel):
     agent_id: str | None = None
     status: str = "todo"
     result: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     model_config = {"frozen": True}

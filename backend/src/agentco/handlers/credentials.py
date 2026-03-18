@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -41,6 +41,15 @@ PROVIDER_TEST_MODEL: dict[str, str] = {
 class CredentialCreate(BaseModel):
     provider: str
     api_key: str
+
+    @field_validator("provider")
+    @classmethod
+    def provider_must_be_known(cls, v: str) -> str:
+        v = v.lower().strip()
+        if v not in PROVIDER_MODELS:
+            allowed = ", ".join(sorted(PROVIDER_MODELS.keys()))
+            raise ValueError(f"Unknown provider '{v}'. Allowed: {allowed}")
+        return v
 
 
 class CredentialOut(BaseModel):
