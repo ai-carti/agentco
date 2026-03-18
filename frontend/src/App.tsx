@@ -15,6 +15,7 @@ import WarRoomPage from './components/WarRoomPage'
 import OnboardingPage from './components/OnboardingPage'
 import LibraryPage from './components/LibraryPage'
 import LibraryPortfolioPage from './components/LibraryPortfolioPage'
+import BillingPage from './pages/BillingPage'
 import { useAuthStore } from './store/authStore'
 
 function AppLayout() {
@@ -35,6 +36,7 @@ function AppLayout() {
             <Route path="/companies/:id/agents/:agentId/edit" element={<AgentEditPage />} />
             <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/billing" element={<BillingPage />} />
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/library/:id/portfolio" element={<LibraryPortfolioPage />} />
           </Routes>

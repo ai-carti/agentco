@@ -19,7 +19,7 @@ import agentco.orm.run         # noqa: F401
 import agentco.orm.user        # noqa: F401
 import agentco.orm.credential  # noqa: F401
 import agentco.orm.agent_library  # noqa: F401
-import agentco.orm.agent_library  # noqa: F401
+import agentco.orm.mcp_server     # noqa: F401
 from agentco.db.session import get_session
 
 
