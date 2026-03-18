@@ -32,7 +32,7 @@ beforeEach(() => {
 describe('BUG-021: Toast integration in create/delete operations', () => {
   describe('CompaniesPage.handleCreate', () => {
     it('shows success toast after company creation', async () => {
-      global.fetch = vi.fn()
+      globalThis.fetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }]) }) // load
         .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'c1', name: 'Acme Corp' }) }) // create
         .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }, { id: 'c1', name: 'Acme Corp' }]) }) // reload
@@ -58,7 +58,7 @@ describe('BUG-021: Toast integration in create/delete operations', () => {
     })
 
     it('shows error toast when company creation fails', async () => {
-      global.fetch = vi.fn()
+      globalThis.fetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'existing', name: 'Existing Co' }]) }) // load
         .mockResolvedValueOnce({ ok: false, status: 500 }) // create fails
 
@@ -84,7 +84,7 @@ describe('BUG-021: Toast integration in create/delete operations', () => {
 
   describe('Task delete toast', () => {
     it('shows success toast after task deletion', async () => {
-      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
       useAgentStore.setState({
         tasks: [{ id: 't1', title: 'Delete me', status: 'todo', assignee_name: 'Alice' }],
         agents: [],

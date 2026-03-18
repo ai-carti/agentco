@@ -52,7 +52,7 @@ vi.mock('../api/client', () => ({
 }))
 
 // Mock fetch
-global.fetch = vi.fn(() =>
+globalThis.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve([]),

@@ -23,7 +23,7 @@ beforeEach(() => {
 
 describe('UX-018: Company Settings page', () => {
   it('renders settings page with General form', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'c1', name: 'Acme Corp', description: 'A company', owner_id: 'u1' }),
     })
@@ -36,7 +36,7 @@ describe('UX-018: Company Settings page', () => {
   })
 
   it('populates form with current company data', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'c1', name: 'Acme Corp', description: 'Best company', owner_id: 'u1' }),
     })
@@ -48,7 +48,7 @@ describe('UX-018: Company Settings page', () => {
   })
 
   it('sends PATCH with name + description on Save changes click', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'c1', name: 'Acme Corp', description: '', owner_id: 'u1' }),
     })
@@ -62,7 +62,7 @@ describe('UX-018: Company Settings page', () => {
     fireEvent.click(screen.getByText('Save changes'))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/c1'),
         expect.objectContaining({
           method: 'PATCH',
@@ -74,7 +74,7 @@ describe('UX-018: Company Settings page', () => {
 
   it('shows loading state on Save button while saving', async () => {
     let resolveFetch: (v: unknown) => void
-    global.fetch = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+    globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
       if (!opts?.method || opts.method === 'GET') {
         // GET company data
         return Promise.resolve({
@@ -99,7 +99,7 @@ describe('UX-018: Company Settings page', () => {
   })
 
   it('shows Danger Zone with Delete button', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'c1', name: 'Acme Corp', description: '', owner_id: 'u1' }),
     })
@@ -111,7 +111,7 @@ describe('UX-018: Company Settings page', () => {
   })
 
   it('delete requires typing exact company name to confirm', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'c1', name: 'Acme Corp', description: '', owner_id: 'u1' }),
     })
@@ -136,7 +136,7 @@ describe('UX-018: Company Settings page', () => {
   })
 
   it('after successful delete, redirects to / and shows success toast', async () => {
-    global.fetch = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+    globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
       if (opts?.method === 'DELETE') {
         return Promise.resolve({ ok: true, json: async () => ({}) })
       }

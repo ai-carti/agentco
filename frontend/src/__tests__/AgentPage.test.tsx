@@ -26,7 +26,7 @@ describe('BUG-017: AgentPage integrates AgentForm', () => {
   })
 
   it('renders AgentForm with model selector dropdown', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o', 'claude-sonnet-4-5'] }),
     })
@@ -38,7 +38,7 @@ describe('BUG-017: AgentPage integrates AgentForm', () => {
   })
 
   it('AgentForm is accessible to user — name and role inputs present', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o'] }),
     })
@@ -50,7 +50,7 @@ describe('BUG-017: AgentPage integrates AgentForm', () => {
   })
 
   it('user can submit agent form', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }),
     })

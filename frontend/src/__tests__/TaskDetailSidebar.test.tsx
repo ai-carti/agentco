@@ -8,7 +8,7 @@ function renderWithToast(ui: React.ReactElement) {
   return render(<ToastProvider>{ui}</ToastProvider>)
 }
 
-const BASE_URL = 'http://localhost:8000'
+// BASE_URL removed - unused
 
 const mockTask: Task = {
   id: 'task-1',
@@ -29,7 +29,7 @@ const defaultProps = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  global.fetch = vi.fn().mockResolvedValue({
+  globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({ logs: [], status_history: [] }),
   })
@@ -105,7 +105,7 @@ describe('TaskDetailSidebar — UX-010', () => {
   it('fetches logs from GET /api/companies/{id}/tasks/{id}/logs', async () => {
     render(<TaskDetailSidebar {...defaultProps} />)
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/company-1/tasks/task-1/logs'),
         expect.any(Object)
       )
@@ -113,7 +113,7 @@ describe('TaskDetailSidebar — UX-010', () => {
   })
 
   it('shows "No execution log yet" when logs are empty', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ logs: [], status_history: [] }),
     })
@@ -124,7 +124,7 @@ describe('TaskDetailSidebar — UX-010', () => {
   })
 
   it('renders log entries with timestamps when logs are returned', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         logs: [
@@ -142,7 +142,7 @@ describe('TaskDetailSidebar — UX-010', () => {
   })
 
   it('renders status history timeline entries', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         logs: [],
@@ -183,7 +183,7 @@ describe('TaskDetailSidebar — UX-010', () => {
   })
 
   it('clicking Run button in sidebar calls POST run', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ logs: [], status_history: [] }),
@@ -194,7 +194,7 @@ describe('TaskDetailSidebar — UX-010', () => {
     const runBtn = screen.getByTestId('sidebar-run-btn')
     fireEvent.click(runBtn)
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/company-1/tasks/task-1/run'),
         expect.objectContaining({ method: 'POST' })
       )
@@ -204,7 +204,7 @@ describe('TaskDetailSidebar — UX-010', () => {
 
 describe('TaskDetailSidebar — BUG-025 toast on run', () => {
   it('shows success toast when run succeeds', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
 
@@ -222,7 +222,7 @@ describe('TaskDetailSidebar — BUG-025 toast on run', () => {
   })
 
   it('shows error toast when run returns !ok', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
       .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
 

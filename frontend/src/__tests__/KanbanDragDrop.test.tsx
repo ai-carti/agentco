@@ -35,7 +35,7 @@ describe('UX-005: Kanban drag & drop', () => {
   })
 
   it('dropping a task in another column sends PATCH to update status', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Drag me', status: 'todo', assignee_name: 'Alice' }],
     })
@@ -49,7 +49,7 @@ describe('UX-005: Kanban drag & drop', () => {
     fireEvent.drop(inProgressCol, { dataTransfer: { getData: () => 't1' } })
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/c1/tasks/t1'),
         expect.objectContaining({
           method: 'PATCH',
@@ -60,7 +60,7 @@ describe('UX-005: Kanban drag & drop', () => {
   })
 
   it('optimistically updates UI on drop (task moves immediately)', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Drag me', status: 'todo', assignee_name: 'Alice' }],
     })
@@ -78,7 +78,7 @@ describe('UX-005: Kanban drag & drop', () => {
   })
 
   it('rolls back on API error and shows error toast', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Drag me', status: 'todo', assignee_name: 'Alice' }],
     })

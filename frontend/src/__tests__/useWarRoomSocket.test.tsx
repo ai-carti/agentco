@@ -56,7 +56,7 @@ beforeEach(() => {
   vi.useFakeTimers()
   MockWebSocket.instances = []
   // @ts-ignore
-  global.WebSocket = MockWebSocket
+  globalThis.WebSocket = MockWebSocket
   useWarRoomStore.getState().reset()
 })
 

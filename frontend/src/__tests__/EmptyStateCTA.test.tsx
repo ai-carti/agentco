@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { ToastProvider } from '../context/ToastContext'
 import KanbanBoard from '../components/KanbanBoard'
 import WarRoom from '../components/WarRoom'
@@ -53,7 +53,7 @@ describe('KanbanBoard empty state CTA', () => {
 
   it('submit button calls API with correct data', async () => {
     useAgentStore.setState({ tasks: [] })
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 't1', title: 'Test task', status: 'todo' }),
     })
@@ -68,7 +68,7 @@ describe('KanbanBoard empty state CTA', () => {
     })
     fireEvent.click(screen.getByTestId('create-task-submit-btn'))
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/tasks'),
         expect.objectContaining({ method: 'POST' }),
       )
@@ -77,7 +77,7 @@ describe('KanbanBoard empty state CTA', () => {
 
   it('closes modal after successful creation', async () => {
     useAgentStore.setState({ tasks: [] })
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 't1', title: 'Test task', status: 'todo' }),
     })

@@ -73,14 +73,14 @@ describe('EmptyState component', () => {
 // --- CompaniesPage empty state ---
 describe('CompaniesPage empty state', () => {
   it('shows loading indicator initially', () => {
-    global.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
+    globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
     render(<MemoryRouter><ToastProvider><CompaniesPage /></ToastProvider></MemoryRouter>)
     // Should show loading or nothing yet (not the onboarding page)
     expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument()
   })
 
   it('shows onboarding when API returns empty array (M3-003)', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     render(<MemoryRouter><ToastProvider><CompaniesPage /></ToastProvider></MemoryRouter>)
     await waitFor(() => {
       expect(screen.getByTestId('onboarding-page')).toBeInTheDocument()
@@ -89,7 +89,7 @@ describe('CompaniesPage empty state', () => {
   })
 
   it('shows company list when data loaded', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{ id: '1', name: 'Acme Corp' }],
     })
@@ -145,7 +145,7 @@ describe('WarRoom empty state', () => {
 // --- CompanyPage agents empty state (BUG-020, updated for UX-POLISH-003 tab layout) ---
 describe('CompanyPage agents empty state', () => {
   it('shows tab navigation (War Room + Board) on company page', async () => {
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [] })
       if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
       if (url.includes('/companies/')) return Promise.resolve({ ok: true, json: async () => ({ id: 'c1', name: 'TestCo' }) })
@@ -167,7 +167,7 @@ describe('CompanyPage agents empty state', () => {
   })
 
   it('does NOT show duplicate agents section below War Room', async () => {
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/agents')) return Promise.resolve({ ok: true, json: async () => [{ id: 'a1', name: 'CEO Agent', status: 'idle' }] })
       if (url.includes('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })
       if (url.includes('/companies/')) return Promise.resolve({ ok: true, json: async () => ({ id: 'c1', name: 'TestCo' }) })
@@ -192,7 +192,7 @@ describe('CompanyPage agents empty state', () => {
 // --- AgentPage history empty state ---
 describe('AgentPage history empty state', () => {
   it('shows history empty state', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     render(
       <MemoryRouter initialEntries={['/companies/c1/agents/a1']}>
         <Routes>

@@ -113,7 +113,7 @@ export function getNextMockEvent(agents: WarRoomAgent[]) {
   }
 }
 
-export const useWarRoomStore = create<WarRoomState>((set, get) => ({
+export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
   agents: [],
   messages: [],
   cost: 0,

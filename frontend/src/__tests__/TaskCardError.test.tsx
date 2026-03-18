@@ -17,7 +17,7 @@ beforeEach(() => {
 
 describe('BUG-018: TaskCard.handleRun error handling', () => {
   it('shows error state when POST /run returns 4xx', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400 })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400 })
     useAgentStore.setState({
       tasks: [{ id: 'err1', title: 'Error Task', status: 'todo', assignee_name: 'Alice' }],
     })
@@ -29,7 +29,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
   })
 
   it('shows error state when POST /run returns 5xx', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 })
     useAgentStore.setState({
       tasks: [{ id: 'err2', title: 'Server Error Task', status: 'todo', assignee_name: 'Bob' }],
     })
@@ -41,7 +41,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
   })
 
   it('does NOT show error when POST /run succeeds', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 'ok1', title: 'OK Task', status: 'todo', assignee_name: 'Carol' }],
     })
@@ -53,7 +53,7 @@ describe('BUG-018: TaskCard.handleRun error handling', () => {
   })
 
   it('clears error state on second successful run', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 500 })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
     useAgentStore.setState({

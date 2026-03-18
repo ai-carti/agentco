@@ -22,7 +22,7 @@ beforeEach(() => {
 
 describe('UX-004: Agent History', () => {
   it('shows "No completed tasks yet" when history is empty', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -37,7 +37,7 @@ describe('UX-004: Agent History', () => {
       { id: 't1', title: 'Write tests', status: 'done', created_at: '2026-03-10T10:00:00Z' },
       { id: 't2', title: 'Deploy app', status: 'done', created_at: '2026-03-11T12:00:00Z' },
     ]
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/tasks?status=done')) {
         return Promise.resolve({ ok: true, json: async () => tasks })
       }
@@ -57,7 +57,7 @@ describe('UX-004: Agent History', () => {
       status: 'done',
       created_at: '2026-03-10T10:00:00Z',
     }))
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/tasks?status=done')) {
         return Promise.resolve({ ok: true, json: async () => tasks })
       }
@@ -81,7 +81,7 @@ describe('UX-004: Agent History', () => {
       status: 'done',
       created_at: '2026-03-10T10:00:00Z',
     }))
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/tasks?status=done')) {
         return Promise.resolve({ ok: true, json: async () => tasks })
       }
@@ -101,7 +101,7 @@ describe('UX-004: Agent History', () => {
     const tasks = [
       { id: 't1', title: 'Write tests', status: 'done', created_at: '2026-03-10T10:00:00Z', description: 'Unit tests for API' },
     ]
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/tasks?status=done')) {
         return Promise.resolve({ ok: true, json: async () => tasks })
       }
@@ -118,13 +118,13 @@ describe('UX-004: Agent History', () => {
   })
 
   it('fetches from GET /api/companies/{id}/agents/{id}/tasks?status=done', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
     renderAgentPage('agent-1', 'c1')
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/c1/agents/agent-1/tasks?status=done'),
         expect.any(Object),
       )

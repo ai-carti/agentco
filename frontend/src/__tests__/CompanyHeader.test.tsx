@@ -35,7 +35,7 @@ beforeEach(() => {
     tasks: [],
   })
 
-  global.fetch = vi.fn().mockImplementation((url: string) => {
+  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
     if (typeof url === 'string' && url.includes('/api/companies/')) {
       if (url.endsWith('/agents')) return Promise.resolve({ ok: true, json: async () => [] })
       if (url.endsWith('/tasks')) return Promise.resolve({ ok: true, json: async () => [] })

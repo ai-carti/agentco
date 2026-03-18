@@ -23,7 +23,7 @@ beforeEach(() => {
 
 describe('BUG-037: AgentPage Memory UI', () => {
   it('renders memory section', () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -36,7 +36,7 @@ describe('BUG-037: AgentPage Memory UI', () => {
       ok: true,
       json: async () => [],
     })
-    global.fetch = fetchMock
+    globalThis.fetch = fetchMock
 
     renderAgentPage('agent-1', 'c1')
 
@@ -47,7 +47,7 @@ describe('BUG-037: AgentPage Memory UI', () => {
   })
 
   it('shows empty state 🧠 "No memories yet" when memory list is empty', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -61,7 +61,7 @@ describe('BUG-037: AgentPage Memory UI', () => {
 
   it('shows skeleton while loading memories', () => {
     // Never resolves to keep loading state
-    global.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
+    globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
     renderAgentPage()
 
     // Memory section should be present
@@ -76,7 +76,7 @@ describe('BUG-037: AgentPage Memory UI', () => {
       { id: 'm2', content: 'CEO meeting on Fridays', created_at: '2026-03-02T12:00:00Z' },
     ]
 
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (typeof url === 'string' && url.includes('/memory')) {
         return Promise.resolve({ ok: true, json: async () => memories })
       }

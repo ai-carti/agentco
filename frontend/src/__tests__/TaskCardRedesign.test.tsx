@@ -142,14 +142,14 @@ describe('UX-008: Task Card redesign', () => {
   })
 
   it('clicking Run calls POST and goes to loading state', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 't11', title: 'Run me', status: 'todo', assignee_name: 'Kira' }],
     })
     renderBoard()
     fireEvent.click(screen.getByTestId('run-btn-t11'))
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/tasks/t11/run'),
         expect.objectContaining({ method: 'POST' })
       )

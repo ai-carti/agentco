@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { type Task, type TaskStatus } from '../store/agentStore'
+import { type Task } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'

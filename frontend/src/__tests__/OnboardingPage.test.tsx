@@ -73,14 +73,14 @@ describe('OnboardingPage', () => {
 
   it('calls from-template endpoint on button click', async () => {
     const mockOnCreated = vi.fn()
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'new-co-id' }),
     })
     wrap(<OnboardingPage onCompanyCreated={mockOnCreated} />)
     fireEvent.click(screen.getByTestId('onboarding-use-template-btn'))
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('from-template'),
         expect.objectContaining({ method: 'POST' }),
       )
@@ -92,7 +92,7 @@ describe('OnboardingPage', () => {
 
   it('falls back to manual company creation if from-template fails', async () => {
     const mockOnCreated = vi.fn()
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: false }) // from-template fails
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'fallback-co-id' }) }) // companies POST
       .mockResolvedValue({ ok: true, json: async () => ({}) }) // agent POSTs
@@ -108,7 +108,7 @@ describe('OnboardingPage', () => {
 // --- M3-003: CompaniesPage shows onboarding when empty ---
 describe('CompaniesPage onboarding integration', () => {
   it('shows onboarding when no companies on first load', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     render(
       <MemoryRouter>
         <ToastProvider>
@@ -123,7 +123,7 @@ describe('CompaniesPage onboarding integration', () => {
   })
 
   it('does NOT show onboarding when companies exist', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{ id: 'c1', name: 'Acme' }],
     })

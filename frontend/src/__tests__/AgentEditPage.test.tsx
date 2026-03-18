@@ -38,7 +38,7 @@ describe('AgentEditPage — POST-003', () => {
 
   // Test 1: Page renders with form fields after data loads
   it('renders edit page with all form fields', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }) })
 
@@ -56,7 +56,7 @@ describe('AgentEditPage — POST-003', () => {
 
   // Test 2: Prefills form with loaded agent data
   it('prefills form with current agent data', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }) })
 
@@ -71,7 +71,7 @@ describe('AgentEditPage — POST-003', () => {
 
   // Test 3: Save sends PATCH and shows success
   it('save button sends PATCH request to correct endpoint', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ...mockAgentData, name: 'Updated Agent' }) })
@@ -84,7 +84,7 @@ describe('AgentEditPage — POST-003', () => {
     fireEvent.click(screen.getByTestId('agent-form-submit'))
 
     await waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls
+      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
       const patchCall = calls.find((call) => call[1]?.method === 'PATCH')
       expect(patchCall).toBeDefined()
       expect(patchCall![0]).toContain('/api/companies/c1/agents/a1')
@@ -93,7 +93,7 @@ describe('AgentEditPage — POST-003', () => {
 
   // Test 4: Cancel navigates back to AgentPage
   it('cancel button navigates back to agent page without saving', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
 
@@ -105,14 +105,14 @@ describe('AgentEditPage — POST-003', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/companies/c1/agents/a1')
     // Should NOT have made a PATCH call
-    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
     const patchCall = calls.find((call) => call[1]?.method === 'PATCH')
     expect(patchCall).toBeUndefined()
   })
 
   // Test 5: Shows error when PATCH fails
   it('shows error message when save request fails', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
       .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
@@ -135,7 +135,7 @@ describe('AgentEditPage — POST-003', () => {
       resolvePatch = resolve
     })
 
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
       .mockReturnValueOnce(patchPending)
@@ -157,7 +157,7 @@ describe('AgentEditPage — POST-003', () => {
   // Test 7: Shows skeleton while loading agent data
   it('shows loading state while fetching agent data', () => {
     // fetch never resolves — stays loading
-    global.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
+    globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
 
     renderAgentEditPage()
 
@@ -168,7 +168,7 @@ describe('AgentEditPage — POST-003', () => {
 
   // Test 8: Redirects after successful save
   it('navigates back to agent page after successful save', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => mockAgentData })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ...mockAgentData }) })

@@ -22,7 +22,7 @@ beforeEach(() => {
 })
 
 function setup(agents: { id: string; name: string; role: string; model: string }[] = []) {
-  global.fetch = vi.fn().mockImplementation((url: string) => {
+  globalThis.fetch = vi.fn().mockImplementation((url: string) => {
     if (url.includes('/agents')) {
       return Promise.resolve({ ok: true, json: async () => agents })
     }

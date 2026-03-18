@@ -31,7 +31,7 @@ beforeEach(() => {
     ],
   })
   vi.clearAllMocks()
-  global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+  globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
 })
 
 describe('BUG-019: TaskCard menu actions', () => {
@@ -53,7 +53,7 @@ describe('BUG-019: TaskCard menu actions', () => {
     fireEvent.click(screen.getByText('Save'))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/tasks/t1'),
         expect.objectContaining({ method: 'PATCH' })
       )
@@ -84,7 +84,7 @@ describe('BUG-019: TaskCard menu actions', () => {
     fireEvent.click(screen.getByTestId('confirm-delete-btn'))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/tasks/t1'),
         expect.objectContaining({ method: 'DELETE' })
       )
@@ -120,7 +120,7 @@ describe('BUG-019: TaskCard menu actions', () => {
     fireEvent.click(screen.getByTestId('assign-agent-a2'))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/tasks/t1'),
         expect.objectContaining({ method: 'PATCH' })
       )

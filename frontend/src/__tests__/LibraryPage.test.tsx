@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import LibraryPage from '../components/LibraryPage'
@@ -45,7 +45,7 @@ function renderAgentPage(agentId = 'agent-1', companyId = 'c1') {
 // ---- LibraryPage tests ----
 describe('LibraryPage', () => {
   it('renders library page', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -56,7 +56,7 @@ describe('LibraryPage', () => {
   })
 
   it('shows empty state when no agents in library', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -68,7 +68,7 @@ describe('LibraryPage', () => {
   })
 
   it('shows empty state emoji 📚', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
@@ -79,7 +79,7 @@ describe('LibraryPage', () => {
   })
 
   it('renders list of agents from GET /api/library', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [
         { id: 'lib-1', name: 'CEO Agent', role: 'Executive', avatar: '👔' },
@@ -94,7 +94,7 @@ describe('LibraryPage', () => {
   })
 
   it('renders Fork button for each agent', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [
         { id: 'lib-1', name: 'CEO Agent', role: 'Executive', avatar: '👔' },
@@ -107,7 +107,7 @@ describe('LibraryPage', () => {
   })
 
   it('opens fork modal on Fork click', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [{ id: 'lib-1', name: 'CEO Agent', role: 'Executive', avatar: '👔' }],
@@ -126,7 +126,7 @@ describe('LibraryPage', () => {
   })
 
   it('fork modal shows company list', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => [{ id: 'lib-1', name: 'CEO Agent', role: 'Executive', avatar: '👔' }],
@@ -159,7 +159,7 @@ describe('LibraryPage', () => {
         ok: true,
         json: async () => ({ id: 'new-agent-1' }),
       })
-    global.fetch = fetchMock
+    globalThis.fetch = fetchMock
     renderLibrary()
     await waitFor(() => {
       fireEvent.click(screen.getByTestId('fork-btn-lib-1'))
@@ -177,7 +177,7 @@ describe('LibraryPage', () => {
   })
 
   it('renders link to portfolio for each agent', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{ id: 'lib-1', name: 'CEO Agent', role: 'Executive', avatar: '👔' }],
     })
@@ -192,7 +192,7 @@ describe('LibraryPage', () => {
       ok: true,
       json: async () => [],
     })
-    global.fetch = fetchMock
+    globalThis.fetch = fetchMock
     renderLibrary()
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -206,7 +206,7 @@ describe('LibraryPage', () => {
 // ---- LibraryPortfolioPage tests ----
 describe('LibraryPortfolioPage', () => {
   it('renders portfolio page', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ tasks: [], total_tasks: 0, success_rate: 0, agent_name: 'CEO Agent' }),
     })
@@ -217,7 +217,7 @@ describe('LibraryPortfolioPage', () => {
   })
 
   it('shows total tasks count', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         tasks: [],
@@ -234,7 +234,7 @@ describe('LibraryPortfolioPage', () => {
   })
 
   it('shows success rate %', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         tasks: [],
@@ -251,7 +251,7 @@ describe('LibraryPortfolioPage', () => {
   })
 
   it('renders task list with title, status, company_name, created_at', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         tasks: [
@@ -281,7 +281,7 @@ describe('LibraryPortfolioPage', () => {
       ok: true,
       json: async () => ({ tasks: [], total_tasks: 0, success_rate: 0, agent_name: 'X' }),
     })
-    global.fetch = fetchMock
+    globalThis.fetch = fetchMock
     renderPortfolio('lib-42')
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -295,7 +295,7 @@ describe('LibraryPortfolioPage', () => {
 // ---- AgentPage "Save to Library" button ----
 describe('AgentPage Save to Library', () => {
   it('renders "Save to Library" button on agent page', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o'] }),
     })
@@ -310,7 +310,7 @@ describe('AgentPage Save to Library', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // history
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // save to library
-    global.fetch = fetchMock
+    globalThis.fetch = fetchMock
     renderAgentPage('agent-1', 'c1')
     await waitFor(() => {
       expect(screen.getByTestId('save-to-library-btn')).toBeInTheDocument()
@@ -330,7 +330,7 @@ describe('AgentPage Save to Library', () => {
   })
 
   it('shows success message after Save to Library', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => [] })  // task history
       .mockResolvedValueOnce({ ok: true, json: async () => [] })  // memory

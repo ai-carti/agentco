@@ -73,14 +73,14 @@ describe('KanbanBoard', () => {
   })
 
   it('clicking Run button calls POST /api/companies/{id}/tasks/{id}/run', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     useAgentStore.setState({
       tasks: [{ id: 't4', title: 'Task Y', status: 'todo', assignee_name: 'Dave' }],
     })
     renderWithToast(<KanbanBoard companyId="c1" />)
     fireEvent.click(screen.getByTestId('run-btn-t4'))
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/companies/c1/tasks/t4/run'),
         expect.objectContaining({ method: 'POST' })
       )

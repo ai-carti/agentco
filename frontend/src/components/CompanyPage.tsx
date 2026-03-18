@@ -5,7 +5,7 @@ import KanbanBoard from './KanbanBoard'
 import AgentForm, { type AgentFormData } from './AgentForm'
 import Button from './Button'
 import EmptyState from './EmptyState'
-import { useAgentStore, type Agent } from '../store/agentStore'
+import { useAgentStore } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import { Bot } from 'lucide-react'
 
@@ -114,7 +114,7 @@ export default function CompanyPage() {
   useEffect(() => {
     if (!id) return
     const token = getStoredToken()
-    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
     fetch(`${BASE_URL}/api/companies/${id}`, { headers })
       .then((res) => (res.ok ? res.json() : null))
