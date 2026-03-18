@@ -53,3 +53,60 @@ describe('WarRoomPage — BUG-040 connected state', () => {
     expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
   })
 })
+
+// ─── SIRI-UX-025: isConnecting flag — no premature empty state ───────────────
+
+describe('WarRoomPage — SIRI-UX-025: isConnecting skeleton/spinner', () => {
+  it('shows skeleton/spinner when isConnected=true but no agents yet', () => {
+    // Don't load mock data — simulate empty agents with real WS connected
+    const original = useWarRoomStore.getState().loadMockData
+    useWarRoomStore.setState({ loadMockData: () => {} } as any)
+
+    render(
+      <MemoryRouter initialEntries={['/companies/comp-1/warroom']}>
+        <Routes>
+          <Route path="/companies/:id/warroom" element={<WarRoomPageDynamic />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    // Should show connecting state, not "All quiet here"
+    expect(screen.queryByText(/All quiet here/i)).not.toBeInTheDocument()
+    expect(screen.getByTestId('war-room-connecting')).toBeInTheDocument()
+
+    useWarRoomStore.setState({ loadMockData: original } as any)
+  })
+
+  it('shows actual content after agents arrive', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // After mock data loads, agents are present — should show war room
+    expect(screen.queryByTestId('war-room-connecting')).not.toBeInTheDocument()
+    expect(screen.getByTestId('agent-panel')).toBeInTheDocument()
+  })
+
+  it('shows empty state after 3s timeout when still no agents and isConnected=true', () => {
+    const original = useWarRoomStore.getState().loadMockData
+    useWarRoomStore.setState({ loadMockData: () => {} } as any)
+
+    render(
+      <MemoryRouter initialEntries={['/companies/comp-1/warroom']}>
+        <Routes>
+          <Route path="/companies/:id/warroom" element={<WarRoomPageDynamic />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    // Before 3s — connecting state
+    expect(screen.getByTestId('war-room-connecting')).toBeInTheDocument()
+
+    // After 3s timeout
+    act(() => { vi.advanceTimersByTime(3000) })
+
+    expect(screen.queryByTestId('war-room-connecting')).not.toBeInTheDocument()
+    expect(screen.getByText(/All quiet here/i)).toBeInTheDocument()
+
+    useWarRoomStore.setState({ loadMockData: original } as any)
+  })
+})

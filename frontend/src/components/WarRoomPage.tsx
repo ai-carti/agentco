@@ -65,6 +65,33 @@ export default function WarRoomPage() {
   // WebSocket connection for real-time events
   const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')
 
+  // SIRI-UX-025: isConnecting — true until first data arrives or 3s timeout
+  const [isConnecting, setIsConnecting] = useState(true)
+  const connectingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    // If agents arrive, stop connecting state
+    if (agents.length > 0) {
+      setIsConnecting(false)
+      if (connectingTimerRef.current) {
+        clearTimeout(connectingTimerRef.current)
+        connectingTimerRef.current = null
+      }
+      return
+    }
+    // Only apply isConnecting logic when real WS is connected
+    if (isConnected && agents.length === 0) {
+      connectingTimerRef.current = setTimeout(() => {
+        setIsConnecting(false)
+      }, 3000)
+      return () => {
+        if (connectingTimerRef.current) clearTimeout(connectingTimerRef.current)
+      }
+    }
+    // Not connected via real WS — not in connecting state
+    setIsConnecting(false)
+  }, [isConnected, agents.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load mock data on mount
   useEffect(() => {
     loadMockData()
@@ -164,6 +191,34 @@ export default function WarRoomPage() {
     } finally {
       setStopping(false)
     }
+  }
+
+  // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
+  if (agents.length === 0 && isConnecting) {
+    return (
+      <div
+        data-testid="war-room-connecting"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          minHeight: 360,
+          background: '#0a0f1a',
+          color: '#e2e8f0',
+          gap: '1rem',
+        }}
+      >
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          border: '3px solid #374151',
+          borderTopColor: '#3b82f6',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Connecting…</div>
+      </div>
+    )
   }
 
   // Empty state

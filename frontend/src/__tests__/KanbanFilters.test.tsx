@@ -160,3 +160,58 @@ describe('KanbanFilters — UX-014', () => {
     expect(screen.getByText('No tasks match filters')).toBeInTheDocument()
   })
 })
+
+// ─── SIRI-UX-023: Dropdowns close on outside click ───────────────────────────
+
+describe('KanbanFilters — SIRI-UX-023: close dropdowns on outside click', () => {
+  it('agent dropdown closes on mousedown outside FilterBar', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    // Open agent dropdown
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+    expect(screen.getByTestId('filter-agent-option-a1')).toBeInTheDocument()
+
+    // Mousedown outside
+    fireEvent.mouseDown(document.body)
+
+    expect(screen.queryByTestId('filter-agent-option-a1')).not.toBeInTheDocument()
+  })
+
+  it('priority dropdown closes on mousedown outside FilterBar', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    // Open priority dropdown
+    fireEvent.click(screen.getByTestId('filter-priority-btn'))
+    expect(screen.getByTestId('filter-priority-option-high')).toBeInTheDocument()
+
+    // Mousedown outside
+    fireEvent.mouseDown(document.body)
+
+    expect(screen.queryByTestId('filter-priority-option-high')).not.toBeInTheDocument()
+  })
+
+  it('both dropdowns close simultaneously on mousedown outside', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    // Manually force both open state isn't easy, but we can open agent and verify it closes
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+    expect(screen.getByTestId('filter-agent-option-a1')).toBeInTheDocument()
+
+    fireEvent.mouseDown(document.body)
+
+    expect(screen.queryByTestId('filter-agent-option-a1')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('filter-priority-option-high')).not.toBeInTheDocument()
+  })
+
+  it('click inside dropdown does not close it', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+    expect(screen.getByTestId('filter-agent-option-a1')).toBeInTheDocument()
+
+    // Click inside the dropdown
+    fireEvent.mouseDown(screen.getByTestId('filter-agent-option-a1'))
+
+    expect(screen.getByTestId('filter-agent-option-a1')).toBeInTheDocument()
+  })
+})

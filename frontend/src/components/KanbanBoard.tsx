@@ -538,9 +538,22 @@ function FilterBar({
   const agents = useAgentStore((s) => s.agents)
   const [agentDropdownOpen, setAgentDropdownOpen] = useState(false)
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false)
+  const filterBarRef = useRef<HTMLDivElement>(null)
+
+  // SIRI-UX-023: close dropdowns on mousedown outside FilterBar
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+        setAgentDropdownOpen(false)
+        setPriorityDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
 
   return (
-    <div style={{ padding: '0.75rem 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div ref={filterBarRef} style={{ padding: '0.75rem 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           data-testid="kanban-search-input"
