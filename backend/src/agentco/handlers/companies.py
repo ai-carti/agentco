@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.company import CompanyService
@@ -13,10 +13,27 @@ router = APIRouter(prefix="/api/companies", tags=["companies"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class CompanyCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_whitespace(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("name must not be empty or whitespace-only")
+        return stripped
+
 
 class CompanyUpdate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_whitespace(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("name must not be empty or whitespace-only")
+        return stripped
 
 class CompanyOut(BaseModel):
     id: str

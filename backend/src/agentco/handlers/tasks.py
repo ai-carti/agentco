@@ -32,6 +32,16 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
 
+    @field_validator("title")
+    @classmethod
+    def title_must_not_be_whitespace(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("title must not be empty or whitespace-only")
+        return stripped
+
 
 class TaskStatusUpdate(BaseModel):
     status: str

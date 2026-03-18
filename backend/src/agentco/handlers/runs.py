@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
@@ -119,7 +119,7 @@ async def create_run(
 @router.get("/runs", response_model=list[RunOut])
 async def list_runs(
     company_id: str,
-    limit: int = 100,
+    limit: int = Query(default=20, ge=1, le=500),
     offset: int = 0,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
