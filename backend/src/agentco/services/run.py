@@ -17,6 +17,7 @@ Lifecycle:
 """
 import asyncio
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
@@ -281,7 +282,8 @@ class RunService:
         }
 
         try:
-            async with create_checkpointer("agentco.db") as checkpointer:
+            _ckpt_db = os.environ.get("AGENTCO_DB_PATH", "./agentco.db")
+            async with create_checkpointer(_ckpt_db) as checkpointer:
                 compiled = compile_graph(checkpointer=checkpointer)
                 config = {"configurable": {"thread_id": run_id}}
                 final_state = await compiled.ainvoke(initial_state, config=config)

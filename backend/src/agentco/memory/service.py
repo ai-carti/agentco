@@ -17,7 +17,8 @@ import litellm
 from agentco.memory.store import MemoryStore
 
 _EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-_DEFAULT_DB = os.environ.get("AGENTCO_MEMORY_DB", "./agentco_memory.db")
+# Use AGENTCO_MEMORY_DB if set, else fall back to AGENTCO_DB_PATH, else default
+_DEFAULT_DB = os.environ.get("AGENTCO_MEMORY_DB") or os.environ.get("AGENTCO_DB_PATH", "./agentco_memory.db")
 
 
 class MemoryService:
