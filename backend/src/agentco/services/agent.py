@@ -22,10 +22,23 @@ class AgentService:
 
     def create(self, company_id: str, owner_id: str, name: str,
                role: str | None = None, system_prompt: str | None = None,
-               model: str = "gpt-4o-mini") -> Agent:
+               model: str = "gpt-4o-mini",
+               parent_agent_id: str | None = None) -> Agent:
         self._check_company_owner(company_id, owner_id)
+        # Determine hierarchy_level from parent
+        hierarchy_level = 0
+        if parent_agent_id:
+            try:
+                parent = self._repo.get(parent_agent_id)
+                if parent.company_id != company_id:
+                    raise NotFoundError(f"Parent agent {parent_agent_id!r} not in company")
+                hierarchy_level = (parent.hierarchy_level or 0) + 1
+            except NotFoundError:
+                raise NotFoundError(f"Parent agent {parent_agent_id!r} not found")
         agent = Agent(company_id=company_id, name=name, role=role,
-                      system_prompt=system_prompt, model=model)
+                      system_prompt=system_prompt, model=model,
+                      parent_agent_id=parent_agent_id,
+                      hierarchy_level=hierarchy_level)
         result = self._repo.add(agent)
         self._session.commit()
         return result
@@ -59,6 +72,39 @@ class AgentService:
         self._session.flush()
         self._session.commit()
         return self._repo._to_domain(agent_orm)
+
+    def get_tree(self, company_id: str, owner_id: str) -> list[dict]:
+        """
+        Returns agents as a nested tree structure.
+        Each node: {id, name, role, model, hierarchy_level, parent_agent_id, children: [...]}
+        POST-006 AC5.
+        """
+        self._check_company_owner(company_id, owner_id)
+        agents = self._repo.list_by_company(company_id)
+
+        def _to_node(agent: Agent) -> dict:
+            return {
+                "id": agent.id,
+                "name": agent.name,
+                "role": agent.role,
+                "model": agent.model,
+                "system_prompt": agent.system_prompt,
+                "hierarchy_level": agent.hierarchy_level,
+                "parent_agent_id": agent.parent_agent_id,
+                "children": [],
+            }
+
+        nodes = {a.id: _to_node(a) for a in agents}
+        roots: list[dict] = []
+
+        for agent in agents:
+            node = nodes[agent.id]
+            if agent.parent_agent_id and agent.parent_agent_id in nodes:
+                nodes[agent.parent_agent_id]["children"].append(node)
+            else:
+                roots.append(node)
+
+        return roots
 
     def delete(self, company_id: str, agent_id: str, owner_id: str) -> None:
         self._check_company_owner(company_id, owner_id)

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from langgraph.graph import END, START, StateGraph
 
-from agentco.orchestration.nodes import ceo_node, subagent_node
+from agentco.orchestration.nodes import ceo_node, subagent_node, hierarchical_node
 from agentco.orchestration.state import AgentState
 
 
@@ -43,7 +43,12 @@ def _after_subagent(state: AgentState) -> str:
 
     - "ceo" — subagent завершил задачи → CEO синтезирует результат
     - "subagent" — ещё есть pending задачи → продолжаем выполнять
+    - "__end__" — статус не "running" (error/completed/failed) → завершить
     """
+    status = state.get("status", "running")
+    if status in ("error", "completed", "failed"):
+        return END
+
     if state.get("pending_tasks"):
         return "subagent"
     return "ceo"
@@ -78,13 +83,14 @@ def build_orchestration_graph() -> StateGraph:
         },
     )
 
-    # SubAgent → conditional: или ещё subagent, или обратно к CEO
+    # SubAgent → conditional: или ещё subagent, или обратно к CEO, или END
     graph.add_conditional_edges(
         "subagent",
         _after_subagent,
         {
             "subagent": "subagent",
             "ceo": "ceo",
+            END: END,
         },
     )
 
@@ -104,6 +110,92 @@ def compile(checkpointer=None):
         Compiled LangGraph graph ready for invoke/ainvoke.
     """
     graph = build_orchestration_graph()
+    if checkpointer is not None:
+        return graph.compile(checkpointer=checkpointer)
+    return graph.compile()
+
+
+# ─── POST-006: Hierarchical Graph (N levels) ──────────────────────────────────
+
+def _should_continue_hierarchical(state: AgentState) -> str:
+    """
+    Conditional edge после CEO node в иерархическом графе.
+    """
+    status = state.get("status", "running")
+    if status in ("error", "completed", "failed"):
+        return END
+    if state.get("pending_tasks"):
+        return "hierarchical"
+    return "ceo"
+
+
+def _after_hierarchical(state: AgentState) -> str:
+    """
+    Conditional edge после hierarchical node.
+    """
+    status = state.get("status", "running")
+    if status in ("error", "completed", "failed"):
+        return END
+    if state.get("pending_tasks"):
+        return "hierarchical"
+    return "ceo"
+
+
+def build_hierarchical_graph(max_depth: int = 3) -> StateGraph:
+    """
+    POST-006: Строит StateGraph с поддержкой произвольной глубины иерархии.
+
+    Граф поддерживает N уровней делегирования через единый hierarchical_node.
+    Глубина контролируется через state["max_depth"] и task["depth"].
+
+    Args:
+        max_depth: максимальная глубина делегирования (default=3: CEO→L1→L2→leaf)
+
+    Граф:
+    START → ceo → [hierarchical → ceo]* → END
+    """
+    graph = StateGraph(AgentState)
+
+    graph.add_node("ceo", ceo_node)
+    graph.add_node("hierarchical", hierarchical_node)
+
+    graph.add_edge(START, "ceo")
+
+    graph.add_conditional_edges(
+        "ceo",
+        _should_continue_hierarchical,
+        {
+            "hierarchical": "hierarchical",
+            "ceo": "ceo",
+            END: END,
+        },
+    )
+
+    graph.add_conditional_edges(
+        "hierarchical",
+        _after_hierarchical,
+        {
+            "hierarchical": "hierarchical",
+            "ceo": "ceo",
+            END: END,
+        },
+    )
+
+    return graph
+
+
+def compile_hierarchical(max_depth: int = 3, checkpointer=None):
+    """
+    Собрать и скомпилировать иерархический граф с поддержкой N уровней.
+
+    Args:
+        max_depth: максимальная глубина иерархии
+        checkpointer: опциональный LangGraph checkpointer
+
+    Returns:
+        Compiled hierarchical graph.
+    """
+    graph = build_hierarchical_graph(max_depth=max_depth)
     if checkpointer is not None:
         return graph.compile(checkpointer=checkpointer)
     return graph.compile()

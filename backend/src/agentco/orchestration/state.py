@@ -7,7 +7,7 @@ TaskResult — результат выполнения задачи.
 """
 from __future__ import annotations
 
-from typing import Annotated, Literal, TypedDict
+from typing import Annotated, Literal, NotRequired, TypedDict
 
 from langgraph.graph.message import add_messages
 
@@ -25,6 +25,8 @@ class TaskMessage(TypedDict):
     to_agent_id: str      # кому назначена
     description: str      # текст задачи
     context: dict         # дополнительный контекст
+    # POST-006: hierarchy depth tracking (optional for backward compat)
+    depth: NotRequired[int]   # текущая глубина делегирования (0 = от CEO)
 
 
 class TaskResult(TypedDict):
@@ -61,8 +63,10 @@ class AgentState(TypedDict):
     total_cost_usd: float
 
     # Идентификатор агента и уровень в иерархии
-    agent_id: str       # текущий агент (ceo / subagent / swe-001 etc.)
-    level: int          # уровень в иерархии: 0 = CEO, 1 = CTO/PM, 2 = SWE
+    agent_id: NotRequired[str]       # текущий агент (ceo / subagent / swe-001 etc.)
+    level: NotRequired[int]          # уровень в иерархии: 0 = CEO, 1 = CTO/PM, 2 = SWE
+    # POST-006: max hierarchy depth (optional for backward compat)
+    max_depth: NotRequired[int]      # максимально допустимая глубина делегирования
 
     # Управление выполнением
     status: Literal["running", "completed", "failed", "error"]

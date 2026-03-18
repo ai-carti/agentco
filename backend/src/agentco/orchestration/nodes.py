@@ -113,12 +113,15 @@ def ceo_node(state: AgentState) -> dict:
 
     # ── Делегирование задачи subagent-у ───────────────────────────────────────
     task_id = str(uuid.uuid4())
+    current_level = state.get("level", 0)
+    # POST-006: track depth in TaskMessage
     task: TaskMessage = {
         "task_id": task_id,
-        "from_agent_id": "ceo",
+        "from_agent_id": state.get("agent_id", "ceo"),
         "to_agent_id": "subagent",
         "description": state["input"],
         "context": {"run_id": state["run_id"]},
+        "depth": current_level + 1,
     }
 
     _, tokens, cost = _mock_llm_call(
@@ -142,6 +145,9 @@ def subagent_node(state: AgentState) -> dict:
     """
     SubAgent Node — выполняет задачи из pending_tasks.
 
+    POST-006: если task.depth < max_depth, subagent может делегировать дальше
+    (добавляет дочерние pending_tasks). Иначе — выполняет напрямую.
+
     Берёт первую pending task, выполняет (mock), возвращает TaskResult.
     """
     if not state["pending_tasks"]:
@@ -153,12 +159,26 @@ def subagent_node(state: AgentState) -> dict:
     remaining_tasks = state["pending_tasks"][1:]
 
     task_id = task["task_id"]
+    task_depth = task.get("depth", 1)
+    max_depth = state.get("max_depth", 2)
+
+    # POST-006: loop detection on deep hierarchy — check iteration limits
+    max_iter = _get_max_iterations()
+    if state["iteration_count"] >= max_iter:
+        return {
+            "status": "failed",
+            "error": "loop_detected",
+            "error_detail": (
+                f"Max iterations ({max_iter}) exceeded at depth {task_depth}, "
+                f"iteration {state['iteration_count']}"
+            ),
+        }
 
     # Mock выполнение через LLM
     result_text, tokens, cost = _mock_llm_call(
-        system=f"You are a subagent with ID: {task['to_agent_id']}. Execute the assigned task.",
+        system=f"You are a subagent with ID: {task['to_agent_id']} at depth {task_depth}. Execute the assigned task.",
         user=f"Task: {task['description']}",
-        mock_response=f"Completed task: {task['description'][:50]}",
+        mock_response=f"Completed task at depth {task_depth}: {task['description'][:50]}",
     )
 
     task_result: TaskResult = {
@@ -180,4 +200,117 @@ def subagent_node(state: AgentState) -> dict:
         "results": {task_id: task_result},
         "total_tokens": state["total_tokens"] + tokens,
         "total_cost_usd": state["total_cost_usd"] + cost,
+        "iteration_count": state["iteration_count"] + 1,
     }
+
+
+# ─── Deep Hierarchy Node (POST-006) ──────────────────────────────────────────
+
+def hierarchical_node(state: AgentState) -> dict:
+    """
+    POST-006: Hierarchical node для агентов промежуточного уровня.
+
+    Агент получает задачу, при необходимости делегирует подчинённым (если depth < max_depth),
+    либо выполняет напрямую. Поддерживает произвольную глубину N уровней.
+    """
+    if not state["pending_tasks"]:
+        return {}
+
+    task = state["pending_tasks"][0]
+    remaining_tasks = state["pending_tasks"][1:]
+    task_id = task["task_id"]
+    task_depth = task.get("depth", 1)
+    max_depth = state.get("max_depth", 2)
+
+    max_iter = _get_max_iterations()
+    max_cost = _get_max_cost_usd()
+    max_tokens = _get_max_tokens()
+
+    # Loop detection
+    if state["iteration_count"] >= max_iter:
+        return {
+            "status": "failed",
+            "error": "loop_detected",
+            "error_detail": (
+                f"Max iterations ({max_iter}) exceeded at depth {task_depth}"
+            ),
+        }
+    if state["total_cost_usd"] >= max_cost:
+        return {
+            "status": "failed",
+            "error": "cost_limit_exceeded",
+            "error_detail": f"Cost limit ${max_cost:.4f} exceeded at depth {task_depth}",
+        }
+    if state["total_tokens"] >= max_tokens:
+        return {
+            "status": "failed",
+            "error": "cost_limit_exceeded",
+            "error_detail": f"Token limit {max_tokens} exceeded at depth {task_depth}",
+        }
+
+    agent_id = task["to_agent_id"]
+
+    if task_depth < max_depth:
+        # Делегируем дочернему агенту (глубже)
+        child_task_id = str(uuid.uuid4())
+        child_task: TaskMessage = {
+            "task_id": child_task_id,
+            "from_agent_id": agent_id,
+            "to_agent_id": f"sub-{agent_id}",
+            "description": task["description"],
+            "context": task.get("context", {}),
+            "depth": task_depth + 1,
+        }
+        _, tokens, cost = _mock_llm_call(
+            system=f"You are agent {agent_id} at depth {task_depth}. Delegate to subordinate.",
+            user=f"Delegate: {task['description']}",
+            mock_response=f"Delegating from depth {task_depth} to {task_depth + 1}",
+        )
+
+        # Оригинальная задача считается delegated
+        task_result: TaskResult = {
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "status": "delegated",
+            "result": f"Delegated to sub-{agent_id} at depth {task_depth + 1}",
+            "delegated_tasks": [child_task],
+            "tokens_used": tokens,
+            "cost_usd": cost,
+        }
+
+        new_active = {k: v for k, v in state["active_tasks"].items() if k != task_id}
+        new_active[child_task_id] = child_task
+
+        return {
+            "pending_tasks": remaining_tasks + [child_task],
+            "active_tasks": new_active,
+            "results": {task_id: task_result},
+            "total_tokens": state["total_tokens"] + tokens,
+            "total_cost_usd": state["total_cost_usd"] + cost,
+            "iteration_count": state["iteration_count"] + 1,
+        }
+    else:
+        # Максимальная глубина — выполняем напрямую
+        result_text, tokens, cost = _mock_llm_call(
+            system=f"You are agent {agent_id} at depth {task_depth} (leaf). Execute directly.",
+            user=f"Task: {task['description']}",
+            mock_response=f"Leaf execution at depth {task_depth}: {task['description'][:50]}",
+        )
+        task_result = {
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "status": "done",
+            "result": result_text,
+            "delegated_tasks": [],
+            "tokens_used": tokens,
+            "cost_usd": cost,
+        }
+        new_active = {k: v for k, v in state["active_tasks"].items() if k != task_id}
+        return {
+            "pending_tasks": remaining_tasks,
+            "active_tasks": new_active,
+            "results": {task_id: task_result},
+            "total_tokens": state["total_tokens"] + tokens,
+            "total_cost_usd": state["total_cost_usd"] + cost,
+            "iteration_count": state["iteration_count"] + 1,
+        }

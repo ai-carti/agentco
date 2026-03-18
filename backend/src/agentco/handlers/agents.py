@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
+from typing import Any
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.agent import AgentService
@@ -17,6 +18,7 @@ class AgentCreate(BaseModel):
     role: str | None = None
     system_prompt: str | None = None
     model: str = "gpt-4o-mini"
+    parent_agent_id: str | None = None  # POST-006
 
     @field_validator("name")
     @classmethod
@@ -41,6 +43,8 @@ class AgentOut(BaseModel):
     role: str | None
     system_prompt: str | None
     model: str
+    parent_agent_id: str | None = None  # POST-006
+    hierarchy_level: int = 0            # POST-006
 
     model_config = {"from_attributes": True}
 
@@ -59,6 +63,28 @@ def create_agent(
             company_id=company_id,
             owner_id=current_user.id,
             **body.model_dump(),
+        )
+    except NotFoundError as e:
+        detail = str(e)
+        if "Parent" in detail:
+            raise HTTPException(status_code=404, detail="Parent agent not found")
+        raise HTTPException(status_code=404, detail="Company not found")
+
+
+@router.get("/tree", response_model=list[Any])
+def get_agents_tree(
+    company_id: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST-006: Returns agents as a nested tree.
+    Each node has: id, name, role, model, hierarchy_level, parent_agent_id, children[].
+    """
+    try:
+        return AgentService(session).get_tree(
+            company_id=company_id,
+            owner_id=current_user.id,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
