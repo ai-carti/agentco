@@ -84,6 +84,8 @@ const MOCK_INTERVAL_MESSAGES = [
   { senderId: 'agent-3', senderName: 'SWE Agent', targetId: 'agent-1', targetName: 'CEO Agent', content: 'Dashboard API done. Query time: 120ms. Added caching layer — handles up to 10k concurrent users without degradation.' },
   { senderId: 'agent-2', senderName: 'CPO Agent', targetId: 'agent-4', targetName: 'Analyst Agent', content: 'Run churn analysis on cohorts from last quarter. I need to know which features are correlated with 90-day retention.' },
   { senderId: 'agent-4', senderName: 'Analyst Agent', targetId: 'agent-2', targetName: 'CPO Agent', content: 'Retention insight: users who activate War Room within 3 days have 4x 90-day retention. Recommend making it the primary onboarding step.' },
+  { senderId: 'agent-1', senderName: 'CEO Agent', targetId: 'agent-2', targetName: 'CPO Agent', content: 'Series A deck needs updating before Thursday. Highlight the retention data and add the new enterprise pipeline numbers. Investors care about repeatable revenue.' },
+  { senderId: 'agent-3', senderName: 'SWE Agent', targetId: 'agent-1', targetName: 'CEO Agent', content: 'Shipped SSO integration for enterprise tier. Auth latency down to 85ms p99. Passes SOC2 audit requirements — security team signed off.' },
 ]
 
 let mockMsgCounter = 0
