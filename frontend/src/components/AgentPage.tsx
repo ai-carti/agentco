@@ -267,7 +267,16 @@ export default function AgentPage() {
             {visibleHistory.map((item) => (
               <div
                 key={item.id}
+                role="button"
+                tabIndex={0}
+                aria-expanded={expandedId === item.id}
                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setExpandedId(expandedId === item.id ? null : item.id)
+                  }
+                }}
                 style={{
                   padding: '0.625rem 0.875rem',
                   background: '#1f2937',

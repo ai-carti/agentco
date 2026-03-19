@@ -10,6 +10,9 @@ from typing import AsyncIterator
 
 logger = logging.getLogger(__name__)
 
+# ALEX-TD-034: bounded queue size to prevent OOM when client is slow or disconnected
+_QUEUE_MAXSIZE = 1000
+
 
 class EventBus:
     _instance: "EventBus | None" = None
@@ -31,15 +34,28 @@ class EventBus:
         return cls._instance
 
     async def publish(self, event: dict) -> None:
-        """Non-blocking put to all subscriber queues."""
+        """Non-blocking put to all subscriber queues.
+
+        ALEX-TD-034: uses bounded queue (maxsize=_QUEUE_MAXSIZE).
+        If queue is full, the event is dropped and a warning is logged to prevent OOM.
+        """
         for _company_id, queue in self._subscribers:
             company = event.get("company_id")
             if company == _company_id:
-                queue.put_nowait(event)
+                try:
+                    queue.put_nowait(event)
+                except asyncio.QueueFull:
+                    logger.warning(
+                        "EventBus: queue full for company %s (maxsize=%d) — event dropped: %s",
+                        _company_id,
+                        _QUEUE_MAXSIZE,
+                        event.get("type"),
+                    )
 
     async def subscribe(self, company_id: str) -> AsyncIterator[dict]:
         """Async generator yielding events for company_id. Cleans up on exit."""
-        queue: asyncio.Queue = asyncio.Queue()
+        # ALEX-TD-034: bounded queue — prevents OOM when client is slow/disconnected
+        queue: asyncio.Queue = asyncio.Queue(maxsize=_QUEUE_MAXSIZE)
         entry = (company_id, queue)
         self._subscribers.append(entry)
         try:

@@ -148,33 +148,15 @@ class RunService:
         Previously this was a stub that faked completion.
         Now delegates to execute_run() which runs the full LangGraph graph.
         session_factory is used to update run status — execute_run manages its own session.
-        """
-        try:
-            # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
-            # for final DB update (avoids stale self._session in background task).
-            result = await self.execute_run(run_id, session_factory=session_factory)
-            return result
-        except Exception as exc:
-            bus = EventBus.get()
-            logger.error("_execute_agent failed for run %s: %s", run_id, exc)
-            session = session_factory()
-            try:
-                run_orm = session.get(self._repo.orm_model, run_id)
-                if run_orm:
-                    run_orm.status = "failed"
-                    run_orm.error = str(exc)
-                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                    session.commit()
-            finally:
-                session.close()
 
-            await bus.publish({
-                "type": "run.failed",
-                "company_id": company_id,
-                "run_id": run_id,
-                "payload": {"error": str(exc)},
-            })
-            raise
+        ALEX-TD-032 fix: do NOT duplicate error handling here. execute_run() already
+        catches all exceptions, updates run status → 'failed', publishes run.failed event,
+        then re-raises. Wrapping again would cause 2x run.failed events + 2x DB writes.
+        """
+        # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
+        # for final DB update (avoids stale self._session in background task).
+        result = await self.execute_run(run_id, session_factory=session_factory)
+        return result
 
     def get(self, company_id: str, run_id: str) -> Run:
         """Возвращает Run по id, проверяет принадлежность компании."""
@@ -381,7 +363,11 @@ class RunService:
             raise
 
     def stop(self, company_id: str, run_id: str, owner_id: str | None = None) -> Run:
-        """Останавливает running ран."""
+        """Останавливает running ран.
+
+        ALEX-TD-033 fix: если ран уже в terminal state (completed/failed/stopped/done),
+        возвращаем как есть — не перезаписываем финальный статус.
+        """
         if owner_id is not None:
             company = self._company_repo.get(company_id)
             if company.owner_id != owner_id:
@@ -393,12 +379,17 @@ class RunService:
         if run_orm is None or run_orm.company_id != company_id:
             raise NotFoundError(f"Run {run_id!r} not found")
 
+        # ALEX-TD-033: если ран уже в terminal state — не меняем статус
+        _terminal = {"completed", "failed", "stopped", "done"}
+        if run_orm.status in _terminal:
+            return self._repo._to_domain(run_orm)
+
         # Отменяем asyncio task если есть
         bg_task = RunService._active_tasks.pop(run_id, None)
         if bg_task and not bg_task.done():
             bg_task.cancel()
 
-        # Обновляем статус → stopped (независимо от текущего)
+        # Обновляем статус → stopped
         run_orm.status = "stopped"
         run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         self._session.flush()

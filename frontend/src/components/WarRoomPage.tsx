@@ -494,6 +494,9 @@ export default function WarRoomPage() {
                 <div
                   key={msg.id}
                   data-testid="feed-message"
+                  role={isLong ? 'button' : undefined}
+                  tabIndex={isLong ? 0 : undefined}
+                  aria-expanded={isLong ? isExpanded : undefined}
                   onClick={() => {
                     if (!isLong) return
                     setExpandedMessages((prev) => {
@@ -502,6 +505,18 @@ export default function WarRoomPage() {
                       else next.add(msg.id)
                       return next
                     })
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isLong) return
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setExpandedMessages((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(msg.id)) next.delete(msg.id)
+                        else next.add(msg.id)
+                        return next
+                      })
+                    }
                   }}
                   style={{
                     background: 'rgba(255,255,255,0.03)',

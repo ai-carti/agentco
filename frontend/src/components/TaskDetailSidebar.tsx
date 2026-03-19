@@ -165,6 +165,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             <button
               data-testid="sidebar-close-btn"
               onClick={onClose}
+              aria-label="Close"
               style={{
                 background: 'transparent',
                 border: 'none',
