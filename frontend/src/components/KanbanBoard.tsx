@@ -59,11 +59,12 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
-  // BUG-050 / SIRI-UX-062: close Edit, Delete, and Assign modals on Escape key
+  // BUG-050 / SIRI-UX-062 / SIRI-UX-070: close menu + modals on Escape key
   useEffect(() => {
-    if (!editOpen && !deleteOpen && !assignOpen) return
+    if (!menuOpen && !editOpen && !deleteOpen && !assignOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        setMenuOpen(false)
         setEditOpen(false)
         setDeleteOpen(false)
         setAssignOpen(false)
@@ -71,7 +72,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [editOpen, deleteOpen, assignOpen])
+  }, [menuOpen, editOpen, deleteOpen, assignOpen])
 
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()

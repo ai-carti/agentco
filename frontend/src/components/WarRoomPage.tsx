@@ -302,6 +302,7 @@ export default function WarRoomPage() {
               data-testid="mobile-agents-toggle"
               onClick={() => setAgentPanelOpen((v) => !v)}
               aria-label="Toggle agents panel"
+              aria-expanded={agentPanelOpen}
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.15)',
