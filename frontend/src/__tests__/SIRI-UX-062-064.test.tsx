@@ -20,7 +20,7 @@ const TASK = {
   assignee_name: undefined as string | undefined,
 }
 
-const AGENT = { id: 'a1', name: 'Alice', role: 'Dev', model: 'gpt-4', system_prompt: '' }
+const AGENT = { id: 'a1', name: 'Alice', role: 'Dev', model: 'gpt-4', system_prompt: '', status: 'idle' as const }
 
 function renderKanban() {
   return render(
