@@ -17,29 +17,32 @@ function renderBreadcrumb(route = '/', section?: string) {
 }
 
 describe('SIRI-UX-008: Breadcrumb board section', () => {
-  it('shows "Board" when activeSection is "board"', () => {
+  // SIRI-UX-042: On /companies/:id the CompanyHeader inside CompanyPage owns navigation.
+  // Breadcrumb renders null for that route — section labels live in CompanyHeader / tab UI.
+  it('does NOT render on /companies/:id — CompanyHeader owns that context', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
     renderBreadcrumb('/companies/c1', 'board')
-    expect(screen.getByText('Board')).toBeInTheDocument()
-    expect(screen.queryByText('War Room')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
   })
 
-  it('shows "War Room" when activeSection is "war-room"', () => {
+  it('does NOT render on /companies/:id with any activeSection', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
-    renderBreadcrumb('/companies/c1', 'war-room')
-    expect(screen.getByText('War Room')).toBeInTheDocument()
-    expect(screen.queryByText('Board')).not.toBeInTheDocument()
+    for (const section of ['war-room', 'board', 'agents', undefined]) {
+      const { unmount } = renderBreadcrumb('/companies/c1', section)
+      expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
+      unmount()
+    }
   })
 
-  it('shows "War Room" as default when no activeSection on company page', () => {
+  it('shows "Agent" on agent sub-page', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
-    renderBreadcrumb('/companies/c1')
-    expect(screen.getByText('War Room')).toBeInTheDocument()
+    renderBreadcrumb('/companies/c1/agents/a1')
+    expect(screen.getByText('Agent')).toBeInTheDocument()
   })
 
-  it('shows "Agents" when activeSection is "agents"', () => {
+  it('shows company name on agent sub-page', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
-    renderBreadcrumb('/companies/c1', 'agents')
-    expect(screen.getByText('Agents')).toBeInTheDocument()
+    renderBreadcrumb('/companies/c1/agents/a1')
+    expect(screen.getByText('My Startup')).toBeInTheDocument()
   })
 })

@@ -110,9 +110,17 @@ describe('Routing', () => {
       expect(screen.getByTestId('settings-page')).toBeInTheDocument()
     })
 
-    it('shows navbar with navigation links', () => {
+    // SIRI-UX-044: Navbar has logo only; nav links live in Sidebar (single source of truth)
+    it('shows navbar with logo; nav links are in Sidebar', () => {
       renderWithRouter('/')
-      expect(screen.getByTestId('navbar')).toBeInTheDocument()
+      const navbar = screen.getByTestId('navbar')
+      expect(navbar).toBeInTheDocument()
+      // "AgentCo" logo is always present in navbar
+      expect(navbar.querySelector('a[href="/"]')).toBeTruthy()
+      // Navbar must NOT contain Companies/Settings nav links — those belong to Sidebar
+      expect(navbar.querySelector('[data-testid="sidebar-nav-companies"]')).toBeNull()
+      expect(navbar.querySelector('[data-testid="sidebar-nav-settings"]')).toBeNull()
+      // Navigation links (Companies, Settings) come from Sidebar, not Navbar
       expect(screen.getAllByRole('link', { name: /companies/i }).length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByRole('link', { name: /settings/i }).length).toBeGreaterThanOrEqual(1)
     })

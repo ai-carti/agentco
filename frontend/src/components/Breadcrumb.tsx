@@ -42,6 +42,11 @@ export default function Breadcrumb({ activeSection }: BreadcrumbProps = {}) {
   const location = useLocation()
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const activeCompanyTab = useAgentStore((s) => s.activeCompanyTab)
+
+  // SIRI-UX-042: On company overview pages, CompanyHeader inside CompanyPage
+  // already provides the navigation context — don't render a second breadcrumb.
+  if (/^\/companies\/[^/]+$/.test(location.pathname)) return null
+
   // activeSection prop takes priority, then store value
   const resolvedSection = activeSection ?? activeCompanyTab ?? undefined
   const section = getSection(location.pathname, resolvedSection)

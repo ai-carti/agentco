@@ -18,32 +18,12 @@ export default function Navbar() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+        {/* SIRI-UX-044: Logo only — nav links live in Sidebar */}
         <NavLink
           to="/"
           style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f8fafc', textDecoration: 'none' }}
         >
           AgentCo
-        </NavLink>
-        <NavLink
-          to="/"
-          end
-          style={({ isActive }) => ({
-            color: isActive ? '#f8fafc' : '#9ca3af',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-          })}
-        >
-          Companies
-        </NavLink>
-        <NavLink
-          to="/settings"
-          style={({ isActive }) => ({
-            color: isActive ? '#f8fafc' : '#9ca3af',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-          })}
-        >
-          Settings
         </NavLink>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

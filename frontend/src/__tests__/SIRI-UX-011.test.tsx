@@ -1,6 +1,9 @@
 /**
  * SIRI-UX-011: Breadcrumb on root `/` should NOT show "Select company"
  * Root is Companies List — no company context needed in breadcrumb
+ *
+ * SIRI-UX-042 update: Breadcrumb no longer renders on /companies/:id at all.
+ * CompanyHeader inside CompanyPage is the single nav context for company pages.
  */
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -34,14 +37,15 @@ describe('SIRI-UX-011: Breadcrumb root page fix', () => {
     expect(breadcrumb.textContent).not.toContain('Select company')
   })
 
-  it('still shows "Select company" on /companies/:id when company not loaded', () => {
+  // SIRI-UX-042: Breadcrumb is hidden on /companies/:id — CompanyHeader owns that context
+  it('does NOT render on /companies/:id when company not loaded', () => {
     renderBreadcrumb('/companies/c1')
-    expect(screen.getByText('Select company')).toBeInTheDocument()
+    expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
   })
 
-  it('still shows company name on /companies/:id when loaded', () => {
+  it('does NOT render on /companies/:id when company is loaded', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
     renderBreadcrumb('/companies/c1')
-    expect(screen.getByText('My Startup')).toBeInTheDocument()
+    expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
   })
 })

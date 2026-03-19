@@ -29,17 +29,11 @@ describe('Breadcrumb', () => {
     expect(screen.queryByText('Select company')).not.toBeInTheDocument()
   })
 
-  it('shows company name when on company page', () => {
+  // SIRI-UX-042: Breadcrumb is hidden on /companies/:id — CompanyHeader in CompanyPage owns that context
+  it('does NOT render on company overview page /companies/:id', () => {
     useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
     renderBreadcrumb('/companies/c1')
-    expect(screen.getByText('AgentCo')).toBeInTheDocument()
-    expect(screen.getByText('My Startup')).toBeInTheDocument()
-  })
-
-  it('shows section "War Room" on company page', () => {
-    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
-    renderBreadcrumb('/companies/c1')
-    expect(screen.getByText('War Room')).toBeInTheDocument()
+    expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
   })
 
   it('shows section "Agent" on agent detail page', () => {
@@ -62,30 +56,32 @@ describe('Breadcrumb', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
-  it('shows "Select company" on /companies/:id when company not loaded yet', () => {
-    renderBreadcrumb('/companies/c1')
+  it('shows "Select company" on agent sub-page when company not loaded yet', () => {
+    renderBreadcrumb('/companies/c1/agents/a1')
     expect(screen.getByText('Select company')).toBeInTheDocument()
   })
 
   it('does NOT show company block on root / page', () => {
     renderBreadcrumb('/')
     // Root page is the companies list — no company context needed
-    // Existing test expects "Select company" on root, but root is also not company-scoped
-    // Keep backward compat: root shows "Select company" as it's the companies list page
     expect(screen.getByText('AgentCo')).toBeInTheDocument()
   })
 
   it('AgentCo link points to companies list', () => {
-    renderBreadcrumb('/companies/c1')
+    renderBreadcrumb('/companies/c1/agents/a1')
     const agentCoLink = screen.getByText('AgentCo')
     expect(agentCoLink.closest('a')).toHaveAttribute('href', '/')
   })
 
-  it('is visible on all protected page routes', () => {
-    for (const route of ['/', '/companies/c1', '/companies/c1/agents/a1', '/settings']) {
+  it('is visible on all protected page routes except company overview', () => {
+    const visibleRoutes = ['/', '/companies/c1/agents/a1', '/settings']
+    for (const route of visibleRoutes) {
       const { unmount } = renderBreadcrumb(route)
       expect(screen.getByTestId('breadcrumb')).toBeInTheDocument()
       unmount()
     }
+    // Company overview hides breadcrumb — CompanyHeader takes over
+    renderBreadcrumb('/companies/c1')
+    expect(screen.queryByTestId('breadcrumb')).not.toBeInTheDocument()
   })
 })
