@@ -3,39 +3,15 @@ import { type Task } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
+// SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
+import { STATUS_COLORS, getAvatarColor, getInitials } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  todo: { bg: '#374151', text: '#d1d5db' },
-  backlog: { bg: '#292524', text: '#a8a29e' },
-  in_progress: { bg: '#1d4ed8', text: '#bfdbfe' },
-  done: { bg: '#065f46', text: '#a7f3d0' },
-  failed: { bg: '#7f1d1d', text: '#fca5a5' },
-}
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
   high: { bg: '#450a0a', text: '#ef4444' },
   medium: { bg: '#451a03', text: '#f59e0b' },
   low: { bg: '#1f2937', text: '#6b7280' },
-}
-
-const AVATAR_COLORS = [
-  '#7c3aed', '#db2777', '#ea580c', '#16a34a',
-  '#0891b2', '#9333ea', '#c2410c', '#0d9488',
-]
-
-function getAvatarColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-
-// SIRI-UX-021: 2-char initials consistent with AgentCard and KanbanBoard
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
 }
 
 interface LogEntry {
