@@ -38,8 +38,8 @@ describe('WarRoomPage', () => {
 
     const panel = screen.getByTestId('agent-panel')
     expect(within(panel).getByText('CEO Agent')).toBeInTheDocument()
-    expect(within(panel).getByText('Dev Agent')).toBeInTheDocument()
-    expect(within(panel).getByText('QA Agent')).toBeInTheDocument()
+    expect(within(panel).getByText('CPO Agent')).toBeInTheDocument()
+    expect(within(panel).getByText('SWE Agent')).toBeInTheDocument()
   })
 
   it('shows agent roles on cards', () => {
@@ -47,8 +47,8 @@ describe('WarRoomPage', () => {
     act(() => { vi.advanceTimersByTime(100) })
 
     expect(screen.getByText('Chief Executive Officer')).toBeInTheDocument()
-    expect(screen.getByText('Software Developer')).toBeInTheDocument()
-    expect(screen.getByText('Quality Assurance')).toBeInTheDocument()
+    expect(screen.getByText('Chief Product Officer')).toBeInTheDocument()
+    expect(screen.getByText('Software Engineer')).toBeInTheDocument()
   })
 
   it('shows animate-pulse for thinking agents', () => {

@@ -445,9 +445,32 @@ export default function WarRoomPage() {
                       fontSize: '0.7rem',
                       color: agent.status === 'thinking' || agent.status === 'running' ? '#4ade80' : '#64748b',
                       fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}
                   >
                     {statusLabel[agent.status]}
+                    {(agent.status === 'thinking' || agent.status === 'running') && (
+                      <span
+                        data-testid="thinking-animation"
+                        style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}
+                      >
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            style={{
+                              width: 3,
+                              height: 3,
+                              borderRadius: '50%',
+                              background: '#4ade80',
+                              display: 'inline-block',
+                              animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </span>
+                    )}
                   </div>
                 </div>
               )
@@ -474,9 +497,40 @@ export default function WarRoomPage() {
               color: '#94a3b8',
               textTransform: 'uppercase',
               letterSpacing: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
             Activity Feed
+            <span
+              data-testid="live-indicator"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                borderRadius: 12,
+                padding: '1px 8px',
+                fontSize: '0.65rem',
+                color: '#4ade80',
+                fontWeight: 700,
+                letterSpacing: 0.5,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#4ade80',
+                  animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
+                  display: 'inline-block',
+                }}
+              />
+              LIVE
+            </span>
           </div>
           {/* SIRI-UX-068: aria-live so screen readers announce new agent messages */}
           <div

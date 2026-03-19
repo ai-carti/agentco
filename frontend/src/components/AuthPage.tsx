@@ -124,6 +124,19 @@ export default function AuthPage() {
       <div style={styles.card}>
         <h1 style={styles.title}>AgentCo</h1>
 
+        <p
+          data-testid="auth-tagline"
+          style={{
+            textAlign: 'center',
+            color: '#6b7280',
+            fontSize: '0.85rem',
+            margin: '-0.75rem 0 1.5rem',
+            lineHeight: 1.5,
+          }}
+        >
+          Your AI team, working 24/7
+        </p>
+
         <div style={styles.tabs}>
           <button
             style={styles.tab(tab === 'signin')}
