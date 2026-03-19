@@ -145,4 +145,36 @@ describe('KanbanBoard', () => {
     fireEvent.click(screen.getByTestId('sidebar-backdrop'))
     expect(screen.queryByTestId('task-detail-sidebar')).not.toBeInTheDocument()
   })
+
+  // BUG-050: Escape closes Edit Task modal in TaskCard
+  it('Escape closes Edit Task modal in TaskCard', async () => {
+    useAgentStore.setState({
+      tasks: [{ id: 't8', title: 'Task Edit Escape', status: 'todo', assignee_name: 'Hank' }],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    // open menu
+    fireEvent.click(screen.getByTestId('task-menu-t8'))
+    // click Edit
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }))
+    expect(screen.getByTestId('edit-task-modal')).toBeInTheDocument()
+    // press Escape
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('edit-task-modal')).not.toBeInTheDocument()
+  })
+
+  // BUG-050: Escape closes Delete confirm dialog in TaskCard
+  it('Escape closes Delete confirm dialog in TaskCard', async () => {
+    useAgentStore.setState({
+      tasks: [{ id: 't9', title: 'Task Delete Escape', status: 'todo', assignee_name: 'Iris' }],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    // open menu
+    fireEvent.click(screen.getByTestId('task-menu-t9'))
+    // click Delete
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))
+    expect(screen.getByTestId('confirm-delete-dialog')).toBeInTheDocument()
+    // press Escape
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('confirm-delete-dialog')).not.toBeInTheDocument()
+  })
 })

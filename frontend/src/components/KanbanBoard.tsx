@@ -59,6 +59,19 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
+  // BUG-050: close Edit and Delete modals on Escape key
+  useEffect(() => {
+    if (!editOpen && !deleteOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditOpen(false)
+        setDeleteOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [editOpen, deleteOpen])
+
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()
     setRunning(true)
