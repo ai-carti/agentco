@@ -26,16 +26,13 @@ describe('SIRI-UX-026: WarRoomPage no duplicate scroll anchor', () => {
 })
 
 // ─── SIRI-UX-027: spin @keyframes missing — connecting spinner is static ────
+// ALEX-TD-020 fix: replaced fs/path/Node.js imports with Vite ?raw import
+import indexCss from '../index.css?raw'
 describe('SIRI-UX-027: index.css has @keyframes spin defined', () => {
-  it('spin animation is importable from CSS module context', async () => {
-    // We test that the CSS file content is referenced in the test setup
-    // The actual fix adds @keyframes spin to index.css
-    // Vitest with jsdom doesn't parse CSS animations, so we verify structurally
-    const fs = await import('fs')
-    const path = await import('path')
-    const cssPath = path.resolve(__dirname, '../index.css')
-    const css = fs.readFileSync(cssPath, 'utf-8')
-    expect(css).toContain('@keyframes spin')
+  it('spin animation is defined in index.css', () => {
+    // The fix adds @keyframes spin to index.css
+    // Use Vite ?raw import — works in jsdom/vitest context
+    expect(indexCss).toContain('@keyframes spin')
   })
 })
 

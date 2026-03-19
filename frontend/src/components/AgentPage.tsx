@@ -180,33 +180,36 @@ export default function AgentPage() {
         </div>
       )}
 
-      <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Button
-          data-testid="save-to-library-btn"
-          variant="secondary"
-          onClick={handleSaveToLibrary}
-        >
-          Save to Library
-        </Button>
-        {savedToLibrary && (
-          <span
-            data-testid="save-to-library-success"
-            style={{ color: '#4ade80', fontSize: '0.875rem' }}
+      {!agentLoading && (
+        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            data-testid="save-to-library-btn"
+            variant="secondary"
+            onClick={handleSaveToLibrary}
           >
-            Saved to library ✓
-          </span>
-        )}
-        {saveToLibraryError && (
-          <span
-            data-testid="save-to-library-error"
-            style={{ color: '#f87171', fontSize: '0.875rem' }}
-          >
-            {saveToLibraryError}
-          </span>
-        )}
-      </div>
+            Save to Library
+          </Button>
+          {savedToLibrary && (
+            <span
+              data-testid="save-to-library-success"
+              style={{ color: '#4ade80', fontSize: '0.875rem' }}
+            >
+              Saved to library ✓
+            </span>
+          )}
+          {saveToLibraryError && (
+            <span
+              data-testid="save-to-library-error"
+              style={{ color: '#f87171', fontSize: '0.875rem' }}
+            >
+              {saveToLibraryError}
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* Memory section */}
+      {/* Memory + History sections — SIRI-UX-035: only show after agent data loaded */}
+      {!agentLoading && (<>
       <div data-testid="agent-memory-section" style={{ marginTop: '2rem' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Memory</h2>
 
@@ -300,6 +303,7 @@ export default function AgentPage() {
           </div>
         )}
       </div>
+      </>)} {/* end !agentLoading guard (SIRI-UX-035) */}
     </div>
   )
 }

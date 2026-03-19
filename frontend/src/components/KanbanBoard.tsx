@@ -380,22 +380,28 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
               autoFocus
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder="Task title"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
                 fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
+                outline: 'none',
               }}
             />
             <textarea
               value={editDesc}
               onChange={(e) => setEditDesc(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder="Description"
               rows={3}
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
                 fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
+                outline: 'none',
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
@@ -966,23 +972,29 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder="Task title"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
                 fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
+                outline: 'none',
               }}
             />
             <textarea
               data-testid="create-task-desc-input"
               value={newTaskDesc}
               onChange={(e) => setNewTaskDesc(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder="Description (optional)"
               rows={3}
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
                 fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
+                outline: 'none',
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>

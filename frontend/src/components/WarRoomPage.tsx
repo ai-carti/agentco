@@ -125,7 +125,7 @@ export default function WarRoomPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [agents.length > 0, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agents.length, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // SIRI-UX-016: Auto-scroll activity feed to latest message
   useEffect(() => {

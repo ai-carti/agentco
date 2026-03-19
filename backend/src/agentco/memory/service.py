@@ -9,6 +9,7 @@ memory/service.py — async сервис для управления памят�
 """
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Any
 
@@ -47,11 +48,15 @@ class MemoryService:
         Returns: id воспоминания
         """
         embedding = await self._get_embedding(content)
-        return self._store.insert(
-            agent_id=agent_id,
-            task_id=task_id,
-            content=content,
-            embedding=embedding,
+        # ALEX-TD-021 fix: run blocking sqlite insert in thread executor
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._store.insert,
+            agent_id,
+            task_id,
+            content,
+            embedding,
         )
 
     async def get_relevant_memories(
@@ -66,10 +71,14 @@ class MemoryService:
         Получает embedding запроса через LiteLLM, ищет в MemoryStore.
         """
         query_embedding = await self._get_embedding(query)
-        return self._store.search(
-            agent_id=agent_id,
-            query_embedding=query_embedding,
-            top_k=top_k,
+        # ALEX-TD-021 fix: run blocking sqlite search in thread executor
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._store.search,
+            agent_id,
+            query_embedding,
+            top_k,
         )
 
     def get_all(self, agent_id: str) -> list[dict[str, Any]]:
