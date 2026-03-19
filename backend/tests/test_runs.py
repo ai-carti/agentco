@@ -736,3 +736,92 @@ async def test_execute_run_updates_run_status_via_session_factory(auth_client):
         assert run_orm is not None
         assert run_orm.status in ("completed", "done"), f"Expected completed/done, got {run_orm.status!r}"
         assert run_orm.completed_at is not None
+
+
+# ── ALEX-TD-025: _session_ctx returns Session, not contextmanager ──────────────
+
+def test_session_ctx_returns_session_directly(auth_client):
+    """
+    ALEX-TD-025: _session_ctx() должна возвращать Session напрямую,
+    а не _GeneratorContextManager.
+
+    До фикса: @contextmanager + yield → session_factory() возвращал
+    _GeneratorContextManager → AttributeError при .get() в execute_run().
+    После фикса: обычная функция → session_factory() возвращает Session.
+    """
+    from agentco.handlers.runs import _session_ctx
+    from sqlalchemy.orm import Session as SASession
+
+    session = _session_ctx()
+    try:
+        assert isinstance(session, SASession), (
+            f"_session_ctx() must return a Session, got {type(session).__name__}. "
+            "Did you accidentally use @contextmanager? session_factory must be a plain callable."
+        )
+        # Ensure it's usable
+        assert hasattr(session, "get"), "Session must have .get() method"
+        assert hasattr(session, "commit"), "Session must have .commit() method"
+    finally:
+        session.close()
+
+
+# ── ALEX-TD-028: execute_run initial read uses session_factory ────────────────
+
+@pytest.mark.asyncio
+async def test_execute_run_uses_session_factory_for_initial_read(auth_client):
+    """
+    ALEX-TD-028: execute_run() должен использовать session_factory для начального
+    чтения Run из БД, а не self._session (который может быть detached в background context).
+
+    Тест создаёт ран, закрывает исходную session, затем вызывает execute_run() с
+    session_factory — должно работать без DetachedInstanceError.
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from agentco.services.run import RunService
+    from agentco.handlers.runs import _session_ctx
+
+    client, engine = auth_client
+    token = _register_and_login(client, email="td028@example.com")
+    company_id = _create_company(client, token)
+    run_id = _create_run(client, token, company_id)
+
+    mock_final_state = {
+        "status": "completed",
+        "final_result": "Test ALEX-TD-028",
+        "messages": [],
+    }
+
+    with patch("agentco.orchestration.graph.compile") as mock_compile, \
+         patch("agentco.orchestration.checkpointer.create_checkpointer") as mock_ckpt:
+
+        mock_graph = AsyncMock()
+        mock_graph.ainvoke = AsyncMock(return_value=mock_final_state)
+        mock_compile.return_value = mock_graph
+
+        from contextlib import asynccontextmanager
+        @asynccontextmanager
+        async def fake_checkpointer(*args, **kwargs):
+            yield MagicMock()
+
+        mock_ckpt.side_effect = fake_checkpointer
+
+        # Создаём сервис с уже-закрытой сессией (симулирует detached session в BG task)
+        from sqlalchemy.orm import sessionmaker
+        TestSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+        detached_session = TestSessionLocal()
+        detached_session.close()  # Закрываем до вызова — симулируем detached state
+
+        def fresh_session_factory():
+            return TestSessionLocal()
+
+        svc = RunService(detached_session)
+        # Должно работать через session_factory, а не через detached self._session
+        result = await svc.execute_run(run_id, session_factory=fresh_session_factory)
+
+    # Verify run status was updated
+    with TestSessionLocal() as verify_session:
+        from agentco.orm.run import RunORM
+        run_orm = verify_session.get(RunORM, run_id)
+        assert run_orm.status in ("completed", "done"), (
+            f"Expected completed/done, got {run_orm.status!r}"
+        )

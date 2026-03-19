@@ -9,7 +9,6 @@ Endpoints:
     GET   /api/companies/{company_id}/runs/{run_id}/events  → list run events
     POST  /api/companies/{company_id}/tasks/{task_id}/run   → legacy: run from task
 """
-from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
 
@@ -80,13 +79,18 @@ class RunCreatedOut(BaseModel):
 
 # ── Session factory for background tasks ──────────────────────────────────────
 
-@contextmanager
-def _session_ctx():
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+def _session_ctx() -> "Session":
+    """
+    ALEX-TD-025 fix: plain session factory (не contextmanager).
+
+    Возвращает свежую Session. Вызывающий код обязан вызвать session.close()
+    в finally-блоке. Используется в RunService.execute_run() как session_factory.
+
+    Было: @contextmanager + yield → session_factory() возвращал
+    _GeneratorContextManager, не Session → AttributeError при .get()/.commit().
+    Стало: обычная функция → session_factory() возвращает Session напрямую.
+    """
+    return SessionLocal()
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────

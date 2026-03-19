@@ -60,6 +60,7 @@ export default function WarRoomPage() {
   const toast = useToast()
   const [stopping, setStopping] = useState(false)
   const [agentPanelOpen, setAgentPanelOpen] = useState(false)
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
   const isMobile = useIsMobile()
 
   // WebSocket connection for real-time events
@@ -486,42 +487,62 @@ export default function WarRoomPage() {
               gap: 6,
             }}
           >
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                data-testid="feed-message"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  borderRadius: 8,
-                  padding: '10px 14px',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                }}
-              >
-                <div data-testid={`feed-message-${msg.id}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#60a5fa' }}>
-                      {msg.senderName}
-                    </span>
-                    <span style={{ color: '#475569', fontSize: '0.8rem' }}>→</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#a78bfa' }}>
-                      {msg.targetName}
-                    </span>
-                    <span
-                      data-testid="message-timestamp"
-                      style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#475569', fontFamily: 'monospace' }}
+            {messages.map((msg) => {
+              const isExpanded = expandedMessages.has(msg.id)
+              const isLong = msg.content.length > 120
+              return (
+                <div
+                  key={msg.id}
+                  data-testid="feed-message"
+                  onClick={() => {
+                    if (!isLong) return
+                    setExpandedMessages((prev) => {
+                      const next = new Set(prev)
+                      if (next.has(msg.id)) next.delete(msg.id)
+                      else next.add(msg.id)
+                      return next
+                    })
+                  }}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    cursor: isLong ? 'pointer' : 'default',
+                  }}
+                >
+                  <div data-testid={`feed-message-${msg.id}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#60a5fa' }}>
+                        {msg.senderName}
+                      </span>
+                      <span style={{ color: '#475569', fontSize: '0.8rem' }}>→</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#a78bfa' }}>
+                        {msg.targetName}
+                      </span>
+                      <span
+                        data-testid="message-timestamp"
+                        style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#475569', fontFamily: 'monospace' }}
+                      >
+                        {formatTime(msg.timestamp)}
+                      </span>
+                    </div>
+                    <div
+                      data-testid="message-content"
+                      style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.4 }}
                     >
-                      {formatTime(msg.timestamp)}
-                    </span>
-                  </div>
-                  <div
-                    data-testid="message-content"
-                    style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.4 }}
-                  >
-                    {truncate(msg.content, 120)}
+                      {/* SIRI-UX-050: expand/collapse long messages on click */}
+                      {isExpanded ? msg.content : truncate(msg.content, 120)}
+                    </div>
+                    {isLong && (
+                      <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: 4 }}>
+                        {isExpanded ? '▲ Show less' : '▼ Show more'}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', color: '#475569', padding: 40, fontSize: '0.9rem' }}>
                 Waiting for agent activity...

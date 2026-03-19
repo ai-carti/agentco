@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import AuthPage from './components/AuthPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
@@ -30,7 +30,8 @@ function AppLayout() {
             <Route path="/" element={<CompaniesPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/companies/:id" element={<CompanyPage />} />
-            <Route path="/war-room" element={<WarRoomPage />} />
+            {/* SIRI-UX-052: /war-room without company context → redirect to companies list */}
+            <Route path="/war-room" element={<Navigate to="/" replace />} />
             <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
             <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
             <Route path="/companies/:id/agents/:agentId/edit" element={<AgentEditPage />} />

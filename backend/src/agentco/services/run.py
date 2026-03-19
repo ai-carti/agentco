@@ -34,8 +34,13 @@ logger = logging.getLogger(__name__)
 
 
 class RunService:
-    # Глобальный реестр активных asyncio Tasks: run_id → asyncio.Task
-    _active_tasks: dict[str, asyncio.Task] = {}
+    # ALEX-TD-026: Intentional class-level (global) registry активных asyncio Tasks.
+    # Хранится на уровне класса, не экземпляра, чтобы stop() мог отменить task
+    # независимо от того какой экземпляр RunService вызывается (каждый HTTP request
+    # создаёт новый экземпляр, но _active_tasks — общий для всех).
+    # ВАЖНО: всегда обращайтесь через RunService._active_tasks, не через self._active_tasks,
+    # чтобы не рисковать переопределить атрибут на уровне экземпляра.
+    _active_tasks: dict[str, asyncio.Task] = {}  # run_id → asyncio.Task
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -152,13 +157,16 @@ class RunService:
         except Exception as exc:
             bus = EventBus.get()
             logger.error("_execute_agent failed for run %s: %s", run_id, exc)
-            with session_factory() as session:
+            session = session_factory()
+            try:
                 run_orm = session.get(self._repo.orm_model, run_id)
                 if run_orm:
                     run_orm.status = "failed"
                     run_orm.error = str(exc)
                     run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     session.commit()
+            finally:
+                session.close()
 
             await bus.publish({
                 "type": "run.failed",
@@ -251,6 +259,9 @@ class RunService:
 
         ALEX-TD-024: session_factory используется для финального DB update после закрытия
         checkpointer context. Если не передан — fallback на self._session (для прямых вызовов).
+
+        ALEX-TD-025: session_factory должна быть plain callable () → Session (не contextmanager).
+        Вызывающий код (handlers/runs.py:_session_ctx) переписан на обычную функцию.
         """
         from ..orchestration.graph import compile as compile_graph
         from ..orchestration.checkpointer import create_checkpointer
@@ -258,18 +269,25 @@ class RunService:
 
         bus = EventBus.get()
 
-        # Получаем ран из БД (используем self._session для начального чтения)
-        run_orm = self._session.get(self._repo.orm_model, run_id)
-        if run_orm is None:
-            raise ValueError(f"Run {run_id!r} not found")
+        # ALEX-TD-028: используем session_factory для начального чтения и обновления статуса
+        # если передан (background task context — self._session может быть detached).
+        # Если session_factory не передан — используем self._session (прямой вызов в тестах).
+        _init_session = session_factory() if session_factory is not None else self._session
+        try:
+            run_orm = _init_session.get(self._repo.orm_model, run_id)
+            if run_orm is None:
+                raise ValueError(f"Run {run_id!r} not found")
 
-        company_id = run_orm.company_id
-        initial_goal = run_orm.goal or (run_orm.task_id or "")
-        initial_task_id = run_orm.task_id
+            company_id = run_orm.company_id
+            initial_goal = run_orm.goal or (run_orm.task_id or "")
+            initial_task_id = run_orm.task_id
 
-        # Обновляем статус → running
-        run_orm.status = "running"
-        self._session.commit()
+            # Обновляем статус → running
+            run_orm.status = "running"
+            _init_session.commit()
+        finally:
+            if session_factory is not None:
+                _init_session.close()
 
         await bus.publish({
             "type": "run.status_changed",
