@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from agentco.auth.dependencies import get_current_user
@@ -31,11 +31,13 @@ _MEMORY_DB = os.environ.get("AGENTCO_MEMORY_DB", "./agentco_memory.db")
 def get_agent_memory(
     company_id: str,
     agent_id: str,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """
-    Возвращает список всех воспоминаний агента.
+    Возвращает список воспоминаний агента с пагинацией (ALEX-TD-044).
 
     Проверяет ownership компании и существование агента.
     """
@@ -57,10 +59,10 @@ def get_agent_memory(
     if agent.company_id != company_id:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    # Получаем воспоминания
+    # Получаем воспоминания с пагинацией
     memory_service = MemoryService(_MEMORY_DB)
     try:
-        memories = memory_service.get_all(agent_id=agent_id)
+        memories = memory_service.get_all(agent_id=agent_id, limit=limit, offset=offset)
     finally:
         memory_service.close()
 

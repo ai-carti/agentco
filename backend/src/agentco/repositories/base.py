@@ -47,10 +47,13 @@ class BaseRepository(Generic[ORMType, DomainType]):
         obj = self._session.get(self.orm_model, id)
         return self._to_domain(obj) if obj else None
 
-    def list(self, limit: int | None = None, offset: int | None = None, **filters) -> list[DomainType]:
+    def list(self, limit: int | None = None, offset: int | None = None, order_by=None, **filters) -> list[DomainType]:
+        """ALEX-TD-046: добавлен order_by параметр для детерминированной сортировки."""
         stmt = select(self.orm_model)
         for attr, value in filters.items():
             stmt = stmt.where(getattr(self.orm_model, attr) == value)
+        if order_by is not None:
+            stmt = stmt.order_by(order_by)
         if offset is not None:
             stmt = stmt.offset(offset)
         if limit is not None:

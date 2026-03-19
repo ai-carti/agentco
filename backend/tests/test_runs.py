@@ -943,3 +943,148 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
+
+
+# ── ALEX-TD-045: stop() publishes run.stopped to EventBus ─────────────────────
+
+class TestALEXTD045StopPublishesEvent:
+    """ALEX-TD-045: RunService.stop() должен публиковать run.stopped в EventBus."""
+
+    @pytest.mark.asyncio
+    async def test_stop_publishes_run_stopped_event(self, auth_client):
+        """stop() должен вызывать EventBus.publish с type=run.stopped."""
+        client, _ = auth_client
+        token = _register_and_login(client, email="td045a@example.com")
+        company_id = _create_company(client, token, name="TD045 Corp A")
+
+        # Создаём ран
+        resp = client.post(
+            f"/api/companies/{company_id}/runs",
+            json={"goal": "test goal"},
+            headers=_auth_headers(token),
+        )
+        assert resp.status_code == 201
+        run_id = resp.json()["id"]
+
+        published_events = []
+        from agentco.core.event_bus import EventBus
+
+        async def mock_publish(ev):
+            published_events.append(ev)
+
+        # Patch EventBus instance
+        bus = EventBus.get()
+        original = bus.publish
+        bus.publish = mock_publish
+
+        try:
+            resp = client.post(
+                f"/api/companies/{company_id}/runs/{run_id}/stop",
+                headers=_auth_headers(token),
+            )
+            assert resp.status_code == 200
+            assert resp.json()["status"] == "stopped"
+            # Give event loop a chance to run the created task
+            await asyncio.sleep(0.05)
+        finally:
+            bus.publish = original
+
+        # Verify run.stopped was published
+        stopped_events = [e for e in published_events if isinstance(e, dict) and e.get("type") == "run.stopped"]
+        assert len(stopped_events) >= 1, f"Expected run.stopped event, got: {published_events}"
+        assert stopped_events[0]["run_id"] == run_id
+        assert stopped_events[0]["company_id"] == company_id
+
+
+# ── ALEX-TD-043: GET /tasks/{id}/runs pagination ──────────────────────────────
+
+class TestALEXTD043TaskRunsPagination:
+    """ALEX-TD-043: GET /tasks/{task_id}/runs должен поддерживать limit/offset."""
+
+    def test_list_task_runs_accepts_limit_offset_params(self, auth_client):
+        """GET /tasks/{id}/runs?limit=10&offset=0 → 200."""
+        client, _ = auth_client
+        token = _register_and_login(client, email="td043a@example.com")
+        company_id = _create_company(client, token, name="TD043 Corp A")
+
+        # Create an agent and task
+        agent_resp = client.post(
+            f"/api/companies/{company_id}/agents",
+            json={"name": "td043-agent", "model": "gpt-4o-mini"},
+            headers=_auth_headers(token),
+        )
+        assert agent_resp.status_code == 201
+        agent_id = agent_resp.json()["id"]
+
+        task_resp = client.post(
+            f"/api/companies/{company_id}/agents/{agent_id}/tasks",
+            json={"title": "TD043 Task"},
+            headers=_auth_headers(token),
+        )
+        assert task_resp.status_code == 201
+        task_id = task_resp.json()["id"]
+
+        resp = client.get(
+            f"/api/companies/{company_id}/tasks/{task_id}/runs?limit=10&offset=0",
+            headers=_auth_headers(token),
+        )
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_list_task_runs_limit_param_is_used(self, auth_client):
+        """GET /tasks/{id}/runs?limit=1 → returns at most 1 run."""
+        from agentco.orm.run import RunORM
+        from sqlalchemy.orm import sessionmaker
+        import uuid
+
+        client, engine = auth_client
+        token = _register_and_login(client, email="td043b@example.com")
+        company_id = _create_company(client, token, name="TD043 Corp B")
+
+        agent_resp = client.post(
+            f"/api/companies/{company_id}/agents",
+            json={"name": "td043-agent-b", "model": "gpt-4o-mini"},
+            headers=_auth_headers(token),
+        )
+        agent_id = agent_resp.json()["id"]
+
+        task_resp = client.post(
+            f"/api/companies/{company_id}/agents/{agent_id}/tasks",
+            json={"title": "TD043 Task B"},
+            headers=_auth_headers(token),
+        )
+        task_id = task_resp.json()["id"]
+
+        # Insert 3 runs directly in DB to test pagination
+        from datetime import datetime, timezone
+        Session = sessionmaker(bind=engine)
+        with Session() as db:
+            for _ in range(3):
+                db.add(RunORM(
+                    id=str(uuid.uuid4()),
+                    company_id=company_id,
+                    task_id=task_id,
+                    agent_id=agent_id,
+                    status="completed",
+                    started_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                ))
+            db.commit()
+
+        # Without limit: should return all 3
+        resp_all = client.get(
+            f"/api/companies/{company_id}/tasks/{task_id}/runs",
+            headers=_auth_headers(token),
+        )
+        assert resp_all.status_code == 200
+        assert len(resp_all.json()) == 3
+
+        # With limit=1: should return 1
+        resp_limited = client.get(
+            f"/api/companies/{company_id}/tasks/{task_id}/runs?limit=1&offset=0",
+            headers=_auth_headers(token),
+        )
+        assert resp_limited.status_code == 200
+        assert len(resp_limited.json()) == 1, (
+            f"Expected 1 run with limit=1, got {len(resp_limited.json())}. "
+            "list_task_runs endpoint does not support pagination."
+        )

@@ -60,8 +60,16 @@ class RunRepository(BaseRepository[RunORM, Run]):
             stmt = stmt.where(RunORM.status == status_filter)
         return [self._to_domain(row) for row in self._session.scalars(stmt).all()]
 
-    def list_by_task(self, task_id: str) -> list[Run]:
-        return self.list(task_id=task_id)
+    def list_by_task(self, task_id: str, limit: int = 50, offset: int = 0) -> list[Run]:
+        """ALEX-TD-043: pagination support for task runs list."""
+        stmt = (
+            select(self.orm_model)
+            .where(RunORM.task_id == task_id)
+            .order_by(RunORM.started_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return [self._to_domain(row) for row in self._session.scalars(stmt).all()]
 
     def find_active_by_task(self, task_id: str) -> Run | None:
         """Возвращает активный ран (pending или running) для задачи или None."""

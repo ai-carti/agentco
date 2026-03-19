@@ -195,8 +195,15 @@ class RunService:
             raise NotFoundError(f"Company {company_id!r} not found")
         return self._repo.list_by_company(company_id, limit=limit, offset=offset, status_filter=status_filter)
 
-    def list_by_task_owned(self, company_id: str, task_id: str, owner_id: str) -> list[Run]:
-        """Список ранов задачи — с проверкой ownership."""
+    def list_by_task_owned(
+        self,
+        company_id: str,
+        task_id: str,
+        owner_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Run]:
+        """Список ранов задачи — с проверкой ownership. ALEX-TD-043: limit/offset pagination."""
         company = self._company_repo.get(company_id)
         if company.owner_id != owner_id:
             raise NotFoundError(f"Company {company_id!r} not found")
@@ -206,7 +213,7 @@ class RunService:
             raise NotFoundError(f"Task {task_id!r} not found")
         if task.company_id != company_id:
             raise NotFoundError(f"Task {task_id!r} not found in company {company_id!r}")
-        return self._repo.list_by_task(task_id)
+        return self._repo.list_by_task(task_id, limit=limit, offset=offset)
 
     def get_task_run_detail(self, company_id: str, task_id: str, run_id: str, owner_id: str) -> dict:
         """Run details for a specific task. Validates ownership and task membership."""
@@ -401,5 +408,20 @@ class RunService:
         run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         self._session.flush()
         self._session.commit()
+
+        # ALEX-TD-045: публикуем run.stopped в EventBus
+        # stop() вызывается из async HTTP handler — loop всегда running.
+        try:
+            loop = asyncio.get_running_loop()
+            bus = EventBus.get()
+            loop.create_task(bus.publish({
+                "type": "run.stopped",
+                "company_id": company_id,
+                "run_id": run_id,
+                "payload": {"status": "stopped"},
+            }))
+        except RuntimeError:
+            # Нет running loop (например, синхронные тесты) — пропускаем publish.
+            pass
 
         return self._repo._to_domain(run_orm)

@@ -121,16 +121,17 @@ class MemoryStore:
 
         return [dict(row) for row in rows]
 
-    def get_all(self, agent_id: str) -> list[dict[str, Any]]:
-        """Получить все воспоминания агента, отсортированные по дате (новые первыми)."""
+    def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        """Получить воспоминания агента с пагинацией (ALEX-TD-044), сортировка: новые первыми."""
         rows = self._conn.execute(
             """
             SELECT id, agent_id, task_id, content, created_at
             FROM agent_memory_meta
             WHERE agent_id = ?
             ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
             """,
-            [agent_id],
+            [agent_id, limit, offset],
         ).fetchall()
         return [dict(row) for row in rows]
 

@@ -251,15 +251,19 @@ async def run_task(
 async def list_task_runs(
     company_id: str,
     task_id: str,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """Список ранов задачи."""
+    """Список ранов задачи с пагинацией (ALEX-TD-043: default limit=50, max=500)."""
     try:
         runs = RunService(session).list_by_task_owned(
             company_id=company_id,
             task_id=task_id,
             owner_id=current_user.id,
+            limit=limit,
+            offset=offset,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

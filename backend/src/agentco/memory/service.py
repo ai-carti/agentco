@@ -81,9 +81,9 @@ class MemoryService:
             top_k,
         )
 
-    def get_all(self, agent_id: str) -> list[dict[str, Any]]:
-        """Синхронно получить все воспоминания агента."""
-        return self._store.get_all(agent_id)
+    def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        """Синхронно получить воспоминания агента с пагинацией (ALEX-TD-044)."""
+        return self._store.get_all(agent_id, limit=limit, offset=offset)
 
     async def inject_memories(
         self,
