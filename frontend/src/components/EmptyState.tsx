@@ -8,9 +8,10 @@ interface EmptyStateProps {
   subtitle: string
   ctaLabel?: string
   onCTA?: () => void
+  ctaTestId?: string
 }
 
-export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onCTA }: EmptyStateProps) {
+export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onCTA, ctaTestId }: EmptyStateProps) {
   return (
     <div
       data-testid="empty-state"
@@ -38,6 +39,7 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
       </p>
       {ctaLabel && onCTA && (
         <button
+          data-testid={ctaTestId}
           onClick={onCTA}
           style={{
             marginTop: '0.5rem',

@@ -164,7 +164,7 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
             variant="secondary"
             style={{ flex: 1, fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
           >
-            View History
+            View Agent
           </Button>
         </Link>
       </div>

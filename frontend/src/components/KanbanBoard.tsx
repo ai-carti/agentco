@@ -869,6 +869,29 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
 
   return (
     <>
+      {/* Always-visible header with New Task button when loaded and tasks exist */}
+      {isLoaded && !showEmpty && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1rem 0' }}>
+          <button
+            data-testid="kanban-new-task-btn"
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              padding: '0.35rem 0.85rem',
+              background: '#2563eb',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
+          >
+            + New Task
+          </button>
+        </div>
+      )}
       {showEmpty && (
         <EmptyState
           icon={<ClipboardList className="w-12 h-12 text-gray-400" />}
@@ -876,6 +899,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           subtitle="Create your first task and assign it to an agent"
           ctaLabel="+ New Task"
           onCTA={() => setShowCreateModal(true)}
+          ctaTestId="kanban-new-task-btn"
         />
       )}
       {!showEmpty && isLoaded && (

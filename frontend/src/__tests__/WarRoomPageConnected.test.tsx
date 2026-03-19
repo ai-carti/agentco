@@ -50,6 +50,9 @@ describe('WarRoomPage — BUG-040 connected state', () => {
 
   it('renders war room page when connected', () => {
     renderWarRoom()
+    // With isConnected=true and no agents, component shows connecting spinner first.
+    // After 3s timeout it transitions to empty state (war-room-page testid).
+    act(() => { vi.advanceTimersByTime(3000) })
     expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
   })
 })
@@ -77,11 +80,15 @@ describe('WarRoomPage — SIRI-UX-025: isConnecting skeleton/spinner', () => {
     useWarRoomStore.setState({ loadMockData: original } as any)
   })
 
-  it('shows actual content after agents arrive', () => {
+  it('shows actual content after agents arrive via WS store update', () => {
     renderWarRoom()
-    act(() => { vi.advanceTimersByTime(100) })
 
-    // After mock data loads, agents are present — should show war room
+    // Simulate WS event arriving — inject agents directly into store
+    act(() => {
+      useWarRoomStore.getState().loadMockData()
+    })
+
+    // After agents arrive, isConnecting should clear and war-room-page should show
     expect(screen.queryByTestId('war-room-connecting')).not.toBeInTheDocument()
     expect(screen.getByTestId('agent-panel')).toBeInTheDocument()
   })
