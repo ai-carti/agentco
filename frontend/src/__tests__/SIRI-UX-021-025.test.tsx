@@ -4,12 +4,12 @@
  * SIRI-UX-024: CompanyPage tab hover states
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import TaskDetailSidebar from '../components/TaskDetailSidebar'
 import LibraryPage from '../components/LibraryPage'
 import CompanyPage from '../components/CompanyPage'
-import { useAgentStore } from '../store/agentStore'
+import { useAgentStore, type AgentStore } from '../store/agentStore'
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ vi.mock('../api/client', () => ({
 }))
 
 vi.mock('../store/agentStore', () => ({
-  useAgentStore: vi.fn((sel: (s: unknown) => unknown) => {
+  useAgentStore: vi.fn((sel: (s: AgentStore) => unknown) => {
     const state = {
       agents: [],
       currentCompany: { id: 'co1', name: 'Test Corp' },
@@ -36,7 +36,7 @@ vi.mock('../store/agentStore', () => ({
       setActiveCompanyTab: vi.fn(),
       activeCompanyTab: 'war-room',
     }
-    return sel(state)
+    return sel(state as unknown as AgentStore)
   }),
 }))
 
@@ -56,7 +56,7 @@ vi.mock('../components/AgentForm', () => ({
 
 describe('SIRI-UX-021: TaskDetailSidebar assignee initials', () => {
   beforeEach(() => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ logs: [], status_history: [] }) })
     mockToastSuccess.mockClear()
     mockToastError.mockClear()
   })
@@ -121,7 +121,7 @@ describe('SIRI-UX-022: LibraryPage ForkModal toast on fork', () => {
   })
 
   it('shows success toast when fork succeeds', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'la1', name: 'Sales Bot', role: 'SDR' }] })
       .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'co1', name: 'Acme Corp' }] })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'new-agent-id' }) })
@@ -144,7 +144,7 @@ describe('SIRI-UX-022: LibraryPage ForkModal toast on fork', () => {
   })
 
   it('shows error toast when fork fails', async () => {
-    global.fetch = vi.fn()
+    globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'la2', name: 'Dev Bot', role: 'SWE' }] })
       .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'co2', name: 'Bad Corp' }] })
       .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({}) })
@@ -171,7 +171,7 @@ describe('SIRI-UX-022: LibraryPage ForkModal toast on fork', () => {
 
 describe('SIRI-UX-024: CompanyPage tab hover states', () => {
   beforeEach(() => {
-    vi.mocked(useAgentStore).mockImplementation((sel: (s: unknown) => unknown) => {
+    vi.mocked(useAgentStore).mockImplementation((sel: (s: AgentStore) => unknown) => {
       const state = {
         agents: [],
         currentCompany: { id: 'co1', name: 'Test Corp' },
@@ -182,9 +182,9 @@ describe('SIRI-UX-024: CompanyPage tab hover states', () => {
         setActiveCompanyTab: vi.fn(),
         activeCompanyTab: 'war-room',
       }
-      return sel(state)
+      return sel(state as unknown as AgentStore)
     })
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
   })
 
   it('inactive tab buttons have onMouseEnter/Leave handlers', () => {

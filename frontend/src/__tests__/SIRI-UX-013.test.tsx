@@ -88,7 +88,6 @@ describe('SIRI-UX-013: Stop button calls API', () => {
     })
 
     await waitFor(() => {
-      const mockToastInfo = vi.fn()
       // no toast.success, but toast.info called
       expect(mockToastSuccess).not.toHaveBeenCalled()
     })

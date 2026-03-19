@@ -8,11 +8,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { useAgentStore } from '../store/agentStore'
+import { useAgentStore, type AgentStore } from '../store/agentStore'
 
 // ─── Mock stores & context ───────────────────────────────────────────────────
 vi.mock('../store/warRoomStore', () => ({
-  useWarRoomStore: vi.fn((sel: (s: unknown) => unknown) => {
+  useWarRoomStore: vi.fn((sel: (s: AgentStore) => unknown) => {
     const state = {
       agents: [{ id: 'a1', name: 'CEO', role: 'Chief Executive Officer', avatar: '🤖', level: 0, status: 'thinking' as const }],
       messages: [
@@ -26,7 +26,7 @@ vi.mock('../store/warRoomStore', () => ({
       addCost: vi.fn(),
       clearFlash: vi.fn(),
     }
-    return sel(state)
+    return sel(state as unknown as AgentStore)
   }),
   getNextMockEvent: vi.fn(() => ({
     message: { id: 'm2', senderName: 'CEO', targetName: 'CPO', content: 'Update', timestamp: new Date().toISOString() },
@@ -47,7 +47,7 @@ vi.mock('../api/client', () => ({
 }))
 
 vi.mock('../store/agentStore', () => ({
-  useAgentStore: vi.fn((sel: (s: unknown) => unknown) => {
+  useAgentStore: vi.fn((sel: (s: AgentStore) => unknown) => {
     const state = {
       agents: [],
       currentCompany: { id: 'co1', name: 'Test Corp' },
@@ -58,7 +58,7 @@ vi.mock('../store/agentStore', () => ({
       setActiveCompanyTab: vi.fn(),
       activeCompanyTab: null,
     }
-    return sel(state)
+    return sel(state as unknown as AgentStore)
   }),
 }))
 
@@ -91,7 +91,7 @@ describe('SIRI-UX-016: WarRoomPage auto-scroll anchor', () => {
 describe('SIRI-UX-018: CompanyPage tab hover states', () => {
   beforeEach(() => {
     // Reset mock to have agents loaded
-    vi.mocked(useAgentStore).mockImplementation((sel: (s: unknown) => unknown) => {
+    vi.mocked(useAgentStore).mockImplementation((sel: (s: AgentStore) => unknown) => {
       const state = {
         agents: [],
         currentCompany: { id: 'co1', name: 'Test Corp' },
@@ -102,7 +102,7 @@ describe('SIRI-UX-018: CompanyPage tab hover states', () => {
         setActiveCompanyTab: vi.fn(),
         activeCompanyTab: 'war-room',
       }
-      return sel(state)
+      return sel(state as unknown as AgentStore)
     })
   })
 
@@ -126,7 +126,7 @@ describe('SIRI-UX-018: CompanyPage tab hover states', () => {
 describe('SIRI-UX-019: LibraryPage Fork/Portfolio hover states', () => {
   it('Fork button has hover transitions', async () => {
     // Mock fetch for library agents
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{ id: 'la1', name: 'Sales Bot', role: 'SDR', avatar: '🤖' }],
     })

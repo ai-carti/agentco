@@ -32,7 +32,7 @@ export interface Company {
   name: string
 }
 
-interface AgentStore {
+export interface AgentStore {
   agents: Agent[]
   tasks: Task[]
   currentCompany: Company | null
