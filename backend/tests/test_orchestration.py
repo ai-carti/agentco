@@ -270,6 +270,7 @@ class TestLoopDetection:
         assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
         assert result.get("error") == "cost_limit_exceeded"
 
+    @pytest.mark.asyncio
     async def test_loop_detection_via_full_graph_run(self, tmp_path):
         """Граф должен остановиться с status='failed' при превышении MAX_ITERATIONS (M2-007)."""
         import os
