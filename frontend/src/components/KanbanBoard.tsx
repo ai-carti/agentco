@@ -59,18 +59,19 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
-  // BUG-050: close Edit and Delete modals on Escape key
+  // BUG-050 / SIRI-UX-062: close Edit, Delete, and Assign modals on Escape key
   useEffect(() => {
-    if (!editOpen && !deleteOpen) return
+    if (!editOpen && !deleteOpen && !assignOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setEditOpen(false)
         setDeleteOpen(false)
+        setAssignOpen(false)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [editOpen, deleteOpen])
+  }, [editOpen, deleteOpen, assignOpen])
 
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -226,6 +227,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
         <button
           data-testid={`task-menu-${task.id}`}
           onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
+          aria-label="Task options"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
           style={{
             background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer',
             fontSize: '1rem', padding: '0 0.15rem', lineHeight: 1, flexShrink: 0,
@@ -369,6 +373,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
       {editOpen && (
         <div
           data-testid="edit-task-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit Task"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
@@ -433,6 +440,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
       {deleteOpen && (
         <div
           data-testid="confirm-delete-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete Task"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
@@ -473,6 +483,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
       {assignOpen && (
         <div
           data-testid="assign-dropdown"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assign to Agent"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
@@ -1008,6 +1021,9 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
       {showCreateModal && (
         <div
           data-testid="create-task-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create Task"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
