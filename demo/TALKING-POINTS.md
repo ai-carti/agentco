@@ -9,7 +9,7 @@
 
 **Почему важно:** Продукт работает с нуля — нет зависимости от Google/GitHub. Self-hosted friendly.
 
-**Цифры:** Auth реализован за 1 день агентом Alex. 285+ backend тестов, включая auth coverage.
+**Цифры:** Auth реализован за 1 день агентом Alex. 403 backend тестов, включая auth coverage.
 
 **Тезис:** "We ship features, not scaffolding."
 
@@ -92,7 +92,7 @@
 
 **Почему важно:** Network effect. Лучшие агенты (проверенные промпты, настроенные модели) распространяются между командами.
 
-**Цифры:** `POST /api/library` + `POST /api/companies/{id}/agents/fork` — за одну транзакцию. 293+ тестов including library coverage.
+**Цифры:** `POST /api/library` + `POST /api/companies/{id}/agents/fork` — за одну транзакцию. 919 тестов total including library coverage.
 
 **Тезис:** "Open source agents. Your best AI employee becomes a template for everyone."
 
@@ -105,12 +105,12 @@
 **Почему важно:** Простота = надёжность. Нет Redis, нет Kafka, нет K8s. Работает на $5/мес VPS.
 
 **Цифры:**
-- 309 тестов passing (backend: 309, frontend: 363) — 0 failures
+- 919 тестов passing (backend: 403, frontend: 516) — 0 failures
 - M0 → M2 + UX Sprint + Post-MVP: all shipped by AgentCo itself
 - Commits: 30+ коммитов от AI-агентов
 - Git log: `ff4ec91` последний — CI fix от самого AgentCo
 
-**Тезис:** "178 tests. 0 failures. Shipped by AI. This is the proof of concept."
+**Тезис:** "919 tests. 0 failures. Shipped by AI. This is the proof of concept."
 
 ---
 
@@ -129,8 +129,8 @@
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тесты | 309 ✅ |
-| Frontend тесты | 363 ✅ |
+| Backend тесты | 403 ✅ |
+| Frontend тесты | 516 ✅ |
 | Milestones closed | M0, M1, M2, UX Sprint, Post-MVP |
 | Иерархия | N уровней (рекурсивный LangGraph) |
 | Cost savings | 3.2× vs naive GPT-4o |
