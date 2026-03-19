@@ -102,7 +102,7 @@ describe('UX-009: Agent Card redesign', () => {
     expect(onEdit).toHaveBeenCalledWith(mockAgent)
   })
 
-  it('View History button links to agent page', () => {
+  it('View Agent button links to agent page', () => {
     renderCard()
     const historyLink = screen.getByTestId('agent-history-btn')
     expect(historyLink).toBeInTheDocument()
