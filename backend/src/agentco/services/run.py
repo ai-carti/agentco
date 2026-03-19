@@ -272,6 +272,9 @@ class RunService:
         # ALEX-TD-028: используем session_factory для начального чтения и обновления статуса
         # если передан (background task context — self._session может быть detached).
         # Если session_factory не передан — используем self._session (прямой вызов в тестах).
+        # ALEX-TD-030: инициализируем company_id до try-блока, чтобы избежать UnboundLocalError
+        # в outer except-блоке если run не найден.
+        company_id: str = ""
         _init_session = session_factory() if session_factory is not None else self._session
         try:
             run_orm = _init_session.get(self._repo.orm_model, run_id)

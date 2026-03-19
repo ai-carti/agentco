@@ -5,9 +5,15 @@ Mock LLM через litellm.mock_completion — реальный LLM не выз
 Loop detection: MAX_ITERATIONS (env MAX_AGENT_ITERATIONS, default=20)
               + MAX_COST_USD (env MAX_RUN_COST_USD, default=1.0)
               + MAX_TOKENS (env MAX_RUN_TOKENS, default=100000)
+
+ALEX-TD-027: все три node-функции конвертированы в async def.
+_mock_llm_call обёрнут через asyncio.run_in_executor — sync вызов
+litellm.mock_completion не блокирует event loop при реальных async LLM-вызовах.
 """
 from __future__ import annotations
 
+import asyncio
+import functools
 import os
 import uuid
 from typing import Any
@@ -32,8 +38,8 @@ def _get_max_tokens() -> int:
 
 # ─── Mock LLM helper ──────────────────────────────────────────────────────────
 
-def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
-    """Вызвать mock LLM, вернуть (response_text, tokens_used, cost_usd)."""
+def _sync_mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
+    """Синхронный вызов mock LLM (для обёртки в run_in_executor)."""
     response = litellm.mock_completion(
         model="gpt-4o",
         messages=[
@@ -48,11 +54,24 @@ def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int
     return response.choices[0].message.content, tokens, cost
 
 
+async def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
+    """
+    Async-ready mock LLM вызов.
+
+    Sync litellm.mock_completion обёрнут через run_in_executor — не блокирует
+    event loop. При переходе на реальный LLM достаточно заменить эту функцию
+    на litellm.acompletion без изменений в вызывающем коде.
+    """
+    loop = asyncio.get_running_loop()
+    fn = functools.partial(_sync_mock_llm_call, system, user, mock_response)
+    return await loop.run_in_executor(None, fn)
+
+
 # ─── CEO Node ─────────────────────────────────────────────────────────────────
 
-def ceo_node(state: AgentState) -> dict:
+async def ceo_node(state: AgentState) -> dict:
     """
-    CEO Node — точка входа иерархии.
+    CEO Node — точка входа иерархии (async def — ALEX-TD-027).
 
     Поведение:
     1. Проверяет loop detection (MAX_ITERATIONS, MAX_COST_USD) → если превышено, status=error
@@ -98,7 +117,7 @@ def ceo_node(state: AgentState) -> dict:
         results_summary = "; ".join(
             f"{tid}: {r['result']}" for tid, r in state["results"].items()
         )
-        final_answer, tokens, cost = _mock_llm_call(
+        final_answer, tokens, cost = await _mock_llm_call(
             system="You are a CEO. Synthesize the results from your team.",
             user=f"Task: {state['input']}\nTeam results: {results_summary}",
             mock_response=f"Final result: {results_summary}",
@@ -124,7 +143,7 @@ def ceo_node(state: AgentState) -> dict:
         "depth": current_level + 1,
     }
 
-    _, tokens, cost = _mock_llm_call(
+    _, tokens, cost = await _mock_llm_call(
         system="You are a CEO. Delegate tasks to your team.",
         user=f"Delegate this task: {state['input']}",
         mock_response=f"Delegating to subagent: task_id={task_id}",
@@ -141,9 +160,9 @@ def ceo_node(state: AgentState) -> dict:
 
 # ─── SubAgent Node ────────────────────────────────────────────────────────────
 
-def subagent_node(state: AgentState) -> dict:
+async def subagent_node(state: AgentState) -> dict:
     """
-    SubAgent Node — выполняет задачи из pending_tasks.
+    SubAgent Node — выполняет задачи из pending_tasks (async def — ALEX-TD-027).
 
     POST-006: если task.depth < max_depth, subagent может делегировать дальше
     (добавляет дочерние pending_tasks). Иначе — выполняет напрямую.
@@ -175,7 +194,7 @@ def subagent_node(state: AgentState) -> dict:
         }
 
     # Mock выполнение через LLM
-    result_text, tokens, cost = _mock_llm_call(
+    result_text, tokens, cost = await _mock_llm_call(
         system=f"You are a subagent with ID: {task['to_agent_id']} at depth {task_depth}. Execute the assigned task.",
         user=f"Task: {task['description']}",
         mock_response=f"Completed task at depth {task_depth}: {task['description'][:50]}",
@@ -206,9 +225,9 @@ def subagent_node(state: AgentState) -> dict:
 
 # ─── Deep Hierarchy Node (POST-006) ──────────────────────────────────────────
 
-def hierarchical_node(state: AgentState) -> dict:
+async def hierarchical_node(state: AgentState) -> dict:
     """
-    POST-006: Hierarchical node для агентов промежуточного уровня.
+    POST-006: Hierarchical node для агентов промежуточного уровня (async def — ALEX-TD-027).
 
     Агент получает задачу, при необходимости делегирует подчинённым (если depth < max_depth),
     либо выполняет напрямую. Поддерживает произвольную глубину N уровней.
@@ -261,7 +280,7 @@ def hierarchical_node(state: AgentState) -> dict:
             "context": task.get("context", {}),
             "depth": task_depth + 1,
         }
-        _, tokens, cost = _mock_llm_call(
+        _, tokens, cost = await _mock_llm_call(
             system=f"You are agent {agent_id} at depth {task_depth}. Delegate to subordinate.",
             user=f"Delegate: {task['description']}",
             mock_response=f"Delegating from depth {task_depth} to {task_depth + 1}",
@@ -291,7 +310,7 @@ def hierarchical_node(state: AgentState) -> dict:
         }
     else:
         # Максимальная глубина — выполняем напрямую
-        result_text, tokens, cost = _mock_llm_call(
+        result_text, tokens, cost = await _mock_llm_call(
             system=f"You are agent {agent_id} at depth {task_depth} (leaf). Execute directly.",
             user=f"Task: {task['description']}",
             mock_response=f"Leaf execution at depth {task_depth}: {task['description'][:50]}",

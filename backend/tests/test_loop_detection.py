@@ -7,6 +7,9 @@ RED: тесты описывают ожидаемое поведение.
 - total_tokens >= limit → status="failed", error="cost_limit_exceeded"
 - Лимиты конфигурируемы через env vars
 - RunEvent записывается при срабатывании guard (через сервисный слой)
+
+ALEX-TD-027: node-функции конвертированы в async — все прямые вызовы
+ceo_node/subagent_node помечены @pytest.mark.asyncio и используют await.
 """
 import os
 import pytest
@@ -15,7 +18,8 @@ import pytest
 class TestLoopDetectionErrorCodes:
     """M2-007: status='failed', error code = 'loop_detected' / 'cost_limit_exceeded'."""
 
-    def test_iteration_limit_sets_status_failed(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_iteration_limit_sets_status_failed(self, monkeypatch):
         """При превышении MAX_AGENT_ITERATIONS статус должен быть 'failed' (не 'error')."""
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "5")
         from agentco.orchestration.nodes import ceo_node
@@ -36,11 +40,12 @@ class TestLoopDetectionErrorCodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
         assert result.get("error") == "loop_detected"
 
-    def test_iteration_limit_error_message_contains_limit(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_iteration_limit_error_message_contains_limit(self, monkeypatch):
         """error payload должен содержать info об итерационном лимите."""
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "3")
         from agentco.orchestration.nodes import ceo_node
@@ -61,13 +66,14 @@ class TestLoopDetectionErrorCodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("error") == "loop_detected"
         # error_detail должен содержать пояснение
         assert result.get("error_detail") is not None
         assert "3" in result.get("error_detail", "")
 
-    def test_cost_limit_sets_status_failed(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_cost_limit_sets_status_failed(self, monkeypatch):
         """При превышении MAX_RUN_COST_USD статус должен быть 'failed'."""
         monkeypatch.setenv("MAX_RUN_COST_USD", "0.5")
         from agentco.orchestration.nodes import ceo_node
@@ -88,11 +94,12 @@ class TestLoopDetectionErrorCodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
         assert result.get("error") == "cost_limit_exceeded"
 
-    def test_cost_limit_error_detail_contains_amounts(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_cost_limit_error_detail_contains_amounts(self, monkeypatch):
         """error_detail должен содержать лимит и фактические затраты."""
         monkeypatch.setenv("MAX_RUN_COST_USD", "1.0")
         from agentco.orchestration.nodes import ceo_node
@@ -113,12 +120,13 @@ class TestLoopDetectionErrorCodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("error") == "cost_limit_exceeded"
         detail = result.get("error_detail", "")
         assert "1.0" in detail
 
-    def test_token_limit_alternative(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_token_limit_alternative(self, monkeypatch):
         """MAX_RUN_TOKENS env var также должен работать как лимит токенов."""
         monkeypatch.setenv("MAX_RUN_TOKENS", "1000")
         monkeypatch.setenv("MAX_RUN_COST_USD", "999.0")  # не должно срабатывать
@@ -140,7 +148,7 @@ class TestLoopDetectionErrorCodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("status") == "failed"
         assert result.get("error") == "cost_limit_exceeded"
 
@@ -148,8 +156,12 @@ class TestLoopDetectionErrorCodes:
 class TestLoopDetectionFullGraph:
     """M2-007: граф завершается с status='failed' при срабатывании guard."""
 
-    def test_graph_stops_with_failed_on_iteration_limit(self, monkeypatch):
-        """Полный граф: MAX_ITERATIONS=1 → итерация срабатывает, status='failed'."""
+    @pytest.mark.asyncio
+    async def test_graph_stops_with_failed_on_iteration_limit(self, monkeypatch):
+        """Полный граф: MAX_ITERATIONS=1 → итерация срабатывает, status='failed'.
+
+        ALEX-TD-027 fix: node-функции async → используем ainvoke() вместо invoke().
+        """
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "1")
         # reload nodes to pick up monkeypatch
         import importlib
@@ -179,12 +191,16 @@ class TestLoopDetectionFullGraph:
             "final_result": None,
         }
 
-        final_state = compiled.invoke(initial_state)
+        final_state = await compiled.ainvoke(initial_state)
         assert final_state["status"] == "failed", f"Expected 'failed', got {final_state['status']}"
         assert final_state["error"] == "loop_detected"
 
-    def test_graph_stops_with_failed_on_cost_limit(self, monkeypatch):
-        """Полный граф: начальный cost уже превышен → status='failed', error='cost_limit_exceeded'."""
+    @pytest.mark.asyncio
+    async def test_graph_stops_with_failed_on_cost_limit(self, monkeypatch):
+        """Полный граф: начальный cost уже превышен → status='failed', error='cost_limit_exceeded'.
+
+        ALEX-TD-027 fix: node-функции async → используем ainvoke() вместо invoke().
+        """
         monkeypatch.setenv("MAX_RUN_COST_USD", "0.0001")
         import importlib
         import agentco.orchestration.nodes as nodes_mod
@@ -212,7 +228,7 @@ class TestLoopDetectionFullGraph:
             "final_result": None,
         }
 
-        final_state = compiled.invoke(initial_state)
+        final_state = await compiled.ainvoke(initial_state)
         assert final_state["status"] == "failed"
         assert final_state["error"] == "cost_limit_exceeded"
 

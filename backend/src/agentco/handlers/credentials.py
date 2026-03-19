@@ -51,6 +51,15 @@ class CredentialCreate(BaseModel):
             raise ValueError(f"Unknown provider '{v}'. Allowed: {allowed}")
         return v
 
+    @field_validator("api_key")
+    @classmethod
+    def api_key_must_not_be_empty(cls, v: str) -> str:
+        """ALEX-TD-029: api_key не может быть пустым или whitespace-only."""
+        v_stripped = v.strip()
+        if not v_stripped:
+            raise ValueError("api_key must not be empty")
+        return v_stripped
+
 
 class CredentialOut(BaseModel):
     id: str

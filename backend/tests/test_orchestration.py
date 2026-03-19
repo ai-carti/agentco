@@ -101,9 +101,10 @@ class TestGraphCompile:
 # ─── nodes.py ─────────────────────────────────────────────────────────────────
 
 class TestAgentNodes:
-    """nodes.py — CEO node и subagent node с mock LLM."""
+    """nodes.py — CEO node и subagent node с mock LLM (async — ALEX-TD-027)."""
 
-    def test_ceo_node_returns_state_dict(self):
+    @pytest.mark.asyncio
+    async def test_ceo_node_returns_state_dict(self):
         """CEO node должен возвращать dict с обновлёнными полями state."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
@@ -123,10 +124,11 @@ class TestAgentNodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(initial_state)
+        result = await ceo_node(initial_state)
         assert isinstance(result, dict)
 
-    def test_ceo_node_increments_iteration_count(self):
+    @pytest.mark.asyncio
+    async def test_ceo_node_increments_iteration_count(self):
         """CEO node должен инкрементировать iteration_count."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
@@ -146,10 +148,11 @@ class TestAgentNodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("iteration_count") == 1
 
-    def test_subagent_node_returns_task_result(self):
+    @pytest.mark.asyncio
+    async def test_subagent_node_returns_task_result(self):
         """SubAgent node должен возвращать TaskResult в results."""
         from agentco.orchestration.nodes import subagent_node
         from agentco.orchestration.state import AgentState, TaskMessage
@@ -176,13 +179,14 @@ class TestAgentNodes:
             "error": None,
             "final_result": None,
         }
-        result = subagent_node(state)
+        result = await subagent_node(state)
         assert isinstance(result, dict)
         # results должен содержать результат задачи
         results = result.get("results", {})
         assert len(results) > 0
 
-    def test_ceo_node_delegates_tasks_to_pending(self):
+    @pytest.mark.asyncio
+    async def test_ceo_node_delegates_tasks_to_pending(self):
         """CEO node должен добавлять задачи в pending_tasks при наличии подчинённых."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
@@ -202,7 +206,7 @@ class TestAgentNodes:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         # CEO должен либо делегировать задачи либо завершить
         # в любом случае iteration_count инкрементируется
         assert "iteration_count" in result
@@ -213,7 +217,8 @@ class TestAgentNodes:
 class TestLoopDetection:
     """Loop detection: MAX_ITERATIONS + MAX_COST_USD."""
 
-    def test_exceeding_max_iterations_sets_status_failed(self):
+    @pytest.mark.asyncio
+    async def test_exceeding_max_iterations_sets_status_failed(self):
         """При iteration_count >= MAX_ITERATIONS статус должен стать 'failed' (M2-007)."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
@@ -235,11 +240,12 @@ class TestLoopDetection:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
         assert result.get("error") == "loop_detected"
 
-    def test_exceeding_max_cost_sets_status_failed(self):
+    @pytest.mark.asyncio
+    async def test_exceeding_max_cost_sets_status_failed(self):
         """При total_cost_usd >= MAX_RUN_COST_USD статус должен стать 'failed' (M2-007)."""
         from agentco.orchestration.nodes import ceo_node
         from agentco.orchestration.state import AgentState
@@ -260,11 +266,11 @@ class TestLoopDetection:
             "error": None,
             "final_result": None,
         }
-        result = ceo_node(state)
+        result = await ceo_node(state)
         assert result.get("status") == "failed", f"Expected 'failed', got {result.get('status')}"
         assert result.get("error") == "cost_limit_exceeded"
 
-    def test_loop_detection_via_full_graph_run(self, tmp_path):
+    async def test_loop_detection_via_full_graph_run(self, tmp_path):
         """Граф должен остановиться с status='failed' при превышении MAX_ITERATIONS (M2-007)."""
         import os
         os.environ["MAX_AGENT_ITERATIONS"] = "1"  # лимит 1: CEO делегирует (iter=1), затем → failed
@@ -292,7 +298,7 @@ class TestLoopDetection:
                 "final_result": None,
             }
 
-            final_state = compiled.invoke(initial_state)
+            final_state = await compiled.ainvoke(initial_state)
             assert final_state["status"] == "failed", f"Expected 'failed', got {final_state['status']}"
             assert final_state["error"] == "loop_detected"
         finally:
@@ -305,7 +311,7 @@ class TestLoopDetection:
 class TestGraphExecution:
     """Полный прогон графа с mock LLM."""
 
-    def test_graph_runs_ceo_delegates_to_subagent_gets_result(self, tmp_path):
+    async def test_graph_runs_ceo_delegates_to_subagent_gets_result(self, tmp_path):
         """CEO получает задачу, делегирует subagent-у, получает результат."""
         from agentco.orchestration.graph import build_orchestration_graph
         from agentco.orchestration.state import AgentState
@@ -329,7 +335,7 @@ class TestGraphExecution:
             "final_result": None,
         }
 
-        final_state = compiled.invoke(initial_state)
+        final_state = await compiled.ainvoke(initial_state)
         # Граф должен завершиться (не зависнуть)
         assert final_state["status"] in ("completed", "error")
         # iteration_count должен быть > 0
@@ -341,49 +347,45 @@ class TestGraphExecution:
 class TestCheckpointing:
     """Checkpointing: граф возобновляется с checkpoint."""
 
-    def test_graph_can_resume_from_checkpoint(self, tmp_path):
+    async def test_graph_can_resume_from_checkpoint(self, tmp_path):
         """Граф должен сохранить checkpoint и позволить возобновление."""
-        import sqlite3
-        from langgraph.checkpoint.sqlite import SqliteSaver
+        from agentco.orchestration.checkpointer import create_checkpointer
         from agentco.orchestration.graph import build_orchestration_graph
         from agentco.orchestration.state import AgentState
 
         db_path = str(tmp_path / "checkpoint.db")
-        conn = sqlite3.connect(db_path, check_same_thread=False)
-        checkpointer = SqliteSaver(conn)
 
-        graph = build_orchestration_graph()
-        compiled = graph.compile(checkpointer=checkpointer)
+        async with create_checkpointer(db_path) as checkpointer:
+            graph = build_orchestration_graph()
+            compiled = graph.compile(checkpointer=checkpointer)
 
-        run_id = "run-checkpoint-test"
-        config = {"configurable": {"thread_id": run_id}}
+            run_id = "run-checkpoint-test"
+            config = {"configurable": {"thread_id": run_id}}
 
-        initial_state: AgentState = {
-            "run_id": run_id,
-            "company_id": "company-001",
-            "input": "Build something",
-            "messages": [],
-            "pending_tasks": [],
-            "active_tasks": {},
-            "results": {},
-            "iteration_count": 0,
-            "total_tokens": 0,
-            "total_cost_usd": 0.0,
-            "status": "running",
-            "error": None,
-            "final_result": None,
-        }
+            initial_state: AgentState = {
+                "run_id": run_id,
+                "company_id": "company-001",
+                "input": "Build something",
+                "messages": [],
+                "pending_tasks": [],
+                "active_tasks": {},
+                "results": {},
+                "iteration_count": 0,
+                "total_tokens": 0,
+                "total_cost_usd": 0.0,
+                "status": "running",
+                "error": None,
+                "final_result": None,
+            }
 
-        # Первый запуск
-        final_state = compiled.invoke(initial_state, config=config)
-        assert final_state is not None
+            # Первый запуск
+            final_state = await compiled.ainvoke(initial_state, config=config)
+            assert final_state is not None
 
-        # Получить сохранённый state через get_state
-        saved_state = compiled.get_state(config)
-        assert saved_state is not None
-        assert saved_state.values["run_id"] == run_id
-
-        conn.close()
+            # Получить сохранённый state через aget_state
+            saved_state = await compiled.aget_state(config)
+            assert saved_state is not None
+            assert saved_state.values["run_id"] == run_id
 
     @pytest.mark.asyncio
     async def test_async_checkpointer_works(self, tmp_path):

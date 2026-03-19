@@ -275,3 +275,31 @@ def test_llm_providers_no_keys_empty(auth_client):
     resp = client.get("/api/llm/providers", headers=_auth_headers(token))
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+def test_create_credential_empty_api_key_rejected(auth_client):
+    """ALEX-TD-029: api_key пустой → 422 (Unprocessable Entity)."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="empty_key_test@example.com")
+    company_id = _create_company(client, token)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/credentials",
+        headers=_auth_headers(token),
+        json={"provider": "openai", "api_key": ""},
+    )
+    assert resp.status_code == 422, f"Expected 422 for empty api_key, got {resp.status_code}"
+
+
+def test_create_credential_whitespace_api_key_rejected(auth_client):
+    """ALEX-TD-029: api_key из пробелов → 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, email="ws_key_test@example.com")
+    company_id = _create_company(client, token)
+
+    resp = client.post(
+        f"/api/companies/{company_id}/credentials",
+        headers=_auth_headers(token),
+        json={"provider": "openai", "api_key": "   "},
+    )
+    assert resp.status_code == 422, f"Expected 422 for whitespace api_key, got {resp.status_code}"

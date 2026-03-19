@@ -184,7 +184,8 @@ class TestAgentHierarchyAPI:
 class TestLoopDetectionDeepHierarchy:
     """AC4: loop detection работает корректно при глубокой иерархии."""
 
-    def test_hierarchical_node_respects_iteration_limit(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_hierarchical_node_respects_iteration_limit(self, monkeypatch):
         """hierarchical_node должен вернуть status='failed' при превышении итераций."""
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "3")
         import importlib
@@ -217,11 +218,11 @@ class TestLoopDetectionDeepHierarchy:
             "error": None,
             "final_result": None,
         }
-        result = hierarchical_node(state)
+        result = await hierarchical_node(state)
         assert result.get("status") == "failed"
         assert result.get("error") == "loop_detected"
 
-    def test_hierarchical_graph_stops_on_cost_limit(self, monkeypatch):
+    async def test_hierarchical_graph_stops_on_cost_limit(self, monkeypatch):
         """Иерархический граф с cost limit — должен завершиться как 'failed'."""
         monkeypatch.setenv("MAX_RUN_COST_USD", "0.0001")
         import importlib
@@ -251,7 +252,7 @@ class TestLoopDetectionDeepHierarchy:
             "final_result": None,
         }
 
-        final_state = compiled.invoke(initial_state)
+        final_state = await compiled.ainvoke(initial_state)
         assert final_state["status"] == "failed"
         assert final_state["error"] == "cost_limit_exceeded"
 
@@ -274,7 +275,7 @@ class TestHierarchicalGraphExecution:
         assert hasattr(g, "compile_hierarchical")
         assert hasattr(g, "build_hierarchical_graph")
 
-    def test_hierarchical_graph_runs_3_levels(self):
+    async def test_hierarchical_graph_runs_3_levels(self):
         """Граф с max_depth=3 должен завершиться без зависания."""
         from agentco.orchestration.graph import build_hierarchical_graph
         from agentco.orchestration.state import AgentState
@@ -299,12 +300,13 @@ class TestHierarchicalGraphExecution:
             "max_depth": 3,
         }
 
-        final_state = compiled.invoke(initial_state)
+        final_state = await compiled.ainvoke(initial_state)
         # Должен завершиться (completed или failed из-за loop guard, не зависнуть)
         assert final_state["status"] in ("completed", "failed")
         assert final_state["iteration_count"] > 0
 
-    def test_hierarchical_node_delegates_at_intermediate_depth(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_hierarchical_node_delegates_at_intermediate_depth(self, monkeypatch):
         """hierarchical_node при depth < max_depth должен создавать дочернюю задачу (delegated)."""
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "50")
         monkeypatch.setenv("MAX_RUN_COST_USD", "10.0")
@@ -339,7 +341,7 @@ class TestHierarchicalGraphExecution:
             "final_result": None,
             "max_depth": 3,
         }
-        result = hierarchical_node(state)
+        result = await hierarchical_node(state)
         # Должен создать дочернюю задачу
         assert len(result.get("pending_tasks", [])) > 0
         # Оригинальная задача — delegated
@@ -347,7 +349,8 @@ class TestHierarchicalGraphExecution:
         assert "task-mid-001" in results
         assert results["task-mid-001"]["status"] == "delegated"
 
-    def test_hierarchical_node_executes_at_max_depth(self, monkeypatch):
+    @pytest.mark.asyncio
+    async def test_hierarchical_node_executes_at_max_depth(self, monkeypatch):
         """hierarchical_node при depth == max_depth должен выполнить напрямую (done)."""
         monkeypatch.setenv("MAX_AGENT_ITERATIONS", "50")
         monkeypatch.setenv("MAX_RUN_COST_USD", "10.0")
@@ -382,7 +385,7 @@ class TestHierarchicalGraphExecution:
             "final_result": None,
             "max_depth": 3,
         }
-        result = hierarchical_node(state)
+        result = await hierarchical_node(state)
         # Leaf — нет дочерних задач, результат done
         assert result.get("pending_tasks") == []
         results = result.get("results", {})
