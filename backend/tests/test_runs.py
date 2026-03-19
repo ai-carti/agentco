@@ -832,8 +832,9 @@ async def test_execute_run_uses_session_factory_for_initial_read(auth_client):
 class TestListRunsStatusFilterValidation:
     """ALEX-TD-038: невалидные значения ?status= должны возвращать 422."""
 
-    def test_invalid_status_returns_422(self, client):
+    def test_invalid_status_returns_422(self, auth_client):
         """GET /api/companies/{id}/runs?status=invalid_value → 422."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038a@example.com")
         company_id = _create_company(client, token, name="TD038 Corp A")
 
@@ -846,8 +847,9 @@ class TestListRunsStatusFilterValidation:
             f"Body: {resp.text}"
         )
 
-    def test_another_invalid_status_returns_422(self, client):
+    def test_another_invalid_status_returns_422(self, auth_client):
         """GET /api/companies/{id}/runs?status=typo → 422."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038b@example.com")
         company_id = _create_company(client, token, name="TD038 Corp B")
 
@@ -857,8 +859,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 422
 
-    def test_valid_status_pending_accepted(self, client):
+    def test_valid_status_pending_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=pending → 200 (пустой список ок)."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038c@example.com")
         company_id = _create_company(client, token, name="TD038 Corp C")
 
@@ -868,8 +871,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_valid_status_running_accepted(self, client):
+    def test_valid_status_running_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=running → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038d@example.com")
         company_id = _create_company(client, token, name="TD038 Corp D")
 
@@ -879,8 +883,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_valid_status_completed_accepted(self, client):
+    def test_valid_status_completed_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=completed → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038e@example.com")
         company_id = _create_company(client, token, name="TD038 Corp E")
 
@@ -890,8 +895,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_valid_status_failed_accepted(self, client):
+    def test_valid_status_failed_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=failed → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038f@example.com")
         company_id = _create_company(client, token, name="TD038 Corp F")
 
@@ -901,8 +907,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_valid_status_stopped_accepted(self, client):
+    def test_valid_status_stopped_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=stopped → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038g@example.com")
         company_id = _create_company(client, token, name="TD038 Corp G")
 
@@ -912,8 +919,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_valid_status_done_accepted(self, client):
+    def test_valid_status_done_accepted(self, auth_client):
         """GET /api/companies/{id}/runs?status=done → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038h@example.com")
         company_id = _create_company(client, token, name="TD038 Corp H")
 
@@ -923,8 +931,9 @@ class TestListRunsStatusFilterValidation:
         )
         assert resp.status_code == 200
 
-    def test_no_status_filter_returns_all(self, client):
+    def test_no_status_filter_returns_all(self, auth_client):
         """GET /api/companies/{id}/runs без ?status → 200."""
+        client, _ = auth_client
         token = _register_and_login(client, email="td038i@example.com")
         company_id = _create_company(client, token, name="TD038 Corp I")
 
