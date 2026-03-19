@@ -34,7 +34,7 @@ describe('SIRI-UX-047: Run button updates task status', () => {
     vi.clearAllMocks()
     useAgentStore.setState({
       tasks: [
-        { id: 'task-1', title: 'Test Task', status: 'todo', assignee_id: null, assignee_name: null },
+        { id: 'task-1', title: 'Test Task', status: 'todo', assignee_id: undefined, assignee_name: undefined },
       ],
       agents: [],
     })

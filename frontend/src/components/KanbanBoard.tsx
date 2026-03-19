@@ -223,6 +223,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
         </button>
         {menuOpen && (
           <div
+            role="menu"
             style={{
               position: 'absolute', background: '#1f2937', border: '1px solid #374151',
               borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
@@ -231,15 +232,21 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
             onClick={(e) => e.stopPropagation()}
           >
             {['Edit', 'Delete', 'Assign'].map((item) => (
-              <div
+              <button
                 key={item}
-                style={{ padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem' }}
+                role="menuitem"
+                style={{
+                  display: 'block', width: '100%', padding: '0.4rem 0.75rem',
+                  cursor: 'pointer', fontSize: '0.8rem', background: 'transparent',
+                  border: 'none', color: '#e5e7eb', textAlign: 'left',
+                }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 onClick={() => handleMenuAction(item)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleMenuAction(item) }}
               >
                 {item}
-              </div>
+              </button>
             ))}
           </div>
         )}
