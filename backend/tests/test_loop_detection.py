@@ -150,7 +150,38 @@ class TestLoopDetectionErrorCodes:
         }
         result = await ceo_node(state)
         assert result.get("status") == "failed"
-        assert result.get("error") == "cost_limit_exceeded"
+        # ALEX-TD-037: token limit должен возвращать "token_limit_exceeded", не "cost_limit_exceeded"
+        assert result.get("error") == "token_limit_exceeded"
+
+    @pytest.mark.asyncio
+    async def test_token_limit_error_code_is_token_limit_exceeded(self, monkeypatch):
+        """ALEX-TD-037: при превышении token limit error должен быть 'token_limit_exceeded'."""
+        monkeypatch.setenv("MAX_RUN_TOKENS", "500")
+        monkeypatch.setenv("MAX_RUN_COST_USD", "999.0")  # не должно срабатывать
+        from agentco.orchestration.nodes import ceo_node
+        from agentco.orchestration.state import AgentState
+
+        state: AgentState = {
+            "run_id": "run-td037",
+            "company_id": "co-001",
+            "input": "Task",
+            "messages": [],
+            "pending_tasks": [],
+            "active_tasks": {},
+            "results": {},
+            "iteration_count": 0,
+            "total_tokens": 600,  # > limit 500
+            "total_cost_usd": 0.0,
+            "status": "running",
+            "error": None,
+            "final_result": None,
+        }
+        result = await ceo_node(state)
+        assert result.get("status") == "failed"
+        assert result.get("error") == "token_limit_exceeded", (
+            f"Expected 'token_limit_exceeded', got '{result.get('error')}'. "
+            "Token limit exceeded должен возвращать 'token_limit_exceeded', не 'cost_limit_exceeded'."
+        )
 
 
 class TestLoopDetectionFullGraph:

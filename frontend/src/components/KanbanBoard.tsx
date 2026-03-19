@@ -584,21 +584,25 @@ function FilterBar({
               boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
             }}>
               {agents.map((agent) => (
-                <label
+                <button
                   key={agent.id}
                   data-testid={`filter-agent-option-${agent.id}`}
+                  role="menuitem"
+                  aria-checked={selectedAgents.includes(agent.id)}
                   onClick={() => onToggleAgent(agent.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleAgent(agent.id) } }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
                     background: selectedAgents.includes(agent.id) ? '#374151' : 'transparent',
+                    border: 'none', width: '100%', textAlign: 'left', color: '#e5e7eb',
                   }}
                 >
                   <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
                     {selectedAgents.includes(agent.id) ? '✓' : ''}
                   </span>
                   {agent.name}
-                </label>
+                </button>
               ))}
             </div>
           )}
@@ -624,22 +628,25 @@ function FilterBar({
               boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
             }}>
               {PRIORITIES.map((p) => (
-                <label
+                <button
                   key={p}
                   data-testid={`filter-priority-option-${p}`}
+                  role="menuitem"
+                  aria-checked={selectedPriorities.includes(p)}
                   onClick={() => onTogglePriority(p)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTogglePriority(p) } }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
                     background: selectedPriorities.includes(p) ? '#374151' : 'transparent',
-                    textTransform: 'capitalize',
+                    textTransform: 'capitalize', border: 'none', width: '100%', textAlign: 'left', color: '#e5e7eb',
                   }}
                 >
                   <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
                     {selectedPriorities.includes(p) ? '✓' : ''}
                   </span>
                   {p}
-                </label>
+                </button>
               ))}
             </div>
           )}

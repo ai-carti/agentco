@@ -10,46 +10,47 @@ from fastapi.testclient import TestClient
 
 # ── ALEX-TD-035: DB session released before WebSocket accept ──────────────────
 
-def test_ws_events_session_released_before_accept():
+def test_ws_events_session_closed_before_accept():
     """
-    ws_events.py не должен держать DB session через Depends(get_session) на время
-    жизни WebSocket. Проверяем что сессия закрывается до websocket.accept().
+    ws_events.py должен явно закрывать DB session до websocket.accept().
 
-    Статический анализ: в хендлере не должно быть `Depends(get_session)` на уровне
-    параметра функции ws_company_events — должен использоваться contextmanager внутри.
-    """
-    import inspect
-    from agentco.handlers.ws_events import ws_company_events
-
-    sig = inspect.signature(ws_company_events)
-    param_names = list(sig.parameters.keys())
-
-    # session не должна быть параметром функции (Depends инжекция на весь lifetime)
-    assert "session" not in param_names, (
-        "ws_company_events не должен принимать session через Depends(get_session) "
-        "— это держит соединение открытым на весь lifetime WebSocket. "
-        "Используй SessionLocal() внутри, закрывай до accept()."
-    )
-
-
-def test_ws_events_opens_closes_own_session():
-    """
-    ws_events.py должен явно создавать и закрывать сессию внутри хендлера
-    для проверки ownership, а не использовать Depends(get_session).
+    Статический анализ: хендлер должен вызывать session.close() в finally-блоке
+    ДО await websocket.accept() — чтобы не держать DB connection на весь WS lifetime.
     """
     import inspect
     from agentco.handlers import ws_events as ws_module
 
     source = inspect.getsource(ws_module)
 
-    # Должен использовать SessionLocal напрямую
-    assert "SessionLocal" in source or "get_session" not in source.split("Depends")[1] if "Depends" in source else True, (
-        "ws_events.py должен создавать сессию через SessionLocal() внутри хендлера"
+    # Должен закрывать сессию явно
+    assert "session.close()" in source, (
+        "ws_events.py должен вызывать session.close() явно до websocket.accept() "
+        "— чтобы освободить DB connection до начала долгой WS сессии."
     )
 
-    # Должен закрывать сессию (явный close или finally блок)
-    assert "session.close()" in source or "finally" in source, (
-        "ws_events.py должен закрывать DB сессию в finally блоке до websocket.accept()"
+    # Должен использовать finally для гарантированного закрытия
+    assert "finally" in source, (
+        "ws_events.py должен закрывать DB сессию в finally блоке"
+    )
+
+
+def test_ws_events_accept_after_close():
+    """
+    websocket.accept() должен вызываться ПОСЛЕ session.close() в теле функции.
+    """
+    import inspect
+    from agentco.handlers.ws_events import ws_company_events
+
+    # Inspect only the function body (not the module docstring)
+    source = inspect.getsource(ws_company_events)
+
+    close_pos = source.find("session.close()")
+    accept_pos = source.find("websocket.accept()")
+
+    assert close_pos != -1, "session.close() не найден в ws_company_events"
+    assert accept_pos != -1, "websocket.accept() не найден в ws_company_events"
+    assert close_pos < accept_pos, (
+        f"session.close() (pos={close_pos}) должен быть ДО websocket.accept() (pos={accept_pos})"
     )
 
 

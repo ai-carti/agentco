@@ -105,7 +105,7 @@ async def ceo_node(state: AgentState) -> dict:
     if state["total_tokens"] >= max_tokens:
         return {
             "status": "failed",
-            "error": "cost_limit_exceeded",
+            "error": "token_limit_exceeded",
             "error_detail": (
                 f"Token limit {max_tokens} exceeded "
                 f"(used {state['total_tokens']} tokens)"

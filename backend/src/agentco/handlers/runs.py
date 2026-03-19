@@ -120,6 +120,9 @@ async def create_run(
     return RunOut(**run.model_dump())
 
 
+VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "done"}
+
+
 @router.get("/runs", response_model=list[RunOut])
 async def list_runs(
     company_id: str,
@@ -130,6 +133,11 @@ async def list_runs(
     current_user: User = Depends(get_current_user),
 ):
     """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running"""
+    if status_filter is not None and status_filter not in VALID_RUN_STATUSES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid status '{status_filter}'. Valid values: {sorted(VALID_RUN_STATUSES)}",
+        )
     try:
         runs = RunService(session).list_by_company_owned(
             company_id,

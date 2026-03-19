@@ -215,3 +215,91 @@ describe('KanbanFilters — SIRI-UX-023: close dropdowns on outside click', () =
     expect(screen.getByTestId('filter-agent-option-a1')).toBeInTheDocument()
   })
 })
+
+// ─── SIRI-UX-060: FilterBar keyboard accessibility ───────────────────────────
+
+describe('KanbanFilters — SIRI-UX-060: keyboard accessible dropdown items', () => {
+  it('filter-agent-option items are buttons (or have role=menuitem)', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+
+    const option = screen.getByTestId('filter-agent-option-a1')
+    // Must be a button or have role=menuitem/checkbox so keyboard works
+    const tag = option.tagName.toLowerCase()
+    const role = option.getAttribute('role')
+    expect(tag === 'button' || role === 'menuitem' || role === 'checkbox' || tag === 'input').toBe(true)
+  })
+
+  it('filter-priority-option items are buttons (or have role=menuitem)', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-priority-btn'))
+
+    const option = screen.getByTestId('filter-priority-option-high')
+    const tag = option.tagName.toLowerCase()
+    const role = option.getAttribute('role')
+    expect(tag === 'button' || role === 'menuitem' || role === 'checkbox' || tag === 'input').toBe(true)
+  })
+
+  it('agent option announces checked state via aria-checked', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+
+    const option = screen.getByTestId('filter-agent-option-a1')
+    // Before selecting: aria-checked should be false or not present
+    expect(option.getAttribute('aria-checked')).toBe('false')
+
+    // Click to select
+    fireEvent.click(option)
+
+    // Re-query after state update
+    const selected = screen.getByTestId('filter-agent-option-a1')
+    expect(selected.getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('priority option announces checked state via aria-checked', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-priority-btn'))
+
+    const option = screen.getByTestId('filter-priority-option-high')
+    expect(option.getAttribute('aria-checked')).toBe('false')
+
+    fireEvent.click(option)
+
+    const selected = screen.getByTestId('filter-priority-option-high')
+    expect(selected.getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('agent option activates via Enter key', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+
+    const option = screen.getByTestId('filter-agent-option-a1')
+    fireEvent.keyDown(option, { key: 'Enter' })
+
+    // Task by Alice should now be filtered
+    expect(screen.getByText('Build login page')).toBeInTheDocument()
+    expect(screen.queryByText('Deploy to prod')).not.toBeInTheDocument()
+  })
+
+  it('agent option activates via Space key', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-agent-btn'))
+
+    const option = screen.getByTestId('filter-agent-option-a1')
+    fireEvent.keyDown(option, { key: ' ' })
+
+    expect(screen.getByText('Build login page')).toBeInTheDocument()
+    expect(screen.queryByText('Deploy to prod')).not.toBeInTheDocument()
+  })
+
+  it('priority option activates via Enter key', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    fireEvent.click(screen.getByTestId('filter-priority-btn'))
+
+    const option = screen.getByTestId('filter-priority-option-high')
+    fireEvent.keyDown(option, { key: 'Enter' })
+
+    expect(screen.getByText('Build login page')).toBeInTheDocument()
+    expect(screen.queryByText('Deploy to prod')).not.toBeInTheDocument()
+  })
+})
