@@ -191,27 +191,25 @@ def test_stop_pending_run_changes_to_stopped():
 # ── ALEX-TD-032: _execute_agent no duplicate error handling ──────────────────
 
 @pytest.mark.asyncio
-async def test_execute_agent_does_not_duplicate_run_failed_events():
+async def test_execute_agent_does_not_duplicate_error_handling():
     """
-    _execute_agent не должен дублировать run.failed события.
-    execute_run() сам обрабатывает ошибки и публикует run.failed.
-    _execute_agent не должен перехватывать и повторно публиковать.
+    ALEX-TD-032: _execute_agent не должен дублировать обработку ошибок из execute_run.
+    execute_run() сам ловит ошибки, обновляет статус, публикует run.failed.
+    _execute_agent не должен содержать bus.publish() и дополнительные DB-updates.
     """
     import inspect
     from agentco.services.run import RunService
 
-    # Проверяем что в _execute_agent нет try/except с publish run.failed
     source = inspect.getsource(RunService._execute_agent)
 
-    # Убеждаемся что нет дублирующего вызова bus.publish в _execute_agent
-    # (execute_run сам делает это внутри)
-    assert source.count("run.failed") == 0, (
-        "_execute_agent не должен публиковать run.failed — это делает execute_run(). "
-        "Двойной publish создаёт дублирующиеся события."
+    # Убеждаемся что нет вызова bus.publish() в _execute_agent
+    assert "bus.publish" not in source, (
+        "_execute_agent не должен вызывать bus.publish — это делает execute_run(). "
+        "Двойной publish создаёт дублирующиеся WebSocket события."
     )
 
-    # Убеждаемся что нет try/except в _execute_agent (кроме возможного для session)
-    assert "except Exception" not in source, (
-        "_execute_agent не должен ловить Exception — это делает execute_run(). "
-        "Двойная обработка = дублирующиеся DB writes и events."
+    # Убеждаемся что нет except-блоков с обновлением DB статуса
+    assert "run_orm.status" not in source, (
+        "_execute_agent не должен обновлять run_orm.status — это делает execute_run(). "
+        "Двойные DB writes корромпируют данные."
     )
