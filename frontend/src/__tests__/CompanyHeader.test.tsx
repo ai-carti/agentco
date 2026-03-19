@@ -3,7 +3,7 @@
  * Tests that CompanyPage renders a header with avatar and company name
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import CompanyPage from '../components/CompanyPage'
 import { useAgentStore } from '../store/agentStore'
