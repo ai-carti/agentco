@@ -126,6 +126,8 @@ export default function AgentEditPage() {
           data-testid="agent-edit-cancel"
           onClick={handleCancel}
           type="button"
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6b7280'; e.currentTarget.style.color = '#e5e7eb' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#9ca3af' }}
           style={{
             padding: '0.5rem 1.25rem',
             background: 'transparent',
@@ -134,6 +136,7 @@ export default function AgentEditPage() {
             color: '#9ca3af',
             fontSize: '0.875rem',
             cursor: 'pointer',
+            transition: 'border-color 0.15s, color 0.15s',
           }}
         >
           Cancel

@@ -5,8 +5,8 @@ import React from 'react'
 const CURRENT_PLAN = {
   name: 'Free',
   nextBilling: 'N/A',
-  apiCalls: 1_240,
-  tokensUsed: 312_000,
+  apiCalls: 240,
+  tokensUsed: 38_000,
 }
 
 const PLANS = [

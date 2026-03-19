@@ -134,6 +134,16 @@ class TestEventBusUnit:
         # Should not raise or block
         await bus.publish(event)
 
+    def test_subscribers_is_instance_attribute_not_class_level(self):
+        """ALEX-TD-023: _subscribers must be an instance attribute, not class-level.
+        Two separate EventBus instances must not share the same list."""
+        bus1 = EventBus.get()
+        # Reset singleton to get a fresh instance
+        EventBus._instance = None
+        bus2 = EventBus.get()
+        # Each instance must have its own list
+        assert bus1._subscribers is not bus2._subscribers
+
     @pytest.mark.asyncio
     async def test_multiple_events_in_order(self):
         """Events are received in publication order."""

@@ -681,3 +681,58 @@ def test_runs_limit_capped_at_500(auth_client):
         headers=_auth_headers(token),
     )
     assert resp.status_code == 422
+
+
+# ── ALEX-TD-024: execute_run uses session factory for final update ─────────────
+
+@pytest.mark.asyncio
+async def test_execute_run_updates_run_status_via_session_factory(auth_client):
+    """ALEX-TD-024: execute_run() must update run status using a fresh session
+    (not self._session which may be stale/closed in background task context)."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from agentco.services.run import RunService
+    from agentco.db.session import get_session
+    from agentco.main import app
+
+    client, engine = auth_client
+    token = _register_and_login(client, email="td024@example.com")
+    company_id = _create_company(client, token)
+    run_id = _create_run(client, token, company_id)
+
+    # Get session factory from test engine
+    from sqlalchemy.orm import sessionmaker
+    TestSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+    # Simulate that the LangGraph graph completes successfully
+    mock_final_state = {
+        "status": "completed",
+        "final_result": "Test result from graph",
+        "messages": [],
+    }
+
+    with patch("agentco.orchestration.graph.compile") as mock_compile, \
+         patch("agentco.orchestration.checkpointer.create_checkpointer") as mock_ckpt:
+
+        mock_graph = AsyncMock()
+        mock_graph.ainvoke = AsyncMock(return_value=mock_final_state)
+        mock_compile.return_value = mock_graph
+
+        from contextlib import asynccontextmanager
+        @asynccontextmanager
+        async def fake_checkpointer(*args, **kwargs):
+            yield MagicMock()
+
+        mock_ckpt.side_effect = fake_checkpointer
+
+        # Create RunService with a session that we will close before checking
+        with TestSessionLocal() as service_session:
+            svc = RunService(service_session)
+            await svc.execute_run(run_id)
+
+    # Verify run was updated correctly — check via a brand new session
+    with TestSessionLocal() as verify_session:
+        from agentco.orm.run import RunORM
+        run_orm = verify_session.get(RunORM, run_id)
+        assert run_orm is not None
+        assert run_orm.status in ("completed", "done"), f"Expected completed/done, got {run_orm.status!r}"
+        assert run_orm.completed_at is not None

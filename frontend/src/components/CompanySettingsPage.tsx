@@ -102,10 +102,12 @@ export default function CompanySettingsPage() {
             id="company-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
             style={{
               width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
               border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-              fontSize: '0.875rem', boxSizing: 'border-box',
+              fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
             }}
           />
         </div>
@@ -118,11 +120,13 @@ export default function CompanySettingsPage() {
             id="company-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
             rows={3}
             style={{
               width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
               border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-              fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
+              fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical', outline: 'none',
             }}
           />
         </div>
@@ -182,11 +186,13 @@ export default function CompanySettingsPage() {
               data-testid="confirm-delete-company-input"
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#f87171' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder={company?.name}
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '1rem',
+                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '1rem', outline: 'none',
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>

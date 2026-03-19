@@ -18,7 +18,12 @@ export default function Navbar() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>AgentCo</span>
+        <NavLink
+          to="/"
+          style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f8fafc', textDecoration: 'none' }}
+        >
+          AgentCo
+        </NavLink>
         <NavLink
           to="/"
           end

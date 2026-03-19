@@ -145,10 +145,9 @@ class RunService:
         session_factory is used to update run status — execute_run manages its own session.
         """
         try:
-            # execute_run uses self._session which was created in create_and_start context.
-            # For background task, we need a fresh session — delegate to execute_run
-            # which creates its own session via checkpointer context.
-            result = await self.execute_run(run_id)
+            # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
+            # for final DB update (avoids stale self._session in background task).
+            result = await self.execute_run(run_id, session_factory=session_factory)
             return result
         except Exception as exc:
             bus = EventBus.get()
@@ -239,24 +238,34 @@ class RunService:
         self.get(company_id, run_id)
         return self._repo.list_events(run_id)
 
-    async def execute_run(self, run_id: str) -> str:
+    async def execute_run(
+        self,
+        run_id: str,
+        session_factory: Optional[Callable[[], Session]] = None,
+    ) -> str:
         """
         M2-002 AC: RunService.execute_run(run_id) запускает граф для конкретного рана.
 
         Загружает ран из БД, строит и запускает LangGraph граф через AsyncSqliteSaver checkpointer.
         Эмитирует события в EventBus при смене статуса агента.
+
+        ALEX-TD-024: session_factory используется для финального DB update после закрытия
+        checkpointer context. Если не передан — fallback на self._session (для прямых вызовов).
         """
         from ..orchestration.graph import compile as compile_graph
         from ..orchestration.checkpointer import create_checkpointer
         from ..orchestration.state import AgentState
-        import uuid
 
         bus = EventBus.get()
 
-        # Получаем ран из БД
+        # Получаем ран из БД (используем self._session для начального чтения)
         run_orm = self._session.get(self._repo.orm_model, run_id)
         if run_orm is None:
             raise ValueError(f"Run {run_id!r} not found")
+
+        company_id = run_orm.company_id
+        initial_goal = run_orm.goal or (run_orm.task_id or "")
+        initial_task_id = run_orm.task_id
 
         # Обновляем статус → running
         run_orm.status = "running"
@@ -264,7 +273,7 @@ class RunService:
 
         await bus.publish({
             "type": "run.status_changed",
-            "company_id": run_orm.company_id,
+            "company_id": company_id,
             "run_id": run_id,
             "payload": {"status": "running"},
         })
@@ -272,8 +281,8 @@ class RunService:
         # Строим начальный state
         initial_state: AgentState = {
             "run_id": run_id,
-            "company_id": str(run_orm.company_id),
-            "input": run_orm.goal or (run_orm.task_id or ""),
+            "company_id": str(company_id),
+            "input": initial_goal,
             "messages": [],
             "pending_tasks": [],
             "active_tasks": {},
@@ -288,6 +297,12 @@ class RunService:
             "level": 0,
         }
 
+        def _get_session_for_update() -> Session:
+            """Return a fresh session if factory available, else self._session."""
+            if session_factory is not None:
+                return session_factory()
+            return self._session
+
         try:
             _ckpt_db = os.environ.get("AGENTCO_DB_PATH", "./agentco.db")
             async with create_checkpointer(_ckpt_db) as checkpointer:
@@ -298,16 +313,22 @@ class RunService:
             result = final_state.get("final_result", "")
             final_status = final_state.get("status", "done")
 
-            run_orm = self._session.get(self._repo.orm_model, run_id)
-            if run_orm:
-                run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
-                run_orm.result = result
-                run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                self._session.commit()
+            # ALEX-TD-024: use fresh session for final update (checkpointer context is closed)
+            update_session = _get_session_for_update()
+            try:
+                run_orm = update_session.get(self._repo.orm_model, run_id)
+                if run_orm:
+                    run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
+                    run_orm.result = result
+                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    update_session.commit()
+            finally:
+                if session_factory is not None:
+                    update_session.close()
 
             await bus.publish({
                 "type": "run.completed",
-                "company_id": run_orm.company_id if run_orm else "",
+                "company_id": company_id,
                 "run_id": run_id,
                 "payload": {"status": final_status, "result": result},
             })
@@ -316,16 +337,23 @@ class RunService:
 
         except Exception as exc:
             logger.error("execute_run failed for %s: %s", run_id, exc)
-            run_orm = self._session.get(self._repo.orm_model, run_id)
-            if run_orm:
-                run_orm.status = "failed"
-                run_orm.error = str(exc)
-                run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                self._session.commit()
+
+            # ALEX-TD-024: use fresh session for error update too
+            update_session = _get_session_for_update()
+            try:
+                run_orm = update_session.get(self._repo.orm_model, run_id)
+                if run_orm:
+                    run_orm.status = "failed"
+                    run_orm.error = str(exc)
+                    run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    update_session.commit()
+            finally:
+                if session_factory is not None:
+                    update_session.close()
 
             await bus.publish({
                 "type": "run.failed",
-                "company_id": run_orm.company_id if run_orm else "",
+                "company_id": company_id,
                 "run_id": run_id,
                 "payload": {"error": str(exc)},
             })

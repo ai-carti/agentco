@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
+import SkeletonCard from './SkeletonCard'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -74,9 +75,43 @@ export default function LibraryPortfolioPage() {
       </p>
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Loading…</p>
+        <SkeletonCard variant="task" count={3} />
       ) : error ? (
-        <p style={{ color: '#f87171' }}>Error: {error}</p>
+        <div
+          style={{
+            padding: '2rem 1.5rem',
+            background: 'rgba(127,29,29,0.1)',
+            border: '1px solid #7f1d1d',
+            borderRadius: 8,
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ color: '#f87171', margin: '0 0 0.75rem' }}>Failed to load portfolio</p>
+          <button
+            onClick={() => {
+              setError('')
+              setLoading(true)
+              const token = getStoredToken()
+              fetch(`${BASE_URL}/api/library/${id}/portfolio`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              })
+                .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.json() })
+                .then((data: PortfolioData) => { setPortfolio(data); setLoading(false) })
+                .catch((err: Error) => { setError(err.message); setLoading(false) })
+            }}
+            style={{
+              padding: '0.4rem 1rem',
+              background: 'transparent',
+              border: '1px solid #7f1d1d',
+              borderRadius: 6,
+              color: '#f87171',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+            }}
+          >
+            Retry
+          </button>
+        </div>
       ) : portfolio ? (
         <>
           {/* Stats row */}

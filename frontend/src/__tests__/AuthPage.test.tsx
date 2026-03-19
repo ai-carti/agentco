@@ -111,11 +111,12 @@ describe('AuthPage', () => {
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
   })
 
-  it('shows Forgot password? link pointing to /forgot-password', () => {
+  it('shows Forgot password? text (coming soon — not a broken link)', () => {
     renderAuthPage()
-    const link = screen.getByRole('link', { name: /forgot password/i })
-    expect(link).toBeInTheDocument()
-    expect(link).toHaveAttribute('href', '/forgot-password')
+    // SIRI-UX-036: /forgot-password route doesn't exist — now shown as disabled span with tooltip
+    expect(screen.getByText(/forgot password/i)).toBeInTheDocument()
+    // Should NOT be a link anymore
+    expect(screen.queryByRole('link', { name: /forgot password/i })).toBeNull()
   })
 
   // BUG-010: after login redirect to original URL

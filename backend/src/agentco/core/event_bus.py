@@ -13,16 +13,21 @@ logger = logging.getLogger(__name__)
 
 class EventBus:
     _instance: "EventBus | None" = None
-    # List of (company_id, asyncio.Queue) tuples
-    _subscribers: list[tuple[str, asyncio.Queue]] = []
 
     def __init__(self) -> None:
         raise RuntimeError("Use EventBus.get()")
 
+    def _init_instance(self) -> None:
+        """Initialize instance attributes (called from get() on new instance)."""
+        # List of (company_id, asyncio.Queue) tuples — per-instance, not class-level
+        self._subscribers: list[tuple[str, asyncio.Queue]] = []
+
     @classmethod
     def get(cls) -> "EventBus":
         if cls._instance is None:
-            cls._instance = object.__new__(cls)
+            instance = object.__new__(cls)
+            instance._init_instance()
+            cls._instance = instance
         return cls._instance
 
     async def publish(self, event: dict) -> None:

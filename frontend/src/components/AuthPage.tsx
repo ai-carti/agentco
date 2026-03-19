@@ -173,14 +173,12 @@ export default function AuthPage() {
           />
 
           <div style={{ textAlign: 'right', marginTop: '-0.75rem', marginBottom: '1rem' }}>
-            <a
-              href="/forgot-password"
-              style={{ color: '#6c47ff', fontSize: '0.8rem', textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            <span
+              title="Coming soon"
+              style={{ color: '#6b7280', fontSize: '0.8rem', cursor: 'default' }}
             >
               Forgot password?
-            </a>
+            </span>
           </div>
 
           <button style={styles.button} type="submit" disabled={isLoading}>
