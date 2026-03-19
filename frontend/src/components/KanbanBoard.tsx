@@ -810,6 +810,17 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
 
   const handleClose = useCallback(() => setSelectedTask(null), [])
 
+  // SIRI-UX-061: close Create modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowCreateModal(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId)
   }, [])

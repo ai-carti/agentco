@@ -57,6 +57,7 @@ export default function AgentPage() {
   const navigate = useNavigate()
   const [agentData, setAgentData] = useState<AgentData | null>(null)
   const [agentLoading, setAgentLoading] = useState(true)
+  const [agentLoadError, setAgentLoadError] = useState(false)
   const [savedToLibrary, setSavedToLibrary] = useState(false)
   const [saveToLibraryError, setSaveToLibraryError] = useState('')
   const toast = useToast()
@@ -75,12 +76,15 @@ export default function AgentPage() {
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}`, {
       headers: authHeaders,
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) { setAgentLoadError(true); setAgentLoading(false); return null }
+        return res.json()
+      })
       .then((data) => {
         if (data) setAgentData(data)
         setAgentLoading(false)
       })
-      .catch(() => setAgentLoading(false))
+      .catch(() => { setAgentLoadError(true); setAgentLoading(false) })
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
       headers: authHeaders,
@@ -133,6 +137,35 @@ export default function AgentPage() {
 
   const visibleHistory = history.slice(0, visibleCount)
   const hasMore = history.length > visibleCount
+
+  // SIRI-UX-059: show error state when agent fails to load
+  if (agentLoadError) {
+    return (
+      <div
+        data-testid="agent-not-found"
+        style={{
+          padding: '3rem 1.5rem',
+          textAlign: 'center',
+          color: '#9ca3af',
+        }}
+      >
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤖</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>
+          Agent not found
+        </div>
+        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+          This agent may have been deleted or you don't have access.
+        </div>
+        <Button
+          data-testid="agent-not-found-back-btn"
+          variant="secondary"
+          onClick={() => navigate(`/companies/${companyId}`)}
+        >
+          ← Back to Company
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>

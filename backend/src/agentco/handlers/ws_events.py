@@ -6,6 +6,12 @@ GET /ws/companies/{company_id}/events?token=<jwt>
 ALEX-TD-011 fix: After JWT validation, verify that the authenticated user
 actually owns the requested company. Without this check, any valid user
 could subscribe to events from other users' companies.
+
+ALEX-TD-035 fix: DB session is used ONLY for ownership check, then explicitly
+closed BEFORE websocket.accept(). Previously the session was held open for the
+entire WebSocket lifetime via Depends(get_session) — pool exhaustion under load.
+We still receive the session via Depends so test fixtures can override it,
+but close it explicitly right after the authorization check.
 """
 import logging
 
@@ -42,11 +48,17 @@ async def ws_company_events(
         return
 
     # 2. ALEX-TD-011: Verify company ownership — user must own the company
-    company = session.scalars(
-        select(CompanyORM).where(CompanyORM.id == company_id)
-    ).first()
+    # ALEX-TD-035: close session immediately after ownership check, before accept().
+    # This prevents holding DB connections open for the entire WebSocket lifetime.
+    try:
+        company = session.scalars(
+            select(CompanyORM).where(CompanyORM.id == company_id)
+        ).first()
+        authorized = company is not None and company.owner_id == user_id
+    finally:
+        session.close()
 
-    if company is None or company.owner_id != user_id:
+    if not authorized:
         await websocket.close(code=1008, reason="Company not found or access denied")
         return
 

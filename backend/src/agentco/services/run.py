@@ -219,14 +219,21 @@ class RunService:
         events_count = self._repo.get_events_count(run_id)
         return {**run.model_dump(), "events_count": events_count}
 
-    def list_events(self, company_id: str, run_id: str, owner_id: str) -> list[RunEvent]:
-        """Events list for a run. Validates ownership."""
+    def list_events(
+        self,
+        company_id: str,
+        run_id: str,
+        owner_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[RunEvent]:
+        """Events list for a run. Validates ownership. Supports pagination."""
         company = self._company_repo.get(company_id)
         if company.owner_id != owner_id:
             raise NotFoundError(f"Company {company_id!r} not found")
         # Validate run belongs to company
         self.get(company_id, run_id)
-        return self._repo.list_events(run_id)
+        return self._repo.list_events(run_id, limit=limit, offset=offset)
 
     async def execute_run(
         self,

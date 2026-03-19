@@ -78,11 +78,14 @@ class RunRepository(BaseRepository[RunORM, Run]):
         stmt = select(func.count(RunEventORM.id)).where(RunEventORM.run_id == run_id)
         return self._session.scalar(stmt) or 0
 
-    def list_events(self, run_id: str) -> list[RunEvent]:
+    def list_events(self, run_id: str, limit: int = 100, offset: int = 0) -> list[RunEvent]:
+        """ALEX-TD-036: pagination support — default limit=100, max enforced at handler level."""
         stmt = (
             select(RunEventORM)
             .where(RunEventORM.run_id == run_id)
             .order_by(RunEventORM.created_at)
+            .limit(limit)
+            .offset(offset)
         )
         return [
             RunEvent(

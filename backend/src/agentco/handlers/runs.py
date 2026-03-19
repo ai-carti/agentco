@@ -197,13 +197,16 @@ async def stop_run(
 async def list_run_events(
     company_id: str,
     run_id: str,
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    """List events for a run."""
+    """List events for a run with pagination (default limit=100, max=1000)."""
     try:
         events = RunService(session).list_events(
             company_id=company_id, run_id=run_id, owner_id=current_user.id,
+            limit=limit, offset=offset,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Run not found")
