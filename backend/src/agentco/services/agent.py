@@ -50,9 +50,9 @@ class AgentService:
             raise NotFoundError(f"Agent {agent_id!r} not found in company {company_id!r}")
         return agent
 
-    def list_by_company(self, company_id: str, owner_id: str) -> list[Agent]:
+    def list_by_company(self, company_id: str, owner_id: str, limit: int | None = None, offset: int | None = None) -> list[Agent]:
         self._check_company_owner(company_id, owner_id)
-        return self._repo.list_by_company(company_id)
+        return self._repo.list_by_company(company_id, limit=limit, offset=offset)
 
     def update(self, company_id: str, agent_id: str, owner_id: str,
                name: str | None = None, role: str | None = None,

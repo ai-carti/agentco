@@ -47,10 +47,14 @@ class BaseRepository(Generic[ORMType, DomainType]):
         obj = self._session.get(self.orm_model, id)
         return self._to_domain(obj) if obj else None
 
-    def list(self, **filters) -> list[DomainType]:
+    def list(self, limit: int | None = None, offset: int | None = None, **filters) -> list[DomainType]:
         stmt = select(self.orm_model)
         for attr, value in filters.items():
             stmt = stmt.where(getattr(self.orm_model, attr) == value)
+        if offset is not None:
+            stmt = stmt.offset(offset)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return [self._to_domain(row) for row in self._session.scalars(stmt).all()]
 
     def add(self, domain_obj: DomainType) -> DomainType:

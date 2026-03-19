@@ -477,7 +477,10 @@ export default function WarRoomPage() {
           >
             Activity Feed
           </div>
+          {/* SIRI-UX-068: aria-live so screen readers announce new agent messages */}
           <div
+            aria-live="polite"
+            aria-label="Agent activity feed"
             style={{
               flex: 1,
               overflowY: 'auto',

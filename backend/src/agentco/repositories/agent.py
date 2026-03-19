@@ -25,5 +25,5 @@ class AgentRepository(BaseRepository[AgentORM, Agent]):
             hierarchy_level=domain.hierarchy_level,
         )
 
-    def list_by_company(self, company_id: str) -> list[Agent]:
-        return self.list(company_id=company_id)
+    def list_by_company(self, company_id: str, limit: int | None = None, offset: int | None = None) -> list[Agent]:
+        return self.list(limit=limit, offset=offset, company_id=company_id)

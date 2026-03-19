@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -83,6 +83,8 @@ def create_task(
 def list_tasks(
     company_id: str,
     agent_id: str,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -91,6 +93,8 @@ def list_tasks(
             company_id=company_id,
             agent_id=agent_id,
             owner_id=current_user.id,
+            limit=limit,
+            offset=offset,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

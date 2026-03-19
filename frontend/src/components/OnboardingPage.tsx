@@ -180,8 +180,10 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         </div>
 
         {/* Company name input */}
+        {/* SIRI-UX-067: add aria-label since there's no visible <label> */}
         <input
           data-testid="onboarding-company-name-input"
+          aria-label="Company name"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleUseTemplate()}

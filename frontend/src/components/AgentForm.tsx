@@ -90,8 +90,10 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Name */}
       <div>
-        <label style={labelStyle}>Name</label>
+        {/* SIRI-UX-066: associate label with input via htmlFor/id */}
+        <label htmlFor="agent-name" style={labelStyle}>Name</label>
         <input
+          id="agent-name"
           data-testid="agent-name-input"
           type="text"
           value={name}
@@ -106,8 +108,9 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
 
       {/* Role */}
       <div>
-        <label style={labelStyle}>Role</label>
+        <label htmlFor="agent-role" style={labelStyle}>Role</label>
         <input
+          id="agent-role"
           data-testid="agent-role-input"
           type="text"
           value={role}
@@ -121,8 +124,9 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
 
       {/* Model — dropdown */}
       <div>
-        <label style={labelStyle}>Model</label>
+        <label htmlFor="agent-model" style={labelStyle}>Model</label>
         <select
+          id="agent-model"
           data-testid="model-select"
           value={model}
           onChange={(e) => setModel(e.target.value)}
@@ -152,8 +156,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
 
       {/* System Prompt */}
       <div>
-        <label style={labelStyle}>System Prompt</label>
-        <SystemPromptEditor value={systemPrompt} onChange={setSystemPrompt} />
+        <label htmlFor="agent-system-prompt" style={labelStyle}>System Prompt</label>
+        <SystemPromptEditor id="agent-system-prompt" value={systemPrompt} onChange={setSystemPrompt} />
       </div>
 
       <Button

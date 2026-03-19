@@ -20,11 +20,11 @@ class TaskRepository(BaseRepository[TaskORM, Task]):
             status=domain.status,
         )
 
-    def list_by_company(self, company_id: str) -> list[Task]:
-        return self.list(company_id=company_id)
+    def list_by_company(self, company_id: str, limit: int | None = None, offset: int | None = None) -> list[Task]:
+        return self.list(limit=limit, offset=offset, company_id=company_id)
 
-    def list_by_agent(self, agent_id: str) -> list[Task]:
-        return self.list(agent_id=agent_id)
+    def list_by_agent(self, agent_id: str, limit: int | None = None, offset: int | None = None) -> list[Task]:
+        return self.list(limit=limit, offset=offset, agent_id=agent_id)
 
     def update_status(self, task_id: str, status: str) -> Task:
         orm = self._session.get(self.orm_model, task_id)

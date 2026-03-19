@@ -17,9 +17,10 @@ function countTokens(text: string): number {
 interface SystemPromptEditorProps {
   value: string
   onChange: (value: string) => void
+  id?: string
 }
 
-export default function SystemPromptEditor({ value, onChange }: SystemPromptEditorProps) {
+export default function SystemPromptEditor({ value, onChange, id }: SystemPromptEditorProps) {
   const tokens = countTokens(value)
   const isOverLimit = tokens > 2000
 
@@ -70,6 +71,7 @@ export default function SystemPromptEditor({ value, onChange }: SystemPromptEdit
       {/* Textarea + token counter wrapper */}
       <div style={{ position: 'relative' }}>
         <textarea
+          id={id}
           data-testid="system-prompt-textarea"
           value={value}
           onChange={handleChange}

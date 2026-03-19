@@ -53,10 +53,10 @@ class TaskService:
             raise NotFoundError(f"Task {task_id!r} not found")
         return task
 
-    def list_by_agent(self, company_id: str, agent_id: str, owner_id: str) -> list[Task]:
+    def list_by_agent(self, company_id: str, agent_id: str, owner_id: str, limit: int | None = None, offset: int | None = None) -> list[Task]:
         self._check_company_owner(company_id, owner_id)
         self._check_agent(company_id, agent_id)
-        return self._repo.list(agent_id=agent_id, company_id=company_id)
+        return self._repo.list(limit=limit, offset=offset, agent_id=agent_id, company_id=company_id)
 
     def update(self, company_id: str, agent_id: str, task_id: str, owner_id: str,
                title: str | None = None, description: str | None = None) -> Task:

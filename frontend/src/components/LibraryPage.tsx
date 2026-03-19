@@ -32,6 +32,15 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   const [error, setError] = useState('')
   const toast = useToast()
 
+  // SIRI-UX-065: close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   useEffect(() => {
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/companies`, {
@@ -78,6 +87,9 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   return (
     <div
       data-testid="fork-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Fork to Company"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       style={{
         position: 'fixed',
@@ -166,7 +178,8 @@ export default function LibraryPage() {
 
   const loadAgents = () => {
     const token = getStoredToken()
-    fetch(`${BASE_URL}/api/library`, {
+    // SIRI-UX-069: use limit param now that backend supports pagination (ALEX-TD-040)
+    fetch(`${BASE_URL}/api/library?limit=50`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => (res.ok ? res.json() : []))

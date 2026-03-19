@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -107,12 +107,17 @@ def create_mcp_server(
 def list_mcp_servers(
     company_id: str,
     agent_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     _resolve_agent(session, company_id, agent_id, current_user.id)
     servers = session.scalars(
-        select(MCPServerORM).where(MCPServerORM.agent_id == agent_id)
+        select(MCPServerORM)
+        .where(MCPServerORM.agent_id == agent_id)
+        .offset(offset)
+        .limit(limit)
     ).all()
     return list(servers)
 
