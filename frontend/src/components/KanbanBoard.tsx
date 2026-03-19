@@ -98,6 +98,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
         setRunError(msg)
         toast.error(msg)
       } else {
+        // SIRI-UX-047: update local status so Run button hides, preventing double-run
+        setTasks(useAgentStore.getState().tasks.map((t) =>
+          t.id === task.id ? { ...t, status: 'in_progress' as const } : t
+        ))
         toast.success(`▶ Running: ${task.title}`)
       }
     } catch (err) {
@@ -733,6 +737,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDesc, setNewTaskDesc] = useState('')
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority | ''>('')
   const [creating, setCreating] = useState(false)
   const toast = useToast()
 
@@ -747,7 +752,12 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ title: newTaskTitle.trim(), description: newTaskDesc.trim(), status: 'todo' }),
+        body: JSON.stringify({
+          title: newTaskTitle.trim(),
+          description: newTaskDesc.trim(),
+          status: 'todo',
+          ...(newTaskPriority ? { priority: newTaskPriority } : {}),
+        }),
       })
       if (res.ok) {
         const newTask = await res.json()
@@ -755,6 +765,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
         toast.success(`Task "${newTaskTitle.trim()}" created`)
         setNewTaskTitle('')
         setNewTaskDesc('')
+        setNewTaskPriority('')
         setShowCreateModal(false)
       } else {
         toast.error('Failed to create task. Try again.')
@@ -1018,9 +1029,25 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
                 fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
-                outline: 'none',
+                outline: 'none', marginBottom: '0.75rem',
               }}
             />
+            {/* SIRI-UX-048: Priority selector */}
+            <select
+              data-testid="create-task-priority-select"
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority | '')}
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: newTaskPriority ? '#f8fafc' : '#6b7280',
+                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
+              }}
+            >
+              <option value="">Priority (optional)</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button
                 onClick={() => setShowCreateModal(false)}

@@ -186,6 +186,7 @@ export default function AgentPage() {
             data-testid="save-to-library-btn"
             variant="secondary"
             onClick={handleSaveToLibrary}
+            disabled={savedToLibrary}
           >
             Save to Library
           </Button>
