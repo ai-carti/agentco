@@ -252,13 +252,7 @@ export default function CompanyPage() {
           hidden={activeTab !== 'war-room'}
           style={{ height: '100%' }}
         >
-          {activeTab === 'war-room' && !agentsLoaded ? (
-            // SIRI-UX-032: wait for agents to load before rendering WarRoomPage
-            // This prevents flash of mock data before real API responds
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <SkeletonCard variant="agent" count={3} />
-            </div>
-          ) : activeTab === 'war-room' && agentsLoaded && agents.length === 0 ? (
+          {activeTab === 'war-room' && agentsLoaded && agents.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <EmptyState
                 data-testid="no-agents-empty-state"

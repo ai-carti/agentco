@@ -92,10 +92,24 @@ export default function WarRoomPage() {
     setIsConnecting(false)
   }, [isConnected, agents.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load mock data on mount
+  // Load mock data on mount — only when no real WS is connected
+  // SIRI-UX-032: clear mock data when real WS connects so no flash of fake agents
   useEffect(() => {
-    loadMockData()
+    if (!isConnected) {
+      loadMockData()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When WS connects (real data), clear mock data so no stale mock agents show
+  const prevConnectedRef = useRef(false)
+  useEffect(() => {
+    if (isConnected && !prevConnectedRef.current) {
+      // WS just connected — reset store so mock agents are cleared
+      // Real agents will come in via WS events
+      useWarRoomStore.getState().reset()
+    }
+    prevConnectedRef.current = isConnected
+  }, [isConnected])
 
   // Mock WS fallback: setInterval ~3 sec cycling agent statuses + adding messages
   // Only run when not connected to real WS

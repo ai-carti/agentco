@@ -22,13 +22,16 @@ beforeEach(() => {
 })
 
 describe('BUG-037: AgentPage Memory UI', () => {
-  it('renders memory section', () => {
+  it('renders memory section after agent data loads', async () => {
+    // SIRI-UX-035: memory section is now guarded by !agentLoading — need waitFor
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     })
     renderAgentPage()
-    expect(screen.getByTestId('agent-memory-section')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByTestId('agent-memory-section')).toBeInTheDocument()
+    })
   })
 
   it('calls GET /api/companies/:companyId/agents/:agentId/memory on mount', async () => {
@@ -59,15 +62,15 @@ describe('BUG-037: AgentPage Memory UI', () => {
     })
   })
 
-  it('shows skeleton while loading memories', () => {
+  it('hides memory section while agent is loading (SIRI-UX-035)', () => {
     // Never resolves to keep loading state
     globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {}))
     renderAgentPage()
 
-    // Memory section should be present
-    expect(screen.getByTestId('agent-memory-section')).toBeInTheDocument()
-    // Skeleton should render (SkeletonCard renders skeleton-task elements)
-    expect(screen.getAllByTestId('skeleton-task').length).toBeGreaterThan(0)
+    // SIRI-UX-035: memory section is hidden while agentLoading=true
+    expect(screen.queryByTestId('agent-memory-section')).not.toBeInTheDocument()
+    // Skeleton for agent fields should be present instead
+    expect(document.querySelector('[data-testid="agent-page"]')).toBeInTheDocument()
   })
 
   it('renders MemoryEntry cards with content and created_at', async () => {
