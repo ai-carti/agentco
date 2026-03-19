@@ -27,6 +27,14 @@ const inputStyle: React.CSSProperties = {
   color: '#f8fafc',
   fontSize: '0.875rem',
   boxSizing: 'border-box',
+  outline: 'none',
+}
+
+const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = '#6c47ff'
+}
+const handleInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = '#374151'
 }
 
 const labelStyle: React.CSSProperties = {
@@ -131,6 +139,8 @@ export default function SettingsPage() {
               data-testid="llm-provider-select"
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
               required
             >
@@ -147,6 +157,8 @@ export default function SettingsPage() {
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               placeholder="sk-..."
               style={inputStyle}
               required

@@ -68,6 +68,14 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
     color: '#f8fafc',
     fontSize: '0.875rem',
     boxSizing: 'border-box',
+    outline: 'none',
+  }
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#6c47ff'
+  }
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#374151'
   }
 
   const labelStyle: React.CSSProperties = {
@@ -88,6 +96,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           placeholder="Agent name"
           style={inputStyle}
           required
@@ -102,6 +112,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           type="text"
           value={role}
           onChange={(e) => setRole(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           placeholder="e.g. Frontend Engineer"
           style={inputStyle}
         />
@@ -114,6 +126,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           data-testid="model-select"
           value={model}
           onChange={(e) => setModel(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           disabled={loadingModels}
           required
           style={{

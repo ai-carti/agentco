@@ -170,11 +170,13 @@ export default function CompaniesPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.outline = 'none' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
               placeholder="Company name"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
                 border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box',
+                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>

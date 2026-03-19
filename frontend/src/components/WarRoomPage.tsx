@@ -127,13 +127,6 @@ export default function WarRoomPage() {
     }
   }, [agents.length > 0, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-scroll activity feed to bottom on new messages (SIRI-UX-016)
-  useEffect(() => {
-    if (feedEndRef.current && typeof feedEndRef.current.scrollIntoView === 'function') {
-      feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages.length])
-
   // SIRI-UX-016: Auto-scroll activity feed to latest message
   useEffect(() => {
     if (feedEndRef.current && typeof feedEndRef.current.scrollIntoView === 'function') {
@@ -521,8 +514,6 @@ export default function WarRoomPage() {
               </div>
             )}
             {/* SIRI-UX-016: sentinel for auto-scroll */}
-            <div ref={feedEndRef} />
-            {/* Scroll anchor (SIRI-UX-016) */}
             <div ref={feedEndRef} />
           </div>
         </div>
