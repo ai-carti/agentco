@@ -7,6 +7,8 @@ import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import { ClipboardList } from 'lucide-react'
+// SIRI-UX-049: import shared utilities to eliminate duplication
+import { STATUS_COLORS, getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -17,36 +19,14 @@ const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: 'done', label: 'Done' },
 ]
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  todo: { bg: '#374151', text: '#d1d5db' },
-  backlog: { bg: '#292524', text: '#a8a29e' },
-  in_progress: { bg: '#1d4ed8', text: '#bfdbfe' },
-  done: { bg: '#065f46', text: '#a7f3d0' },
-  failed: { bg: '#7f1d1d', text: '#fca5a5' },
-}
-
-const AVATAR_COLORS = [
-  '#7c3aed', '#db2777', '#ea580c', '#16a34a',
-  '#0891b2', '#9333ea', '#c2410c', '#0d9488',
-]
-
-function getAvatarColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-
 const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   high:   { bg: '#7f1d1d', text: '#fca5a5', label: 'High' },
   medium: { bg: '#78350f', text: '#fcd34d', label: 'Medium' },
   low:    { bg: '#1f2937', text: '#9ca3af', label: 'Low' },
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
+// SIRI-UX-049: getInitials imported from taskUtils (alias to avoid breaking existing usages)
+const getInitials = _getInitials
 
 function formatDueDate(dateStr: string): { label: string; overdue: boolean } {
   const due = new Date(dateStr)
