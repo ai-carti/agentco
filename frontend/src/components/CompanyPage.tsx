@@ -25,10 +25,23 @@ function hashCode(str: string): number {
   return Math.abs(h)
 }
 
+const MOBILE_BREAKPOINT = 640
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT)
+  useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return mobile
+}
+
 function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
   const colorIndex = hashCode(name) % 8
   const avatarColor = AVATAR_COLORS[colorIndex]
   const initials = name.slice(0, 2).toUpperCase()
+  const isMobile = useIsMobile()
 
   return (
     <div
@@ -44,22 +57,33 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
         padding: '0 16px',
       }}
     >
-      {/* Breadcrumb */}
-      <button
-        data-testid="company-header-home-link"
-        onClick={onHomeClick}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: '#94a3b8',
-          cursor: 'pointer',
-          fontSize: '0.875rem',
-          padding: 0,
-        }}
-      >
-        AgentCo
-      </button>
-      <span style={{ color: '#475569', fontSize: '0.875rem' }}>/</span>
+      {/* Breadcrumb — hidden on mobile, show only avatar + name */}
+      {!isMobile && (
+        <>
+          <button
+            data-testid="company-header-home-link"
+            onClick={onHomeClick}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              padding: 0,
+            }}
+          >
+            AgentCo
+          </button>
+          <span style={{ color: '#475569', fontSize: '0.875rem' }}>/</span>
+        </>
+      )}
+      {isMobile && (
+        <button
+          data-testid="company-header-home-link"
+          onClick={onHomeClick}
+          style={{ display: 'none' }}
+        />
+      )}
 
       {/* Avatar */}
       <div

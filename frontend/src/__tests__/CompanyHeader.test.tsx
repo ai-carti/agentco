@@ -109,3 +109,62 @@ describe('BUG-039: Company Header', () => {
     })
   })
 })
+
+describe('UX-011: Company Header mobile responsive', () => {
+  const originalInnerWidth = globalThis.window.innerWidth
+
+  afterEach(() => {
+    Object.defineProperty(globalThis.window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: originalInnerWidth,
+    })
+  })
+
+  it('hides "AgentCo /" breadcrumb text on mobile (< 640px)', async () => {
+    // Set mobile width
+    Object.defineProperty(globalThis.window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 375,
+    })
+    // Trigger resize event
+    globalThis.window.dispatchEvent(new Event('resize'))
+
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'TestCorp' } })
+    renderCompanyPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('company-header')).toBeInTheDocument()
+    })
+
+    // On mobile: "AgentCo" text should not be visible (button is hidden)
+    const homeLink = screen.getByTestId('company-header-home-link')
+    expect(homeLink.style.display).toBe('none')
+
+    // Avatar and company name are still visible
+    expect(screen.getByTestId('company-avatar')).toBeInTheDocument()
+    expect(screen.getByTestId('company-header-name')).toBeInTheDocument()
+  })
+
+  it('shows full breadcrumb on desktop (>= 640px)', async () => {
+    Object.defineProperty(globalThis.window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 1024,
+    })
+    globalThis.window.dispatchEvent(new Event('resize'))
+
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'TestCorp' } })
+    renderCompanyPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('company-header')).toBeInTheDocument()
+    })
+
+    // On desktop: "AgentCo" button should be visible
+    const homeLink = screen.getByTestId('company-header-home-link')
+    expect(homeLink.style.display).not.toBe('none')
+    expect(homeLink.textContent).toContain('AgentCo')
+  })
+})
