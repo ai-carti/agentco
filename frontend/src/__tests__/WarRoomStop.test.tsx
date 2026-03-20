@@ -52,10 +52,10 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
   it('calls POST API on stop button click', async () => {
     const mockFetch = vi.fn()
 
-    // First call: GET runs list
+    // First call: GET runs list (RunOut schema uses `id`, not `run_id`)
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => [{ run_id: 'run-1' }, { run_id: 'run-2' }],
+      json: async () => [{ id: 'run-1' }, { id: 'run-2' }],
     })
     // Second and third: POST stop for each run
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) })
@@ -88,7 +88,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     const mockFetch = vi.fn()
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => [{ run_id: 'run-1' }],
+      json: async () => [{ id: 'run-1' }],
     })
     mockFetch.mockResolvedValueOnce({ ok: true })
 
@@ -146,7 +146,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     // runs list
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => [{ run_id: 'run-1' }],
+      json: async () => [{ id: 'run-1' }],
     })
     // stop call — pending
     mockFetch.mockReturnValueOnce(pendingStop)
@@ -157,6 +157,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
 
     const stopBtn = screen.getByTestId('stop-btn')
     fireEvent.click(stopBtn)
+
 
     // After click, button should show "Stopping..." and be disabled
     await waitFor(() => {

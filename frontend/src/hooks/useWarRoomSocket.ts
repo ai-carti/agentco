@@ -30,6 +30,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
 
   const addMessage = useWarRoomStore((s) => s.addMessage)
   const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
+  const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return
@@ -53,6 +54,15 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         // Update warRoomStore based on event type
         if (data.type === 'message') {
           addMessage(data as unknown as FeedMessage)
+        } else if (data.type === 'run.completed') {
+          // SIRI-UX-079: handle run lifecycle events
+          setRunStatus('done')
+        } else if (data.type === 'run.failed') {
+          setRunStatus('failed')
+        } else if (data.type === 'run.stopped') {
+          setRunStatus('stopped')
+        } else if (data.type === 'run.started' || data.type === 'run.status_changed') {
+          setRunStatus('active')
         } else if (data.type === 'agent_status') {
           const VALID_STATUSES: WarRoomAgentStatus[] = ['idle', 'thinking', 'running', 'done']
           const agentId = data.agentId
@@ -90,7 +100,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         }
       }, delay)
     }
-  }, [companyId, addMessage, updateAgentStatus])
+  }, [companyId, addMessage, updateAgentStatus, setRunStatus])
 
   useEffect(() => {
     unmountedRef.current = false

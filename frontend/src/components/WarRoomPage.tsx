@@ -171,7 +171,8 @@ export default function WarRoomPage() {
         toast.error(`Failed to fetch runs (${runsRes.status})`)
         return
       }
-      const runs: { run_id: string }[] = await runsRes.json().catch(() => [])
+      // RunOut schema uses `id`, not `run_id` — SIRI-UX-078 fix
+      const runs: { id: string }[] = await runsRes.json().catch(() => [])
       const toStop = Array.isArray(runs) ? runs : []
 
       if (toStop.length === 0) {
@@ -181,7 +182,7 @@ export default function WarRoomPage() {
 
       const results = await Promise.allSettled(
         toStop.map((r) =>
-          fetch(`${BASE_URL}/api/companies/${companyId}/runs/${r.run_id}/stop`, {
+          fetch(`${BASE_URL}/api/companies/${companyId}/runs/${r.id}/stop`, {
             method: 'POST',
             headers,
           }),

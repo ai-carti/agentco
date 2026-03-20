@@ -585,6 +585,7 @@ function FilterBar({
           data-testid="kanban-search-input"
           type="text"
           placeholder="Search tasks..."
+          aria-label="Search tasks"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
@@ -1091,6 +1092,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             <input
               autoFocus
               data-testid="create-task-title-input"
+              aria-label="Task title"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
