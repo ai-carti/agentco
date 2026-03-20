@@ -854,6 +854,35 @@ API: `POST /library` (сохранить), `GET /library` (список), `GET /
 
 ---
 
+## Post-Demo Sprint (после 2026-03-21)
+
+> Бэклог добавлен Shadrin [07:15 MSK 2026-03-20]. Источники: demo/POST-DEMO-ROADMAP.md (Siri) и demo/POST-DEMO-BACKEND.md (Alex).
+> Стартуем ПОСЛЕ демо. До демо — не трогаем.
+
+### Frontend (Siri)
+
+| ID | Описание | Приоритет | Статус |
+|----|----------|-----------|--------|
+| FE-001 | **Real WebSocket integration smoke test**: WarRoomPage работает на mock interval. После демо — live-тест с реальным бэкендом: запустить агента, убедиться что `llm_token` WS-события приходят, Activity Feed обновляется. | P0 | fixed |
+| FE-002 | **SettingsPage: реальное управление LLM ключами**: `/settings` — заглушка. Форма добавления ключа (provider select + api_key input + validate button), список ключей с маскировкой `sk-...xxxx`, кнопка удаления. | P0 | fixed |
+| FE-003 | **AgentPage: убрать дублирующийся UX Edit**: AgentPage рендерит одновременно AgentForm (редактируемый) И кнопку "Edit" → AgentEditPage. Решение: AgentPage = view-only, "Edit" → AgentEditPage. | P1 | open |
+| FE-004 | **KanbanBoard: stress-test drag & drop + persist**: stress-test drag 10 карточек быстро, проверить rollback при ошибке, добавить aria-grabbed/aria-dropeffect. Сохранять порядок в localStorage. | P1 | open |
+| FE-005 | **Performance при >50 карточках**: добавить виртуализацию (`@tanstack/react-virtual`) или lazy-load (20 карточек per page). `GET /tasks` без пагинации на фронте — добавить `limit=50&offset=N`. | P1 | fixed |
+| FE-006 | **Mobile War Room**: провести полный мобайл-тест (375px), agent-панель → drawer-паттерн. | P2 | fixed |
+| FE-007 | **Error Boundary + 404 page**: добавить ErrorBoundary на уровне роутов, страница ошибки, обработать несуществующий `/companies/:id`. | P2 | open |
+
+### Backend (Alex)
+
+| ID | Описание | Приоритет | Статус |
+|----|----------|-----------|--------|
+| ALEX-POST-001 | **SQLite → PostgreSQL**: SQLite на Railway теряет данные при pod eviction. Алembic migration, `DATABASE_URL` env, dialect swap. Блокер для платящих клиентов. | 🔴 Critical | fixed |
+| ALEX-POST-002 | **Horizontal scalability (EventBus)**: in-process asyncio.Queue не работает при multiple workers. Нужен Redis pub/sub или NATS. | 🔴 Critical | fixed |
+| ALEX-POST-003 | **Rate limiting**: нет лимитов — пользователь может запустить 1000 агентов → bankrupt. `slowapi` + Redis counter на `/tasks/*/run`. | 🟠 High | fixed |
+| ALEX-POST-004 | **Structured logging + tracing**: plain print() → `structlog` + `opentelemetry-sdk` с OTLP export. Correlation ID по запросам. | 🟠 High | open |
+| ALEX-POST-005 | **LangGraph checkpointing persistence**: `MemorySaver` в RAM — при crash теряется прогресс агентов. Нужен `SqliteSaver`/`PostgresSaver`. | 🟠 High | open |
+| ALEX-POST-006 | **API versioning**: все на `/api/...` без версии. `/api/v1/...` prefix + deprecation headers. | 🟡 Medium | open |
+| ALEX-POST-007 | **Background job queue (arq)**: bare asyncio tasks без retry. `arq` (async Redis queue) с retry policy, dead-letter queue. | 🟡 Medium | open |
+
 ## Post-MVP (после WoW момента)
 
 | ID | Название | Owner | Status |
