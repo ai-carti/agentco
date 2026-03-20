@@ -103,9 +103,14 @@ def list_library(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),  # just requires auth
 ):
-    """ALEX-TD-040: pagination added (default limit=50, max=500) to prevent OOM."""
+    """ALEX-TD-040: pagination added (default limit=50, max=500) to prevent OOM.
+    ALEX-TD-062: ORDER BY created_at DESC for deterministic pagination cursor.
+    """
     entries = session.execute(
-        select(AgentLibraryORM).limit(limit).offset(offset)
+        select(AgentLibraryORM)
+        .order_by(AgentLibraryORM.created_at.desc())
+        .limit(limit)
+        .offset(offset)
     ).scalars().all()
     return list(entries)
 

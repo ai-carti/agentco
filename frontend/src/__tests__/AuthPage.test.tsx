@@ -63,7 +63,7 @@ describe('AuthPage', () => {
 
   it('shows Sign In and Sign Up tabs', () => {
     renderAuthPage()
-    const tabs = screen.getAllByRole('button', { name: /sign in|sign up/i })
+    const tabs = screen.getAllByRole('tab', { name: /sign in|sign up/i })
     const tabTexts = tabs.map((t) => t.textContent)
     expect(tabTexts).toContain('Sign In')
     expect(tabTexts).toContain('Sign Up')
@@ -85,10 +85,7 @@ describe('AuthPage', () => {
 
   it('switches to Sign Up tab on click — submit button shows Sign Up', () => {
     renderAuthPage()
-    const allButtons = screen.getAllByRole('button')
-    const signUpTabBtn = allButtons.find(
-      (b) => b.textContent === 'Sign Up' && b.getAttribute('type') === 'button'
-    )
+    const signUpTabBtn = screen.getByRole('tab', { name: /sign up/i })
     expect(signUpTabBtn).toBeTruthy()
     fireEvent.click(signUpTabBtn!)
     const buttons = screen.getAllByRole('button')
@@ -109,6 +106,41 @@ describe('AuthPage', () => {
     expect(screen.queryByText(/^Password$/)).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
+  })
+
+  // SIRI-UX-103: ARIA tablist pattern for screen readers
+  describe('SIRI-UX-103: ARIA tab roles', () => {
+    it('wraps tab buttons in a container with role="tablist"', () => {
+      renderAuthPage()
+      expect(screen.getByRole('tablist')).toBeInTheDocument()
+    })
+
+    it('Sign In tab has role="tab" and aria-selected="true" by default', () => {
+      renderAuthPage()
+      const signInTab = screen.getByRole('tab', { name: /sign in/i })
+      expect(signInTab).toBeInTheDocument()
+      expect(signInTab).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('Sign Up tab has role="tab" and aria-selected="false" by default', () => {
+      renderAuthPage()
+      const signUpTab = screen.getByRole('tab', { name: /sign up/i })
+      expect(signUpTab).toBeInTheDocument()
+      expect(signUpTab).toHaveAttribute('aria-selected', 'false')
+    })
+
+    it('switching to Sign Up tab updates aria-selected correctly', () => {
+      renderAuthPage()
+      const signUpTab = screen.getByRole('tab', { name: /sign up/i })
+      fireEvent.click(signUpTab)
+      expect(signUpTab).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('tab', { name: /sign in/i })).toHaveAttribute('aria-selected', 'false')
+    })
+
+    it('tab panel has role="tabpanel"', () => {
+      renderAuthPage()
+      expect(screen.getByRole('tabpanel')).toBeInTheDocument()
+    })
   })
 
   it('shows Forgot password? text (coming soon — not a broken link)', () => {

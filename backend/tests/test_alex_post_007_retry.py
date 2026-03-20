@@ -54,7 +54,8 @@ async def test_execute_agent_retries_on_first_transient_error():
         return "done"
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
-         patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+         patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
+         patch("random.uniform", return_value=0.0):  # ALEX-TD-061: zero jitter for deterministic test
         result = await svc._execute_agent(
             run_id="run-001",
             task_id="task-001",
@@ -65,7 +66,7 @@ async def test_execute_agent_retries_on_first_transient_error():
 
     assert result == "done"
     assert call_count == 2, f"execute_run должен быть вызван 2 раза, вызван: {call_count}"
-    mock_sleep.assert_called_once_with(1.0)  # exponential backoff: 1s after first failure
+    mock_sleep.assert_called_once_with(1.0)  # exponential backoff: 1s after first failure (jitter=0)
 
 
 # ── Test 2: all retries exhausted → failed with descriptive error_message ────
@@ -90,6 +91,7 @@ async def test_execute_agent_exhausts_retries_raises_descriptive_error():
     # Override RUN_MAX_RETRIES env to 3 (default)
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
+         patch("random.uniform", return_value=0.0), \
          patch.dict("os.environ", {"RUN_MAX_RETRIES": "3", "RUN_RETRY_BASE_DELAY": "1.0"}):
         with pytest.raises(Exception) as exc_info:
             await svc._execute_agent(
@@ -105,8 +107,8 @@ async def test_execute_agent_exhausts_retries_raises_descriptive_error():
 
     # sleep вызван 2 раза: после 1й и 2й попыток (не после последней)
     assert mock_sleep.call_count == 2, f"sleep должен быть вызван 2 раза, вызван: {mock_sleep.call_count}"
-    mock_sleep.assert_any_call(1.0)  # после 1й попытки
-    mock_sleep.assert_any_call(2.0)  # после 2й попытки
+    mock_sleep.assert_any_call(1.0)  # после 1й попытки (jitter=0)
+    mock_sleep.assert_any_call(2.0)  # после 2й попытки (jitter=0)
 
     # Ошибка должна содержать информацию о количестве попыток
     error_str = str(exc_info.value)
@@ -135,7 +137,8 @@ async def test_execute_agent_succeeds_on_second_attempt():
         return "agent completed successfully"
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
-         patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+         patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
+         patch("random.uniform", return_value=0.0):  # ALEX-TD-061: zero jitter
         result = await svc._execute_agent(
             run_id="run-003",
             task_id="task-003",
@@ -203,6 +206,7 @@ async def test_execute_agent_exponential_backoff_delays():
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", side_effect=record_sleep), \
+         patch("random.uniform", return_value=0.0), \
          patch.dict("os.environ", {"RUN_MAX_RETRIES": "3", "RUN_RETRY_BASE_DELAY": "1.0"}):
         with pytest.raises(Exception):
             await svc._execute_agent(
@@ -214,7 +218,7 @@ async def test_execute_agent_exponential_backoff_delays():
             )
 
     assert sleep_calls == [1.0, 2.0], (
-        f"Ожидался exponential backoff [1.0, 2.0], получено: {sleep_calls}"
+        f"Ожидался exponential backoff [1.0, 2.0] (без jitter), получено: {sleep_calls}"
     )
 
 

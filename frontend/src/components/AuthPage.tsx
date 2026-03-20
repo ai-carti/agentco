@@ -137,8 +137,10 @@ export default function AuthPage() {
           Your AI team, working 24/7
         </p>
 
-        <div style={styles.tabs}>
+        <div role="tablist" style={styles.tabs}>
           <button
+            role="tab"
+            aria-selected={tab === 'signin'}
             style={styles.tab(tab === 'signin')}
             onClick={() => setTab('signin')}
             type="button"
@@ -146,6 +148,8 @@ export default function AuthPage() {
             Sign In
           </button>
           <button
+            role="tab"
+            aria-selected={tab === 'signup'}
             style={styles.tab(tab === 'signup')}
             onClick={() => setTab('signup')}
             type="button"
@@ -154,6 +158,7 @@ export default function AuthPage() {
           </button>
         </div>
 
+        <div role="tabpanel">
         {error && <div style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
@@ -198,6 +203,7 @@ export default function AuthPage() {
             {isLoading ? 'Loading…' : tab === 'signin' ? 'Sign In' : 'Sign Up'}
           </button>
         </form>
+        </div>
       </div>
     </div>
   )

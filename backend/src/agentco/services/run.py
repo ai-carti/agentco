@@ -18,6 +18,7 @@ Lifecycle:
 import asyncio
 import logging
 import os
+import random
 from datetime import datetime, timezone
 
 
@@ -183,8 +184,10 @@ class RunService:
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                    # ALEX-TD-061: full jitter to avoid thundering herd
+                    delay = delay + random.uniform(0, 0.1) * delay
                     logger.warning(
-                        "run_retry run_id=%s attempt=%d/%d delay=%.1fs error=%s",
+                        "run_retry run_id=%s attempt=%d/%d delay=%.2fs error=%s",
                         run_id, attempt, _MAX_RETRIES, delay, exc,
                     )
                     await asyncio.sleep(delay)
@@ -358,8 +361,9 @@ class RunService:
             return self._session
 
         try:
-            _ckpt_db = os.environ.get("AGENTCO_DB_PATH", "./agentco.db")
-            async with create_checkpointer(_ckpt_db) as checkpointer:
+            # ALEX-TD-063: use CHECKPOINT_DB_PATH (via get_checkpoint_db_path) instead of
+            # AGENTCO_DB_PATH. Keeps checkpoints in a separate file from the main DB.
+            async with create_checkpointer() as checkpointer:
                 compiled = compile_graph(checkpointer=checkpointer)
                 config = {"configurable": {"thread_id": run_id}}
                 final_state = await compiled.ainvoke(initial_state, config=config)
