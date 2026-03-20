@@ -126,7 +126,7 @@
 ## Pre-Demo Checklist
 
 - [ ] Приложение задеплоено и доступно по публичному URL
-- [ ] Демо-компания создана с 4 агентами (CEO, CPO, SWE, Market Analyst)
+- [ ] Демо-компания создана с 4 агентами (Alex/CEO, Jordan/CPO, Dev/SWE, Morgan/Market Analyst)
 - [ ] Демо-задачи в Kanban (3-5 задач в разных статусах)
 - [ ] LLM ключи настроены (OPENAI_API_KEY в .env)
 - [ ] War Room открыт — агенты показывают активность (mock fallback работает без WS)
