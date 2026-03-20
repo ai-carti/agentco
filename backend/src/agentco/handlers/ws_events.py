@@ -13,10 +13,11 @@ entire WebSocket lifetime via Depends(get_session) — pool exhaustion under loa
 We still receive the session via Depends so test fixtures can override it,
 but close it explicitly right after the authorization check.
 
-ALEX-TD-055 fix: Always call websocket.accept() before websocket.close().
-Some proxies (Nginx, HAProxy) log a close-before-accept as a connection error.
-Use custom codes 4001 (unauthorized) and 4003 (forbidden) instead of 1008 —
-1008 is not reliably handled in all browsers.
+ALEX-TD-055 fix: Always call websocket.accept() AFTER session.close() but
+BEFORE websocket.close(). Satisfies both TD-035 (release DB before long-lived WS)
+and TD-055 (proper WebSocket close handshake — proxies like Nginx/HAProxy log
+close-before-accept as a connection error). Use custom codes 4001/4003 instead
+of 1008 — better browser compatibility.
 """
 import logging
 
@@ -33,10 +34,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Custom WebSocket close codes (4000–4999 are available for application use)
-_WS_CLOSE_UNAUTHORIZED = 4001   # missing / invalid token
-_WS_CLOSE_FORBIDDEN = 4003      # valid token but insufficient ownership
-
 
 @router.websocket("/ws/companies/{company_id}/events")
 async def ws_company_events(
@@ -45,33 +42,41 @@ async def ws_company_events(
     token: str = Query(default=""),
     session: Session = Depends(get_session),
 ):
-    # 1. Always accept first so proxies don't log a spurious connection error.
+    # 1. Authenticate — decode JWT (no DB required)
+    user_id: str | None = None
+    if token:
+        try:
+            user_id = decode_access_token(token)
+        except Exception:
+            pass  # user_id stays None → unauthorized
+
+    # 2. ALEX-TD-011: Verify company ownership via DB.
+    # ALEX-TD-035: session.close() in finally — DB released before websocket.accept().
+    # This prevents holding DB connections open for the entire WebSocket lifetime.
+    authorized = False
+    if user_id is not None:
+        try:
+            company = session.scalars(
+                select(CompanyORM).where(CompanyORM.id == company_id)
+            ).first()
+            authorized = company is not None and company.owner_id == user_id
+        finally:
+            session.close()  # ← released before websocket.accept() (ALEX-TD-035)
+    else:
+        session.close()  # always release
+
+    # 3. ALEX-TD-055: accept() always comes before close() — correct WS handshake.
+    # Proxies (Nginx, HAProxy) log close-before-accept as a connection error.
     await websocket.accept()
 
-    # 2. Authenticate via query param token
-    if not token:
-        await websocket.close(code=4001, reason="Missing token")  # 4001 = Unauthorized
+    if not token or user_id is None:
+        # 4001 = Unauthorized (missing/invalid token)
+        await websocket.close(code=4001, reason="Missing or invalid token")
         return
-
-    try:
-        user_id = decode_access_token(token)
-    except Exception:
-        await websocket.close(code=4001, reason="Invalid token")  # 4001 = Unauthorized
-        return
-
-    # 3. ALEX-TD-011: Verify company ownership — user must own the company
-    # ALEX-TD-035: close session immediately after ownership check, before accept().
-    # This prevents holding DB connections open for the entire WebSocket lifetime.
-    try:
-        company = session.scalars(
-            select(CompanyORM).where(CompanyORM.id == company_id)
-        ).first()
-        authorized = company is not None and company.owner_id == user_id
-    finally:
-        session.close()
 
     if not authorized:
-        await websocket.close(code=4003, reason="Company not found or access denied")  # 4003 = Forbidden
+        # 4003 = Forbidden (valid token but no ownership)
+        await websocket.close(code=4003, reason="Company not found or access denied")
         return
 
     bus = EventBus.get()

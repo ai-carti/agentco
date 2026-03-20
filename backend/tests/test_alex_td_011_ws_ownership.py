@@ -8,9 +8,14 @@ Any authenticated user can subscribe to events for any company_id, including
 companies belonging to other users — information disclosure vulnerability.
 
 Fix: After decoding the token, look up the company and verify owner_id == current user.
+
+ALEX-TD-055 note: with the TD-055 fix, the server now always performs the WS handshake
+(websocket.accept()) before closing, so TestClient no longer raises on bad auth.
+Instead we verify the close code: 4001 = Unauthorized, 4003 = Forbidden.
 """
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 
 def _register_and_login(client: TestClient, email: str, password: str = "Secret123!"):
@@ -30,6 +35,20 @@ def _create_company(client: TestClient, token: str, name: str = "My Corp") -> st
     return resp.json()["id"]
 
 
+def _ws_close_code(client: TestClient, url: str) -> int | None:
+    """Connect to WS, receive close frame, return close code (or None if still open)."""
+    try:
+        with client.websocket_connect(url) as ws:
+            # Connection accepted — server should send close frame immediately
+            try:
+                ws.receive_text()
+            except WebSocketDisconnect as e:
+                return e.code
+    except WebSocketDisconnect as e:
+        return e.code
+    return None
+
+
 class TestWebSocketOwnership:
     """WebSocket must reject connections to companies the user doesn't own."""
 
@@ -45,7 +64,7 @@ class TestWebSocketOwnership:
             pass  # should not raise
 
     def test_non_owner_cannot_connect_to_foreign_company(self, auth_client):
-        """Non-owner user must NOT be able to subscribe to another user's company events."""
+        """Non-owner user gets close code 4003 (Forbidden) for another user's company."""
         client, _ = auth_client
 
         # User A creates a company
@@ -55,21 +74,20 @@ class TestWebSocketOwnership:
         # User B tries to subscribe to User A's company events
         token_b = _register_and_login(client, "user-b@ws-test.com")
 
-        with pytest.raises(Exception):
-            # Should fail with 1008 (policy violation) or 403
-            with client.websocket_connect(
-                f"/ws/companies/{company_id}/events?token={token_b}"
-            ) as ws:
-                # If we get here, the connection was accepted — that's the bug
-                pass
+        code = _ws_close_code(
+            client,
+            f"/ws/companies/{company_id}/events?token={token_b}",
+        )
+        # ALEX-TD-055: close code 4003 = Forbidden (not 1008)
+        assert code == 4003, f"Expected close code 4003 (Forbidden), got {code}"
 
     def test_nonexistent_company_rejected(self, auth_client):
-        """WebSocket connection to nonexistent company_id must be rejected."""
+        """WebSocket connection to nonexistent company_id gets close code 4003."""
         client, _ = auth_client
         token = _register_and_login(client, "user-c@ws-test.com")
 
-        with pytest.raises(Exception):
-            with client.websocket_connect(
-                f"/ws/companies/nonexistent-id/events?token={token}"
-            ) as ws:
-                pass
+        code = _ws_close_code(
+            client,
+            f"/ws/companies/nonexistent-id/events?token={token}",
+        )
+        assert code == 4003, f"Expected close code 4003 (Forbidden), got {code}"

@@ -200,11 +200,22 @@ class TestWebSocketIntegration:
     """WebSocket endpoint tests."""
 
     def test_ws_requires_auth(self, auth_client):
-        """WebSocket without token returns 1008 (policy violation)."""
+        """WebSocket without token: handshake accepted then closed with 4001 (Unauthorized).
+
+        ALEX-TD-055: server always accept()s before close() for proxy compatibility.
+        Close code 4001 = Unauthorized (was 1008 before TD-055 fix).
+        """
+        from starlette.websockets import WebSocketDisconnect
         client, _ = auth_client
-        with pytest.raises(Exception):
-            with client.websocket_connect("/ws/companies/fake/events"):
-                pass
+        try:
+            with client.websocket_connect("/ws/companies/fake/events") as ws:
+                try:
+                    ws.receive_text()
+                except WebSocketDisconnect as e:
+                    assert e.code == 4001, f"Expected 4001 (Unauthorized), got {e.code}"
+                    return
+        except WebSocketDisconnect as e:
+            assert e.code == 4001, f"Expected 4001 (Unauthorized), got {e.code}"
 
     def test_ws_connects_with_valid_token(self, auth_client):
         """WebSocket connects successfully with valid token in query param."""
