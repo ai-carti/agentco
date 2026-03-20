@@ -137,6 +137,9 @@ export default function CompanyPage() {
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
   const [agentsLoaded, setAgentsLoaded] = useState(false)
+  const [taskOffset, setTaskOffset] = useState(0)
+  const [hasMoreTasks, setHasMoreTasks] = useState(false)
+  const TASK_LIMIT = 50
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
 
@@ -160,10 +163,15 @@ export default function CompanyPage() {
       .catch(() => {})
 
     setTasksLoaded(false)
-    fetch(`${BASE_URL}/api/companies/${id}/tasks`, { headers })
+    setTaskOffset(0)
+    setHasMoreTasks(false)
+    fetch(`${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=0`, { headers })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        setTasks(Array.isArray(data) ? data : [])
+        const items = Array.isArray(data) ? data : []
+        setTasks(items)
+        setHasMoreTasks(items.length === TASK_LIMIT)
+        setTaskOffset(items.length)
         setTasksLoaded(true)
       })
       .catch(() => {
@@ -189,6 +197,28 @@ export default function CompanyPage() {
       setActiveCompanyTab(null)
     }
   }, [id, setCurrentCompany, setTasks, setAgents, setActiveCompanyTab])
+
+  const handleLoadMoreTasks = async () => {
+    if (!id || !hasMoreTasks) return
+    const token = getStoredToken()
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=${taskOffset}`,
+        { headers }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const items = Array.isArray(data) ? data : []
+        const currentTasks = useAgentStore.getState().tasks
+        setTasks([...currentTasks, ...items])
+        setTaskOffset(taskOffset + items.length)
+        setHasMoreTasks(items.length === TASK_LIMIT)
+      }
+    } catch {
+      // silently ignore
+    }
+  }
 
   const handleCreateAgent = async (data: AgentFormData) => {
     if (!id) return
@@ -298,7 +328,12 @@ export default function CompanyPage() {
           style={{ height: '100%', overflowY: 'auto' }}
         >
           {activeTab === 'board' && (
-            <KanbanBoard companyId={id ?? ''} isLoaded={tasksLoaded} />
+            <KanbanBoard
+              companyId={id ?? ''}
+              isLoaded={tasksLoaded}
+              hasMore={hasMoreTasks}
+              onLoadMore={handleLoadMoreTasks}
+            />
           )}
         </div>
 
