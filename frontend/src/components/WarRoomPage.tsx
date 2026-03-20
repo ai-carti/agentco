@@ -95,6 +95,26 @@ export default function WarRoomPage() {
     setIsConnecting(false)
   }, [isConnected, agents.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // SIRI-UX-113: reset store when companyId changes (switching between companies)
+  // Without this, cost/$, messages and agents from previous company persist in store
+  // Use ref to skip reset on initial mount — only reset on actual companyId change
+  const prevCompanyIdRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const safeReset = () => {
+      // Guard against mocked store in tests that don't provide getState
+      if (typeof useWarRoomStore.getState === 'function') {
+        useWarRoomStore.getState().reset()
+      }
+    }
+    if (prevCompanyIdRef.current !== undefined && prevCompanyIdRef.current !== companyId) {
+      safeReset()
+    }
+    prevCompanyIdRef.current = companyId
+    return () => {
+      safeReset()
+    }
+  }, [companyId])
+
   // Load mock data on mount — only when no real WS is connected
   // SIRI-UX-032: clear mock data when real WS connects so no flash of fake agents
   useEffect(() => {

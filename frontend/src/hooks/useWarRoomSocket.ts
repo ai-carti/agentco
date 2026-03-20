@@ -19,6 +19,9 @@ interface UseWarRoomSocketResult {
   error: string | null
 }
 
+// SIRI-UX-116: cap events array to prevent unbounded memory growth in long sessions
+const MAX_EVENTS = 500
+
 export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const [events, setEvents] = useState<WsEvent[]>([])
   const [isConnected, setIsConnected] = useState(false)
@@ -55,7 +58,11 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
     ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string) as WsEvent
-        setEvents((prev) => [...prev, data])
+        // SIRI-UX-116: cap events array at MAX_EVENTS to prevent memory leak in long sessions
+        setEvents((prev) => {
+          const next = [...prev, data]
+          return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next
+        })
 
         // Update warRoomStore based on event type
         if (data.type === 'message') {

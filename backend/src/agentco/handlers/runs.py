@@ -26,6 +26,8 @@ from ..core.rate_limiting import limiter
 
 # Rate limit config from env (ALEX-POST-003 AC: RATE_LIMIT_RUN env var)
 _RATE_LIMIT_RUN = os.getenv("RATE_LIMIT_RUN", "10/minute")
+# ALEX-TD-065: separate limit for POST /runs (goal-based runs without task, still can trigger LLM)
+_RATE_LIMIT_CREATE_RUN = os.getenv("RATE_LIMIT_CREATE_RUN", "20/minute")
 
 router = APIRouter(
     prefix="/api/companies/{company_id}",
@@ -106,7 +108,9 @@ def _session_ctx() -> "Session":
     response_model=RunOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(_RATE_LIMIT_CREATE_RUN)
 async def create_run(
+    request: Request,
     company_id: str,
     body: RunCreate,
     session: Session = Depends(get_session),

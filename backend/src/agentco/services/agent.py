@@ -107,9 +107,20 @@ class AgentService:
         return roots
 
     def delete(self, company_id: str, agent_id: str, owner_id: str) -> None:
+        """ALEX-TD-064 fix: nullify task.agent_id before deleting agent.
+
+        SQLite has PRAGMA foreign_keys=ON. Deleting an agent that has tasks would
+        raise IntegrityError (FK constraint on tasks.agent_id → agents.id) → 500.
+        Fix: set task.agent_id = NULL for all tasks of this agent before deletion.
+        Tasks become unassigned but are preserved (non-destructive for user data).
+        """
         self._check_company_owner(company_id, owner_id)
         agent_orm = self._session.get(self._repo.orm_model, agent_id)
         if agent_orm is None or agent_orm.company_id != company_id:
             raise NotFoundError(f"Agent {agent_id!r} not found")
+        # Nullify FK references in tasks to avoid IntegrityError on DELETE
+        for task_orm in list(agent_orm.tasks):
+            task_orm.agent_id = None
+        self._session.flush()
         self._session.delete(agent_orm)
         self._session.commit()

@@ -871,6 +871,9 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
       if (e.key === 'Escape') {
         setShowCreateModal(false)
         setTitleTouched(false)
+        setNewTaskTitle('')
+        setNewTaskDesc('')
+        setNewTaskPriority('')
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -1096,7 +1099,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setTitleTouched(false) } }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') } }}
         >
           <div style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
@@ -1162,7 +1165,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             </select>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button
-                onClick={() => { setShowCreateModal(false); setTitleTouched(false) }}
+                onClick={() => { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') }}
                 style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               >
                 Cancel
