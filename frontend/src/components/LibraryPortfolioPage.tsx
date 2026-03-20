@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
@@ -33,8 +33,11 @@ export default function LibraryPortfolioPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  // SIRI-UX-095: extracted to useCallback — reused by both mount effect and retry button
+  const fetchPortfolio = useCallback(() => {
     if (!id) return
+    setError('')
+    setLoading(true)
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/library/${id}/portfolio`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -52,6 +55,10 @@ export default function LibraryPortfolioPage() {
         setLoading(false)
       })
   }, [id])
+
+  useEffect(() => {
+    fetchPortfolio()
+  }, [fetchPortfolio])
 
   return (
     <div
@@ -88,17 +95,7 @@ export default function LibraryPortfolioPage() {
         >
           <p style={{ color: '#f87171', margin: '0 0 0.75rem' }}>Failed to load portfolio</p>
           <button
-            onClick={() => {
-              setError('')
-              setLoading(true)
-              const token = getStoredToken()
-              fetch(`${BASE_URL}/api/library/${id}/portfolio`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-              })
-                .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.json() })
-                .then((data: PortfolioData) => { setPortfolio(data); setLoading(false) })
-                .catch((err: Error) => { setError(err.message); setLoading(false) })
-            }}
+            onClick={fetchPortfolio}
             style={{
               padding: '0.4rem 1rem',
               background: 'transparent',

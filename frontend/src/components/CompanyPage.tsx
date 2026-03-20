@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
@@ -136,6 +136,17 @@ export default function CompanyPage() {
   const TASK_LIMIT = 50
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
+
+  // SIRI-UX-091: close modal on Escape key
+  const handleModalEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setIsAgentFormOpen(false)
+  }, [])
+  useEffect(() => {
+    if (isAgentFormOpen) {
+      document.addEventListener('keydown', handleModalEscape)
+      return () => document.removeEventListener('keydown', handleModalEscape)
+    }
+  }, [isAgentFormOpen, handleModalEscape])
 
   useEffect(() => {
     setActiveCompanyTab('war-room')
@@ -382,6 +393,9 @@ export default function CompanyPage() {
       {isAgentFormOpen && (
         <div
           data-testid="agent-form-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add Agent"
           style={{
             position: 'fixed',
             inset: 0,

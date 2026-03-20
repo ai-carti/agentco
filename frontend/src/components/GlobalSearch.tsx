@@ -188,6 +188,7 @@ export default function GlobalSearch() {
           <input
             ref={inputRef}
             data-testid="global-search-input"
+            aria-label="Search companies, agents, tasks"
             type="text"
             placeholder="Search companies, agents, tasks..."
             value={query}

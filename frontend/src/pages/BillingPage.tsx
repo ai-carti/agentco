@@ -138,16 +138,38 @@ export default function BillingPage() {
           <div style={{ ...cardStyle, flex: 1, minWidth: 160 }}>
             <p style={labelStyle}>API calls</p>
             <p style={valueStyle}>{CURRENT_PLAN.apiCalls.toLocaleString()}</p>
-            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>
+            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0.5rem' }}>
               of 1,000 / mo
             </p>
+            {/* SIRI-UX-094: usage progress bar */}
+            <div
+              role="progressbar"
+              aria-valuenow={CURRENT_PLAN.apiCalls}
+              aria-valuemin={0}
+              aria-valuemax={1000}
+              aria-label="API calls usage"
+              style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
+            >
+              <div style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.apiCalls / 1000) * 100, 100)}%`, background: '#3b82f6', borderRadius: 2, transition: 'width 0.3s' }} />
+            </div>
           </div>
           <div style={{ ...cardStyle, flex: 1, minWidth: 160 }}>
             <p style={labelStyle}>Tokens used</p>
             <p style={valueStyle}>{(CURRENT_PLAN.tokensUsed / 1000).toLocaleString()}K</p>
-            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>
+            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0.5rem' }}>
               of 100K / mo
             </p>
+            {/* SIRI-UX-094: usage progress bar */}
+            <div
+              role="progressbar"
+              aria-valuenow={CURRENT_PLAN.tokensUsed}
+              aria-valuemin={0}
+              aria-valuemax={100000}
+              aria-label="Tokens used"
+              style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
+            >
+              <div style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.tokensUsed / 100000) * 100, 100)}%`, background: '#8b5cf6', borderRadius: 2, transition: 'width 0.3s' }} />
+            </div>
           </div>
         </div>
       </section>

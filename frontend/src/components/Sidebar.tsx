@@ -92,6 +92,7 @@ export default function Sidebar() {
             borderBottom: '1px solid #1e293b',
           }}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? '\u{2630}' : '\u{2190}'}
         </button>

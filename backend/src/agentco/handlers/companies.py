@@ -79,11 +79,10 @@ def get_company(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    # ALEX-TD-057: ownership check consolidated in service.get_owned()
     try:
-        company = CompanyService(session).get(company_id)
+        company = CompanyService(session).get_owned(company_id, owner_id=current_user.id)
     except NotFoundError:
-        raise HTTPException(status_code=404, detail="Company not found")
-    if company.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Company not found")
     return _to_out(company)
 
@@ -95,14 +94,9 @@ def update_company(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    # ALEX-TD-054: single DB hit — ownership check + update merged in service
     try:
-        company = CompanyService(session).get(company_id)
-    except NotFoundError:
-        raise HTTPException(status_code=404, detail="Company not found")
-    if company.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Company not found")
-    try:
-        return _to_out(CompanyService(session).update(company_id, body.name))
+        return _to_out(CompanyService(session).update(company_id, body.name, owner_id=current_user.id))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
     except ValueError as e:
@@ -115,13 +109,8 @@ def delete_company(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    # ALEX-TD-054: single DB hit — ownership check + delete merged in service
     try:
-        company = CompanyService(session).get(company_id)
-    except NotFoundError:
-        raise HTTPException(status_code=404, detail="Company not found")
-    if company.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Company not found")
-    try:
-        CompanyService(session).delete(company_id)
+        CompanyService(session).delete_owned(company_id, owner_id=current_user.id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")

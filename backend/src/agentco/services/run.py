@@ -158,14 +158,14 @@ class RunService:
         ALEX-POST-007: retry wrapper — on transient failure retries up to MAX_RETRIES times
         with exponential backoff. Permanent errors (cost_limit_exceeded, token_limit_exceeded)
         are not retried.
-        """
-        import asyncio as _asyncio
-        import os as _os
 
-        _MAX_RETRIES = int(_os.getenv("RUN_MAX_RETRIES", "3"))
+        ALEX-TD-056: imports moved to module level (asyncio, os already imported at top).
+        """
+        # ALEX-TD-056: use module-level asyncio and os (no in-function import aliases)
+        _MAX_RETRIES = int(os.getenv("RUN_MAX_RETRIES", "3"))
         if _MAX_RETRIES < 1:
             _MAX_RETRIES = 1  # ALEX-TD-048: guard against range(1, 0+1) yielding no iterations
-        _RETRY_BASE_DELAY = float(_os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
+        _RETRY_BASE_DELAY = float(os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
         _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded", "cancelled"}
 
         last_exc: Exception | None = None
@@ -187,7 +187,7 @@ class RunService:
                         "run_retry run_id=%s attempt=%d/%d delay=%.1fs error=%s",
                         run_id, attempt, _MAX_RETRIES, delay, exc,
                     )
-                    await _asyncio.sleep(delay)
+                    await asyncio.sleep(delay)
                 else:
                     logger.error(
                         "run_dead_letter run_id=%s exhausted after %d attempts error=%s",
