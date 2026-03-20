@@ -7,12 +7,13 @@ Endpoints:
     GET   /api/companies/{company_id}/runs/{run_id}         → run details (+ events_count)
     PATCH /api/companies/{company_id}/runs/{run_id}/stop    → stop run (+ POST backward compat)
     GET   /api/companies/{company_id}/runs/{run_id}/events  → list run events
-    POST  /api/companies/{company_id}/tasks/{task_id}/run   → legacy: run from task
+    POST  /api/companies/{company_id}/tasks/{task_id}/run   → legacy: run from task (rate limited)
 """
+import os
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
@@ -21,6 +22,10 @@ from ..services.run import RunService
 from ..repositories.base import NotFoundError, ConflictError
 from ..auth.dependencies import get_current_user
 from ..orm.user import User
+from ..core.rate_limiting import limiter
+
+# Rate limit config from env (ALEX-POST-003 AC: RATE_LIMIT_RUN env var)
+_RATE_LIMIT_RUN = os.getenv("RATE_LIMIT_RUN", "10/minute")
 
 router = APIRouter(
     prefix="/api/companies/{company_id}",
@@ -226,7 +231,9 @@ async def list_run_events(
     response_model=RunCreatedOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(_RATE_LIMIT_RUN)
 async def run_task(
+    request: Request,
     company_id: str,
     task_id: str,
     session: Session = Depends(get_session),

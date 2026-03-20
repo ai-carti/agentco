@@ -21,6 +21,21 @@ import agentco.orm.credential  # noqa: F401
 import agentco.orm.agent_library  # noqa: F401
 import agentco.orm.mcp_server     # noqa: F401
 from agentco.db.session import get_session
+from agentco.core.rate_limiting import limiter
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Reset rate limiter storage before each test to prevent state bleed (ALEX-POST-003)."""
+    try:
+        limiter._storage.reset()
+    except Exception:
+        pass
+    yield
+    try:
+        limiter._storage.reset()
+    except Exception:
+        pass
 
 
 def _make_test_engine():

@@ -6,6 +6,9 @@ import asyncio
 import logging
 import os
 
+from slowapi.errors import RateLimitExceeded
+
+from .core.rate_limiting import limiter, rate_limit_exceeded_handler
 from .handlers import companies_router, agents_router, tasks_router, auth_router, credentials_router, runs_router, ws_events_router, templates_router, memory_router, library_router, mcp_servers_router
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="AgentCo", version="0.1.0", lifespan=lifespan)
+
+# Rate limiting setup (ALEX-POST-003)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

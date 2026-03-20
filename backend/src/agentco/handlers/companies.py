@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -6,6 +8,9 @@ from ..services.company import CompanyService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import User
+from ..core.rate_limiting import limiter
+
+_RATE_LIMIT_COMPANIES = os.getenv("RATE_LIMIT_COMPANIES", "5/hour")
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 
@@ -55,7 +60,9 @@ def list_companies(
 
 
 @router.post("/", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_RATE_LIMIT_COMPANIES)
 def create_company(
+    request: Request,
     body: CompanyCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),

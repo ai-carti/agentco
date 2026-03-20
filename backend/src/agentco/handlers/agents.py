@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field, field_validator
+import os
 from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
 from ..services.agent import AgentService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import User
+from ..core.rate_limiting import limiter
+
+_RATE_LIMIT_AGENTS = os.getenv("RATE_LIMIT_AGENTS", "20/hour")
 
 router = APIRouter(prefix="/api/companies/{company_id}/agents", tags=["agents"])
 
@@ -62,7 +67,9 @@ class AgentOut(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=AgentOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_RATE_LIMIT_AGENTS)
 def create_agent(
+    request: Request,
     company_id: str,
     body: AgentCreate,
     session: Session = Depends(get_session),

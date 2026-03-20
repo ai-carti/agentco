@@ -19,6 +19,7 @@ dependencies = [
     "cryptography>=46.0.5",
     "langgraph-checkpoint-sqlite>=1.0",
     "sqlite-vec>=0.1.6",
+    "slowapi>=0.1.9",
 ]
 
 [project.scripts]
@@ -34,6 +35,12 @@ dev = [
 # NOT required for default SQLite deploy — only needed when switching DATABASE_URL to Postgres.
 postgres = [
     "psycopg2-binary>=2.9",
+]
+# Redis pub/sub for multi-worker EventBus (ALEX-POST-002).
+# Install with: pip install "agentco[redis]" or uv add "agentco[redis]"
+# Required when REDIS_URL env var is set.
+redis = [
+    "redis[asyncio]>=4.6",
 ]
 
 [build-system]

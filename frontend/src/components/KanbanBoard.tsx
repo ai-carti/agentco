@@ -752,9 +752,13 @@ function FilterBar({
 interface KanbanBoardProps {
   companyId: string
   isLoaded?: boolean
+  /** Whether there are more tasks to load (server-side pagination) */
+  hasMore?: boolean
+  /** Callback to load the next page of tasks */
+  onLoadMore?: () => void
 }
 
-export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardProps) {
+export default function KanbanBoard({ companyId, isLoaded = true, hasMore = false, onLoadMore }: KanbanBoardProps) {
   const tasks = useAgentStore((s) => s.tasks)
   const setTasks = useAgentStore((s) => s.setTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -1040,6 +1044,29 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           </div>
         ))}
       </div>
+
+      {/* FE-005: Load More button for server-side pagination */}
+      {isLoaded && hasMore && onLoadMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 1rem 1rem' }}>
+          <button
+            data-testid="kanban-load-more-btn"
+            onClick={onLoadMore}
+            style={{
+              padding: '0.45rem 1.5rem',
+              background: '#1f2937',
+              color: '#e5e7eb',
+              border: '1px solid #374151',
+              borderRadius: 6,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#1f2937')}
+          >
+            Load more tasks
+          </button>
+        </div>
+      )}
 
       {selectedTask && (
         <TaskDetailSidebar task={selectedTask} companyId={companyId} onClose={handleClose} />
