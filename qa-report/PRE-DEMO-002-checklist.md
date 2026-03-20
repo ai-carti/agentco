@@ -66,15 +66,56 @@
 
 ---
 
+## DEMO-FINAL-ALEX Update (2026-03-20 05:20 MSK)
+
+### Backend Tests (re-run)
+- ✅ **403/403 passed** — подтверждено, все зелёные
+- Duration: 197s
+
+### CI (latest 5 runs from 2026-03-20)
+- ✅ `pages build and deployment` — success (2026-03-20T02:09)
+- ✅ `Deploy` (DEMO-DAY-BACKEND-001) — success (2026-03-20T02:08)
+- ✅ `CI` (DEMO-DAY-BACKEND-001) — success (2026-03-20T02:08)
+- ✅ `pages build and deployment` — success (2026-03-20T01:48)
+- ✅ `Deploy` (fix BUG-053) — success (2026-03-20T01:47)
+
+### GitHub Secrets (актуально)
+- ✅ `RAILWAY_TOKEN` — присутствует
+- ❌ **`VITE_API_URL` — ОТСУТСТВУЕТ**
+- ❌ **`ENCRYPTION_KEY` — ОТСУТСТВУЕТ** (NEW — critical для prod!)
+
+### ENCRYPTION_KEY — что это и почему критично
+Бэкенд использует Fernet encryption для sensitive данных (см. `backend/src/agentco/services/encryption.py`).
+Если `ENCRYPTION_KEY` не задан в production — используется dev-заглушка `b'\x00'*32` с предупреждением в логах.
+Для демо это некритично (данные не шифруются правильно, но приложение работает), но **лучше задать**.
+
+### 🔴 NEW CRITICAL #3 — Задать ENCRYPTION_KEY GitHub Secret
+1. Сгенерировать ключ локально:
+   ```bash
+   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   ```
+2. GitHub → репо ai-carti/agentco → **Settings → Secrets and variables → Actions**
+3. **New repository secret**: `ENCRYPTION_KEY` = сгенерированный ключ
+4. **Также добавить в Railway dashboard** → backend service → Variables → `ENCRYPTION_KEY`
+
+---
+
 ## Итог
 
 | Пункт | Статус |
 |---|---|
-| 403 тестов backend | ✅ Green |
+| 403 тестов backend | ✅ Green (403/403) |
 | CI/Deploy last 5 runs | ✅ All green |
 | railway.toml корректность | ✅ OK (volume — мануально) |
-| Railway CLI variables | ❌ CLI не установлен |
+| Railway CLI / URL | ❌ CLI не установлен, URL unknown |
+| RAILWAY_TOKEN GitHub Secret | ✅ Присутствует |
 | VITE_API_URL GitHub Secret | ❌ ОТСУТСТВУЕТ (critical) |
+| ENCRYPTION_KEY GitHub Secret | ❌ ОТСУТСТВУЕТ (critical for prod) |
 | Railway persistent volume | ❌ Требует настройки в dashboard |
 
-**2 критических action item требуют ручного действия @timofeytst перед демо.**
+**3 критических action item требуют ручного действия @timofeytst перед демо.**
+
+### Приоритет для @timofeytst:
+1. 🔴 **VITE_API_URL** — без этого фронт на GitHub Pages не работает (демо провалится)
+2. 🔴 **ENCRYPTION_KEY** — Railway Variables (не в GitHub Secrets) — для корректного шифрования в prod
+3. 🟡 **AGENTCO_DB_URL + Railway Volume** — без этого данные ephemeral (сбрасываются при рестарте)
