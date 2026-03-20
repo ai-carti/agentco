@@ -166,11 +166,15 @@ export default function CompanySettingsPage() {
       {/* Delete confirmation modal */}
       {deleteModalOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete Company"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteModalOpen(false) }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setDeleteModalOpen(false) }}
         >
           <div style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 400,

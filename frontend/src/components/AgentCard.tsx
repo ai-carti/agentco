@@ -1,27 +1,8 @@
 import { Link } from 'react-router-dom'
 import { type Agent } from '../store/agentStore'
 import Button from './Button'
-
-const AVATAR_COLORS = [
-  '#7c3aed', '#db2777', '#ea580c', '#16a34a',
-  '#0891b2', '#9333ea', '#c2410c', '#0d9488',
-]
-
-function hashCode(str: string): number {
-  let h = 0
-  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h)
-  return Math.abs(h)
-}
-
-function getAvatarColor(name: string): string {
-  return AVATAR_COLORS[hashCode(name) % AVATAR_COLORS.length]
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
+// SIRI-UX-106: use shared utilities from taskUtils instead of duplicating locally
+import { getAvatarColor, getInitials } from '../utils/taskUtils'
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
@@ -92,6 +73,8 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
             {agent.name}
             <span
               data-testid="status-dot"
+              role="img"
+              aria-label={`Status: ${agent.status}`}
               className={isRunning ? 'animate-pulse' : ''}
               style={{
                 width: 8,

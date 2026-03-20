@@ -185,7 +185,7 @@ export default function CompaniesPage() {
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button
-                onClick={() => setShowNewModal(false)}
+                onClick={() => { setShowNewModal(false); setNewName('') }}
                 style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               >
                 Cancel
