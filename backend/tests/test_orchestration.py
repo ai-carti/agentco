@@ -312,6 +312,7 @@ class TestLoopDetection:
 class TestGraphExecution:
     """Полный прогон графа с mock LLM."""
 
+    @pytest.mark.asyncio
     async def test_graph_runs_ceo_delegates_to_subagent_gets_result(self, tmp_path):
         """CEO получает задачу, делегирует subagent-у, получает результат."""
         from agentco.orchestration.graph import build_orchestration_graph
@@ -348,6 +349,7 @@ class TestGraphExecution:
 class TestCheckpointing:
     """Checkpointing: граф возобновляется с checkpoint."""
 
+    @pytest.mark.asyncio
     async def test_graph_can_resume_from_checkpoint(self, tmp_path):
         """Граф должен сохранить checkpoint и позволить возобновление."""
         from agentco.orchestration.checkpointer import create_checkpointer

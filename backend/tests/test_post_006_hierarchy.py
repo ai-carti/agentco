@@ -222,6 +222,7 @@ class TestLoopDetectionDeepHierarchy:
         assert result.get("status") == "failed"
         assert result.get("error") == "loop_detected"
 
+    @pytest.mark.asyncio
     async def test_hierarchical_graph_stops_on_cost_limit(self, monkeypatch):
         """Иерархический граф с cost limit — должен завершиться как 'failed'."""
         monkeypatch.setenv("MAX_RUN_COST_USD", "0.0001")
@@ -275,6 +276,7 @@ class TestHierarchicalGraphExecution:
         assert hasattr(g, "compile_hierarchical")
         assert hasattr(g, "build_hierarchical_graph")
 
+    @pytest.mark.asyncio
     async def test_hierarchical_graph_runs_3_levels(self):
         """Граф с max_depth=3 должен завершиться без зависания."""
         from agentco.orchestration.graph import build_hierarchical_graph
