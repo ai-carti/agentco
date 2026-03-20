@@ -5,6 +5,14 @@
 
 ---
 
+## Demo Day Audit — Siri [2026-03-20]
+
+| ID | Описание | Статус |
+|----|----------|--------|
+| SIRI-DAY-001 | War Room mock agents: заменить "CEO Agent / CPO Agent / SWE Agent" на human names (Alex/Jordan/Dev/Morgan) — убрать generic "Agent" суффикс | done |
+
+---
+
 ## Bugs 🐛 (приоритет выше любого milestone)
 
 > Shadrin: **всегда проверяй этот раздел первым**. Незакрытые баги — блокер для всего остального.
