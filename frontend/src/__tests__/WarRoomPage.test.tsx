@@ -37,16 +37,16 @@ describe('WarRoomPage', () => {
     act(() => { vi.advanceTimersByTime(100) })
 
     const panel = screen.getByTestId('agent-panel')
-    expect(within(panel).getByText('CEO Agent')).toBeInTheDocument()
-    expect(within(panel).getByText('CPO Agent')).toBeInTheDocument()
-    expect(within(panel).getByText('SWE Agent')).toBeInTheDocument()
+    expect(within(panel).getByText('Alex')).toBeInTheDocument()
+    expect(within(panel).getByText('Jordan')).toBeInTheDocument()
+    expect(within(panel).getByText('Dev')).toBeInTheDocument()
   })
 
   it('shows agent roles on cards', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
 
-    expect(screen.getByText('Chief Executive Officer')).toBeInTheDocument()
+    expect(screen.getByText('CEO')).toBeInTheDocument()
     expect(screen.getByText('Chief Product Officer')).toBeInTheDocument()
     expect(screen.getByText('Software Engineer')).toBeInTheDocument()
   })
@@ -197,7 +197,7 @@ describe('WarRoomPage', () => {
 
     const panel = screen.getByTestId('agent-panel')
     const cards = within(panel).getAllByTestId(/^agent-card-/)
-    expect(cards[0].textContent).toContain('CEO Agent')
+    expect(cards[0].textContent).toContain('Alex')
   })
 
   it('indents subordinate agents below CEO', () => {
@@ -240,9 +240,9 @@ describe('WarRoomPage', () => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-long',
         senderId: 'agent-1',
-        senderName: 'CEO Agent',
+        senderName: 'Alex',
         targetId: 'agent-2',
-        targetName: 'Dev Agent',
+        targetName: 'Dev',
         content: 'A'.repeat(200),
         timestamp: new Date().toISOString(),
       })

@@ -42,37 +42,37 @@ interface WarRoomState {
 }
 
 const MOCK_AGENTS: WarRoomAgent[] = [
-  { id: 'agent-1', name: 'CEO Agent', role: 'Chief Executive Officer', status: 'thinking', avatar: '👔', level: 0 },
-  { id: 'agent-2', name: 'CPO Agent', role: 'Chief Product Officer', status: 'running', avatar: '🎯', level: 1 },
-  { id: 'agent-3', name: 'SWE Agent', role: 'Software Engineer', status: 'idle', avatar: '💻', level: 1 },
-  { id: 'agent-4', name: 'Analyst Agent', role: 'Market Analyst', status: 'idle', avatar: '📊', level: 1 },
+  { id: 'agent-1', name: 'Alex', role: 'CEO', status: 'thinking', avatar: '👔', level: 0 },
+  { id: 'agent-2', name: 'Jordan', role: 'Chief Product Officer', status: 'running', avatar: '🎯', level: 1 },
+  { id: 'agent-3', name: 'Dev', role: 'Software Engineer', status: 'idle', avatar: '💻', level: 1 },
+  { id: 'agent-4', name: 'Morgan', role: 'Market Analyst', status: 'idle', avatar: '📊', level: 1 },
 ]
 
 const MOCK_MESSAGES: FeedMessage[] = [
   {
     id: 'mock-1',
     senderId: 'agent-1',
-    senderName: 'CEO Agent',
+    senderName: 'Alex',
     targetId: 'agent-4',
-    targetName: 'Analyst Agent',
+    targetName: 'Morgan',
     content: 'Research our top 3 competitors and identify gaps in their enterprise offerings. Focus on pricing, integrations, and customer reviews from the last 6 months.',
     timestamp: new Date(Date.now() - 120000).toISOString(),
   },
   {
     id: 'mock-2',
     senderId: 'agent-4',
-    senderName: 'Analyst Agent',
+    senderName: 'Morgan',
     targetId: 'agent-2',
-    targetName: 'CPO Agent',
+    targetName: 'Jordan',
     content: 'Analysis complete. Key gap: none of the top 3 offer real-time multi-agent orchestration. Customers are paying $50k/yr for manual coordination. This is our wedge.',
     timestamp: new Date(Date.now() - 75000).toISOString(),
   },
   {
     id: 'mock-3',
     senderId: 'agent-2',
-    senderName: 'CPO Agent',
+    senderName: 'Jordan',
     targetId: 'agent-1',
-    targetName: 'CEO Agent',
+    targetName: 'Alex',
     content: 'Drafted Q2 product roadmap: (1) War Room v2 with real-time collaboration, (2) Agent marketplace, (3) SOC2 compliance. Estimated 8-week delivery with current team.',
     timestamp: new Date(Date.now() - 30000).toISOString(),
   },
@@ -80,12 +80,12 @@ const MOCK_MESSAGES: FeedMessage[] = [
 
 // Mock messages for interval simulation — business-focused scenarios
 const MOCK_INTERVAL_MESSAGES = [
-  { senderId: 'agent-1', senderName: 'CEO Agent', targetId: 'agent-3', targetName: 'SWE Agent', content: 'Implement the investor dashboard endpoint. We need ARR, MoM growth, and burn rate surfaced by tomorrow morning.' },
-  { senderId: 'agent-3', senderName: 'SWE Agent', targetId: 'agent-1', targetName: 'CEO Agent', content: 'Dashboard API done. Query time: 120ms. Added caching layer — handles up to 10k concurrent users without degradation.' },
-  { senderId: 'agent-2', senderName: 'CPO Agent', targetId: 'agent-4', targetName: 'Analyst Agent', content: 'Run churn analysis on cohorts from last quarter. I need to know which features are correlated with 90-day retention.' },
-  { senderId: 'agent-4', senderName: 'Analyst Agent', targetId: 'agent-2', targetName: 'CPO Agent', content: 'Retention insight: users who activate War Room within 3 days have 4x 90-day retention. Recommend making it the primary onboarding step.' },
-  { senderId: 'agent-1', senderName: 'CEO Agent', targetId: 'agent-2', targetName: 'CPO Agent', content: 'Series A deck needs updating before Thursday. Highlight the retention data and add the new enterprise pipeline numbers. Investors care about repeatable revenue.' },
-  { senderId: 'agent-3', senderName: 'SWE Agent', targetId: 'agent-1', targetName: 'CEO Agent', content: 'Shipped SSO integration for enterprise tier. Auth latency down to 85ms p99. Passes SOC2 audit requirements — security team signed off.' },
+  { senderId: 'agent-1', senderName: 'Alex', targetId: 'agent-3', targetName: 'Dev', content: 'Implement the investor dashboard endpoint. We need ARR, MoM growth, and burn rate surfaced by tomorrow morning.' },
+  { senderId: 'agent-3', senderName: 'Dev', targetId: 'agent-1', targetName: 'Alex', content: 'Dashboard API done. Query time: 120ms. Added caching layer — handles up to 10k concurrent users without degradation.' },
+  { senderId: 'agent-2', senderName: 'Jordan', targetId: 'agent-4', targetName: 'Morgan', content: 'Run churn analysis on cohorts from last quarter. I need to know which features are correlated with 90-day retention.' },
+  { senderId: 'agent-4', senderName: 'Morgan', targetId: 'agent-2', targetName: 'Jordan', content: 'Retention insight: users who activate War Room within 3 days have 4x 90-day retention. Recommend making it the primary onboarding step.' },
+  { senderId: 'agent-1', senderName: 'Alex', targetId: 'agent-2', targetName: 'Jordan', content: 'Series A deck needs updating before Thursday. Highlight the retention data and add the new enterprise pipeline numbers. Investors care about repeatable revenue.' },
+  { senderId: 'agent-3', senderName: 'Dev', targetId: 'agent-1', targetName: 'Alex', content: 'Shipped SSO integration for enterprise tier. Auth latency down to 85ms p99. Passes SOC2 audit requirements — security team signed off.' },
 ]
 
 let mockMsgCounter = 0
