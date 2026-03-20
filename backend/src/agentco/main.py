@@ -63,6 +63,24 @@ app.include_router(memory_router)
 app.include_router(library_router)
 app.include_router(mcp_servers_router)
 
+# ALEX-POST-006: API versioning — mount all routers also under /api/v1/ prefix
+# Existing /api/... paths remain unchanged for backward compat.
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import RedirectResponse
+
+class ApiV1AliasMiddleware(BaseHTTPMiddleware):
+    """Transparently re-maps /api/v1/{rest} → /api/{rest} for backward compat."""
+    async def dispatch(self, request, call_next):
+        path = request.url.path
+        if path.startswith("/api/v1/") and path != "/api/v1/":
+            # Rewrite scope path for internal routing (no external redirect)
+            new_path = "/api/" + path[len("/api/v1/"):]
+            request.scope["path"] = new_path
+            request.scope["raw_path"] = new_path.encode()
+        return await call_next(request)
+
+app.add_middleware(ApiV1AliasMiddleware)
+
 
 # AC2: GET /health → {"status": "ok"}
 @app.get("/health")
