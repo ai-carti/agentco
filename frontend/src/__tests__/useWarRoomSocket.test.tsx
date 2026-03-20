@@ -204,8 +204,8 @@ describe('useWarRoomSocket', () => {
     expect(closeSpy).toHaveBeenCalled()
   })
 
-  it('does not crash and logs warning on unexpected agent_status payload (missing agentId)', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  it('does not crash and silently ignores unexpected agent_status payload (missing agentId)', () => {
+    // SIRI-UX-101: console.warn removed — malformed events are silently skipped
     act(() => { useWarRoomStore.getState().loadMockData() })
     renderHook(() => useWarRoomSocket('run-1'))
     act(() => { MockWebSocket.instances[0].open() })
@@ -220,13 +220,10 @@ describe('useWarRoomSocket', () => {
         })
       })
     }).not.toThrow()
-
-    expect(warnSpy).toHaveBeenCalled()
-    warnSpy.mockRestore()
   })
 
-  it('does not crash and logs warning on invalid status value in agent_status payload', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  it('does not crash and silently ignores invalid status value in agent_status payload', () => {
+    // SIRI-UX-101: console.warn removed — invalid status values are silently skipped
     act(() => { useWarRoomStore.getState().loadMockData() })
     renderHook(() => useWarRoomSocket('run-1'))
     act(() => { MockWebSocket.instances[0].open() })
@@ -240,8 +237,5 @@ describe('useWarRoomSocket', () => {
         })
       })
     }).not.toThrow()
-
-    expect(warnSpy).toHaveBeenCalled()
-    warnSpy.mockRestore()
   })
 })

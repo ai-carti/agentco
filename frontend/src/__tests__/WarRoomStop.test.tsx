@@ -98,9 +98,10 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
 
     fireEvent.click(screen.getByTestId('stop-btn'))
 
-    // Toast success shows up
+    // Toast success shows up (use getAllByText — banner may also match "Run stopped")
     await waitFor(() => {
-      expect(screen.getByText(/All runs stopped|Run stopped/i)).toBeInTheDocument()
+      const matches = screen.getAllByText(/All runs stopped|Run stopped/i)
+      expect(matches.length).toBeGreaterThan(0)
     })
   })
 

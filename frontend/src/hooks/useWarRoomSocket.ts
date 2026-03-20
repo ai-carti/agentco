@@ -74,10 +74,11 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
           const agentId = data.agentId
           const status = data.status
 
+          // SIRI-UX-101: removed console.warn — noisy in DevTools during demo
           if (typeof agentId !== 'string') {
-            console.warn('[useWarRoomSocket] agent_status: missing or invalid agentId field', data)
+            // silently skip malformed event
           } else if (typeof status !== 'string' || !VALID_STATUSES.includes(status as WarRoomAgentStatus)) {
-            console.warn('[useWarRoomSocket] agent_status: invalid status value', data)
+            // silently skip unknown status
           } else {
             updateAgentStatus(agentId, status as WarRoomAgentStatus)
           }

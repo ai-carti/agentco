@@ -54,6 +54,7 @@ export default function WarRoomPage() {
   const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
   const addCost = useWarRoomStore((s) => s.addCost)
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
+  const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const feedEndRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
@@ -65,7 +66,7 @@ export default function WarRoomPage() {
   const isMobile = useIsMobile()
 
   // WebSocket connection for real-time events
-  const { isConnected } = useWarRoomSocket(companyId ?? 'mock-company')
+  const { isConnected, error: wsError } = useWarRoomSocket(companyId ?? 'mock-company')
 
   // SIRI-UX-025: isConnecting — true until first data arrives or 3s timeout
   const [isConnecting, setIsConnecting] = useState(true)
@@ -194,6 +195,8 @@ export default function WarRoomPage() {
       if (failures.length > 0) {
         toast.error(`Failed to stop ${failures.length} run(s)`)
       } else {
+        // SIRI-UX-098: update run status so Stop banner appears and button disables
+        setRunStatus('stopped')
         toast.success('All runs stopped')
       }
     } catch {
@@ -363,6 +366,26 @@ export default function WarRoomPage() {
           </Button>
         </div>
       </div>
+
+      {/* SIRI-UX-099: WS error banner — shown when WebSocket fails to connect */}
+      {wsError && (
+        <div
+          data-testid="ws-error-banner"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 20px',
+            background: 'rgba(239,68,68,0.12)',
+            borderBottom: '1px solid rgba(239,68,68,0.3)',
+            fontSize: '0.8rem',
+            color: '#f87171',
+            fontWeight: 600,
+          }}
+        >
+          ⚠ {wsError}
+        </div>
+      )}
 
       {/* SIRI-UX-082: Run status banner — shown when run finishes/fails/stops */}
       {(runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') && (

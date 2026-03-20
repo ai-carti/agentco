@@ -764,7 +764,9 @@ interface KanbanBoardProps {
 export default function KanbanBoard({ companyId, isLoaded = true, hasMore = false, onLoadMore }: KanbanBoardProps) {
   const tasks = useAgentStore((s) => s.tasks)
   const setTasks = useAgentStore((s) => s.setTasks)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  // SIRI-UX-097: store only selectedTaskId — derive task from store to avoid stale snapshot
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const [grabbedTaskId, setGrabbedTaskId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -854,10 +856,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     })
   }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])
 
-  const handleClose = useCallback(() => setSelectedTask(null), [])
+  const handleClose = useCallback(() => setSelectedTaskId(null), [])
 
-  // SIRI-UX-061: close Create modal on Escape key
+  // SIRI-UX-061 / SIRI-UX-100: close Create modal on Escape — gated on showCreateModal to avoid always-on listener
   useEffect(() => {
+    if (!showCreateModal) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowCreateModal(false)
@@ -865,7 +868,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [showCreateModal])
 
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId)
@@ -1036,7 +1039,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
                       key={task.id}
                       task={task}
                       companyId={companyId}
-                      onCardClick={setSelectedTask}
+                      onCardClick={(task) => setSelectedTaskId(task.id)}
                       onDragStart={handleDragStart}
                       onDragEnd={handleDragEnd}
                       isGrabbed={grabbedTaskId === task.id}
