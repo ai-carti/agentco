@@ -91,7 +91,6 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       })
       if (!res.ok) {
         const msg = `Failed to run task (${res.status})`
-        console.error(msg)
         setRunError(msg)
         toast.error(msg)
       } else {
@@ -101,9 +100,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         ))
         toast.success(`▶ Running: ${task.title}`)
       }
-    } catch (err) {
+    } catch {
       const msg = 'Network error — could not run task'
-      console.error(msg, err)
       setRunError(msg)
       toast.error(msg)
     } finally {
