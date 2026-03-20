@@ -139,8 +139,10 @@ export default function AuthPage() {
 
         <div role="tablist" style={styles.tabs}>
           <button
+            id="tab-signin"
             role="tab"
             aria-selected={tab === 'signin'}
+            aria-controls="tabpanel-auth"
             style={styles.tab(tab === 'signin')}
             onClick={() => setTab('signin')}
             type="button"
@@ -148,8 +150,10 @@ export default function AuthPage() {
             Sign In
           </button>
           <button
+            id="tab-signup"
             role="tab"
             aria-selected={tab === 'signup'}
+            aria-controls="tabpanel-auth"
             style={styles.tab(tab === 'signup')}
             onClick={() => setTab('signup')}
             type="button"
@@ -158,7 +162,12 @@ export default function AuthPage() {
           </button>
         </div>
 
-        <div role="tabpanel">
+        {/* SIRI-UX-108: aria-labelledby links tabpanel to active tab for screen readers */}
+        <div
+          id="tabpanel-auth"
+          role="tabpanel"
+          aria-labelledby={tab === 'signin' ? 'tab-signin' : 'tab-signup'}
+        >
         {error && <div style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit}>

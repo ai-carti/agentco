@@ -49,15 +49,28 @@ def test_mcp_server_agent_id_has_index():
 
 # ── ALEX-TD-062: list_library ORDER BY ────────────────────────────────────────
 
-def test_list_library_deterministic_order(client, auth_headers):
+def _register_and_login_062(client, email="lib062@example.com", password="pass123"):
+    client.post("/auth/register", json={"email": email, "password": password})
+    resp = client.post("/auth/login", json={"email": email, "password": password})
+    return resp.json()["access_token"]
+
+
+def test_list_library_deterministic_order(auth_client):
     """
     list_library must return results ordered by created_at DESC so pagination
     is deterministic (same records on same page across requests).
+
+    SQLite server_default=func.now() has second-level precision, so we
+    backfill distinct created_at values via direct DB update after insert.
     """
-    import time
+    from datetime import datetime, timedelta
+    from sqlalchemy import text as sa_text
+
+    client, engine = auth_client
+    token = _register_and_login_062(client)
+    auth_headers = {"Authorization": f"Bearer {token}"}
 
     # Create 3 library entries via saving agents
-    # First create a company and agent
     company_resp = client.post("/api/companies/", json={"name": "LibOrderTest"}, headers=auth_headers)
     assert company_resp.status_code == 201
     company_id = company_resp.json()["id"]
@@ -79,26 +92,37 @@ def test_list_library_deterministic_order(client, auth_headers):
         )
         assert lib_resp.status_code == 201
         saved_ids.append(lib_resp.json()["id"])
-        # Small sleep to ensure distinct created_at values
-        time.sleep(0.01)
 
-    # Fetch first page
+    # Backfill distinct created_at: oldest first (saved_ids[0] oldest, saved_ids[-1] newest)
+    base_time = datetime(2024, 1, 1, 12, 0, 0)
+    with engine.connect() as conn:
+        for i, lib_id in enumerate(saved_ids):
+            ts = base_time + timedelta(seconds=i)
+            conn.execute(
+                sa_text("UPDATE agent_library SET created_at = :ts WHERE id = :id"),
+                {"ts": ts.isoformat(), "id": lib_id},
+            )
+        conn.commit()
+
+    # Fetch first page (limit=2, should get the 2 most-recent: saved_ids[2], saved_ids[1])
     resp1 = client.get("/api/library?limit=2&offset=0", headers=auth_headers)
     assert resp1.status_code == 200
     page1 = [e["id"] for e in resp1.json()]
 
-    # Fetch same page again
+    # Fetch same page again — must be identical (deterministic ORDER BY)
     resp2 = client.get("/api/library?limit=2&offset=0", headers=auth_headers)
     assert resp2.status_code == 200
     page2 = [e["id"] for e in resp2.json()]
 
-    # Pages must be identical (deterministic ordering)
     assert page1 == page2, "list_library pagination is non-deterministic (no ORDER BY)"
 
-    # The most recently saved agent should appear first (DESC order)
-    # saved_ids[-1] was inserted last → should be first
+    # Newest entry (saved_ids[-1]) must appear first (ORDER BY created_at DESC)
     assert page1[0] == saved_ids[-1], (
         f"Expected most-recent entry ({saved_ids[-1]}) first, got {page1[0]}"
+    )
+    # Second entry should be saved_ids[1]
+    assert page1[1] == saved_ids[1], (
+        f"Expected second entry ({saved_ids[1]}), got {page1[1]}"
     )
 
 

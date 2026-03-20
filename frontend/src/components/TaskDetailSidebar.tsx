@@ -51,6 +51,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
+  const [logsError, setLogsError] = useState(false)
   const [running, setRunning] = useState(false)
   const toast = useToast()
   const setTasks = useAgentStore((s) => s.setTasks)
@@ -59,6 +60,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   useEffect(() => {
     const fetchLogs = async () => {
       setLogsLoading(true)
+      setLogsError(false)
       try {
         const token = getStoredToken()
         const res = await fetch(
@@ -71,9 +73,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           const data = await res.json()
           setLogs(data.logs ?? [])
           setStatusHistory(data.status_history ?? [])
+        } else {
+          // SIRI-UX-109: distinguish API error from empty logs
+          setLogsError(true)
         }
       } catch {
-        // silently fail — show empty state
+        // SIRI-UX-109: network error — show error state, not empty state
+        setLogsError(true)
       } finally {
         setLogsLoading(false)
       }
@@ -298,6 +304,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             >
               {logsLoading ? (
                 <SkeletonCard variant="task" count={2} />
+              ) : logsError ? (
+                <span data-testid="logs-error" style={{ color: '#f87171' }}>⚠ Failed to load logs</span>
               ) : logs.length === 0 ? (
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (

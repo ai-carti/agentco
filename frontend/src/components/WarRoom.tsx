@@ -41,6 +41,8 @@ export default function WarRoom() {
   const companyId = useAgentStore((s) => s.currentCompany?.id)
   const [runs, setRuns] = useState<Run[]>([])
   const [isConnecting, setIsConnecting] = useState(true)
+  // SIRI-UX-110: tick state forces re-render every 30s so timeAgo stays fresh
+  const [, setTick] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const navigate = useNavigate()
@@ -121,6 +123,12 @@ export default function WarRoom() {
       wsRef.current?.close()
     }
   }, [connect])
+
+  // SIRI-UX-110: refresh timeAgo labels every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30_000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div data-testid="war-room" className="p-4">

@@ -11,19 +11,8 @@ import { useAgentStore } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import { Bot } from 'lucide-react'
-
-const AVATAR_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
-  '#f97316', '#eab308', '#22c55e', '#06b6d4',
-]
-
-function hashCode(str: string): number {
-  let h = 0
-  for (let i = 0; i < str.length; i++) {
-    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
-  }
-  return Math.abs(h)
-}
+// SIRI-UX-107: import shared utilities to eliminate local duplicates of AVATAR_COLORS + hashCode
+import { getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
 
 const MOBILE_BREAKPOINT = 640
 
@@ -38,9 +27,9 @@ function useIsMobile() {
 }
 
 function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
-  const colorIndex = hashCode(name) % 8
-  const avatarColor = AVATAR_COLORS[colorIndex]
-  const initials = name.slice(0, 2).toUpperCase()
+  // SIRI-UX-107: use shared getAvatarColor + getInitials from taskUtils
+  const avatarColor = getAvatarColor(name)
+  const initials = _getInitials(name)
   const isMobile = useIsMobile()
 
   return (

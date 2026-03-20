@@ -774,10 +774,16 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   const [newTaskDesc, setNewTaskDesc] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority | ''>('')
   const [creating, setCreating] = useState(false)
+  // SIRI-UX-111: track attempted submit with empty title for validation feedback
+  const [titleTouched, setTitleTouched] = useState(false)
   const toast = useToast()
 
   const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) return
+    if (!newTaskTitle.trim()) {
+      // SIRI-UX-111: show validation error when submitting empty title
+      setTitleTouched(true)
+      return
+    }
     setCreating(true)
     try {
       const token = getStoredToken()
@@ -864,6 +870,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowCreateModal(false)
+        setTitleTouched(false)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -1089,30 +1096,39 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCreateModal(false) }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setTitleTouched(false) } }}
         >
           <div style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>New Task</h2>
+            {/* SIRI-UX-111: aria-invalid + describedby for empty-submit validation */}
             <input
               autoFocus
               data-testid="create-task-title-input"
               aria-label="Task title"
+              aria-invalid={titleTouched && !newTaskTitle.trim() ? 'true' : 'false'}
+              aria-describedby={titleTouched && !newTaskTitle.trim() ? 'title-error' : undefined}
               value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onChange={(e) => { setNewTaskTitle(e.target.value); if (titleTouched) setTitleTouched(false) }}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#3b82f6' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#374151' }}
               placeholder="Task title"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
+                border: `1px solid ${titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#374151'}`,
+                borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: titleTouched && !newTaskTitle.trim() ? '0.25rem' : '0.75rem',
                 outline: 'none',
               }}
             />
+            {titleTouched && !newTaskTitle.trim() && (
+              <p id="title-error" style={{ color: '#ef4444', fontSize: '0.75rem', margin: '0 0 0.75rem' }}>
+                Title is required
+              </p>
+            )}
             <textarea
               data-testid="create-task-desc-input"
               value={newTaskDesc}
@@ -1146,7 +1162,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             </select>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => { setShowCreateModal(false); setTitleTouched(false) }}
                 style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               >
                 Cancel
