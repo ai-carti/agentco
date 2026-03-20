@@ -163,6 +163,8 @@ class RunService:
         import os as _os
 
         _MAX_RETRIES = int(_os.getenv("RUN_MAX_RETRIES", "3"))
+        if _MAX_RETRIES < 1:
+            _MAX_RETRIES = 1  # ALEX-TD-048: guard against range(1, 0+1) yielding no iterations
         _RETRY_BASE_DELAY = float(_os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
         _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded", "cancelled"}
 
