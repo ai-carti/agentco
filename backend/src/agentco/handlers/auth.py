@@ -1,6 +1,7 @@
 """Auth endpoints: register + login + protected /me."""
+import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,8 +10,14 @@ from ..db.session import get_session
 from ..orm.user import User
 from ..auth.security import hash_password, verify_password, create_access_token
 from ..auth.dependencies import get_current_user
+from ..core.rate_limiting import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# ALEX-TD-047 fix: rate limits for auth endpoints — brute-force protection
+# Configurable via env vars so production can tighten limits without code changes.
+_RATE_LIMIT_REGISTER = os.getenv("RATE_LIMIT_AUTH_REGISTER", "5/minute")
+_RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_AUTH_LOGIN", "10/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -52,7 +59,8 @@ class MeResponse(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, session: Session = Depends(get_session)):
+@limiter.limit(_RATE_LIMIT_REGISTER)
+def register(request: Request, body: RegisterRequest, session: Session = Depends(get_session)):
     """Register a new user. Returns user id."""
     # ALEX-TD-005 fix: modern select() API
     existing = session.scalars(select(User).where(User.email == body.email)).first()
@@ -70,7 +78,8 @@ def register(body: RegisterRequest, session: Session = Depends(get_session)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, session: Session = Depends(get_session)):
+@limiter.limit(_RATE_LIMIT_LOGIN)
+def login(request: Request, body: LoginRequest, session: Session = Depends(get_session)):
     """Authenticate user and return JWT access token."""
     # ALEX-TD-005 fix: modern select() API
     user = session.scalars(select(User).where(User.email == body.email)).first()
