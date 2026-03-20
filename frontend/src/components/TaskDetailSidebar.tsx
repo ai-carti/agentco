@@ -53,6 +53,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const [logsLoading, setLogsLoading] = useState(true)
   const [running, setRunning] = useState(false)
   const toast = useToast()
+  const setTasks = useAgentStore((s) => s.setTasks)
 
   // Fetch logs
   useEffect(() => {
