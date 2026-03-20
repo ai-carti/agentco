@@ -126,7 +126,6 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         animation: 'fadeIn 0.4s ease-in',
       }}
     >
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       {/* Hero */}
       <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🦄</div>

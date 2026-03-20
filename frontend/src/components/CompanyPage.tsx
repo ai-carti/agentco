@@ -251,6 +251,7 @@ export default function CompanyPage() {
       {/* Tab navigation */}
       <div
         role="tablist"
+        aria-label="Company sections"
         style={{
           display: 'flex',
           alignItems: 'center',

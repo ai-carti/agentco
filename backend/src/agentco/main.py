@@ -117,9 +117,26 @@ class ApiV1AliasMiddleware(BaseHTTPMiddleware):
 app.add_middleware(ApiV1AliasMiddleware)
 
 
-# AC2: GET /health → {"status": "ok"}
+# AC2: GET /health → {"status": "ok"} (with DB liveness check — ALEX-TD-052)
 @app.get("/health")
 async def health_check():
+    """Liveness probe for Railway. Checks DB connectivity so Railway restarts on DB failure."""
+    from sqlalchemy import text
+    from .db.session import SessionLocal
+    try:
+        session = SessionLocal()
+        try:
+            session.execute(text("SELECT 1"))
+        finally:
+            session.close()
+    except Exception as e:
+        from fastapi import Response
+        import json
+        return Response(
+            content=json.dumps({"status": "error", "detail": "db_unreachable"}),
+            status_code=503,
+            media_type="application/json",
+        )
     return {"status": "ok"}
 
 

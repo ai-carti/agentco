@@ -10,8 +10,13 @@ from cryptography.fernet import Fernet
 
 logger = logging.getLogger(__name__)
 
+# ALEX-TD-053: cache the Fernet instance — no need to reconstruct on every call.
+# _fernet_cache holds (key_str, Fernet) so we rebuild only if the key changes.
+_fernet_cache: tuple[str, Fernet] | None = None
+
 
 def _get_fernet() -> Fernet:
+    global _fernet_cache
     key = os.environ.get("ENCRYPTION_KEY")
     if not key:
         # ALEX-TD-022 fix: warn loudly when ENCRYPTION_KEY is not set.
@@ -23,7 +28,12 @@ def _get_fernet() -> Fernet:
         # Dev fallback: deterministic key from zero bytes (NOT for prod)
         # In production ENCRYPTION_KEY must be set
         key = base64.urlsafe_b64encode(b"\x00" * 32).decode()
-    return Fernet(key.encode() if isinstance(key, str) else key)
+    # Return cached instance unless key has changed (e.g. in tests)
+    if _fernet_cache is not None and _fernet_cache[0] == key:
+        return _fernet_cache[1]
+    fernet = Fernet(key.encode() if isinstance(key, str) else key)
+    _fernet_cache = (key, fernet)
+    return fernet
 
 
 def encrypt(plaintext: str) -> str:

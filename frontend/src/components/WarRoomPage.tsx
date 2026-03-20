@@ -324,6 +324,8 @@ export default function WarRoomPage() {
           <span
             data-testid="ws-status-indicator"
             title={isConnected ? 'Connected' : 'Disconnected'}
+            aria-label={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+            role="img"
             style={{
               display: 'inline-block',
               width: 10,
@@ -354,8 +356,8 @@ export default function WarRoomPage() {
             data-testid="stop-btn"
             variant="danger"
             onClick={handleStop}
-            disabled={stopping}
-            style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+            disabled={stopping || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'}
+            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: (runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') ? 0.4 : 1 }}
           >
             {stopping ? 'Stopping…' : 'Stop'}
           </Button>

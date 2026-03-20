@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -8,6 +8,11 @@ from ..services.credential import CredentialService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import User
+from ..core.rate_limiting import limiter
+import os
+
+# ALEX-TD-050: rate limit for validate-key endpoint — each call makes a real LLM request
+_RATE_LIMIT_VALIDATE_KEY = os.getenv("RATE_LIMIT_VALIDATE_KEY", "5/minute")
 
 router = APIRouter(tags=["credentials"])
 
@@ -166,7 +171,9 @@ class ValidateKeyResponse(BaseModel):
 
 
 @router.post("/api/llm/validate-key", response_model=ValidateKeyResponse)
+@limiter.limit(_RATE_LIMIT_VALIDATE_KEY)
 async def validate_llm_key(
+    request: Request,
     body: ValidateKeyRequest,
     current_user: User = Depends(get_current_user),
 ):

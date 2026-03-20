@@ -36,7 +36,8 @@ router = APIRouter(
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class RunCreate(BaseModel):
-    goal: str = Field(min_length=1)
+    # ALEX-TD-051: max_length=10000 prevents megabyte goals → LLM cost abuse
+    goal: str = Field(min_length=1, max_length=10000)
 
     @field_validator("goal", mode="before")
     @classmethod
