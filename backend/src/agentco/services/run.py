@@ -19,6 +19,8 @@ import asyncio
 import logging
 import os
 from datetime import datetime, timezone
+
+
 from typing import Callable, Optional
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -152,11 +154,44 @@ class RunService:
         ALEX-TD-032 fix: do NOT duplicate error handling here. execute_run() already
         catches all exceptions, updates run status → 'failed', publishes run.failed event,
         then re-raises. Wrapping again would cause 2x run.failed events + 2x DB writes.
+
+        ALEX-POST-007: retry wrapper — on transient failure retries up to MAX_RETRIES times
+        with exponential backoff. Permanent errors (cost_limit_exceeded, token_limit_exceeded)
+        are not retried.
         """
-        # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
-        # for final DB update (avoids stale self._session in background task).
-        result = await self.execute_run(run_id, session_factory=session_factory)
-        return result
+        import asyncio as _asyncio
+        import os as _os
+
+        _MAX_RETRIES = int(_os.getenv("RUN_MAX_RETRIES", "3"))
+        _RETRY_BASE_DELAY = float(_os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
+        _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded", "cancelled"}
+
+        last_exc: Exception | None = None
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
+                # for final DB update (avoids stale self._session in background task).
+                result = await self.execute_run(run_id, session_factory=session_factory)
+                return result
+            except Exception as exc:
+                error_code = getattr(exc, "error_code", None) or str(exc)
+                # Don't retry permanent/intentional errors
+                if any(no_retry in error_code for no_retry in _NO_RETRY_ERRORS):
+                    raise
+                last_exc = exc
+                if attempt < _MAX_RETRIES:
+                    delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                    logger.warning(
+                        "run_retry run_id=%s attempt=%d/%d delay=%.1fs error=%s",
+                        run_id, attempt, _MAX_RETRIES, delay, exc,
+                    )
+                    await _asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        "run_dead_letter run_id=%s exhausted after %d attempts error=%s",
+                        run_id, _MAX_RETRIES, exc,
+                    )
+        raise last_exc  # type: ignore[misc]
 
     def get(self, company_id: str, run_id: str) -> Run:
         """Возвращает Run по id, проверяет принадлежность компании."""
