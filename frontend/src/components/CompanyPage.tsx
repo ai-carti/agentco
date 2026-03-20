@@ -77,13 +77,7 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
           <span style={{ color: '#475569', fontSize: '0.875rem' }}>/</span>
         </>
       )}
-      {isMobile && (
-        <button
-          data-testid="company-header-home-link"
-          onClick={onHomeClick}
-          style={{ display: 'none' }}
-        />
-      )}
+      {/* SIRI-UX-084: removed hidden duplicate button that caused duplicate data-testid on mobile */}
 
       {/* Avatar */}
       <div
@@ -306,6 +300,8 @@ export default function CompanyPage() {
           hidden={activeTab !== 'war-room'}
           style={{ height: '100%' }}
         >
+          {/* SIRI-UX-083: when agents not yet loaded, show WarRoomPage (has its own isConnecting state)
+              Only show "Add first agent" empty state after we confirm agents are empty */}
           {activeTab === 'war-room' && agentsLoaded && agents.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <EmptyState

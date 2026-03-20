@@ -97,6 +97,10 @@ class ApiV1AliasMiddleware(BaseHTTPMiddleware):
             new_path = "/api/" + path[len("/api/v1/"):]
             request.scope["path"] = new_path
             request.scope["raw_path"] = new_path.encode()
+            # ALEX-TD-049: reset path_params so stale values from outer ASGI layers
+            # (proxy middleware, gateways, etc.) don't leak into route handlers.
+            # The router will re-derive path_params from the new path during matching.
+            request.scope["path_params"] = {}
         elif path.startswith("/api/") and not path.startswith("/api/v1/"):
             # Old /api/... path — mark for Deprecation header (BUG-042)
             is_old_api_path = True

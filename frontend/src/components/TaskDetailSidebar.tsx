@@ -106,6 +106,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
         },
       })
       if (res.ok) {
+        // SIRI-UX-081: optimistic update — hide Run button, match KanbanBoard behavior
+        setTasks(useAgentStore.getState().tasks.map((t) =>
+          t.id === task.id ? { ...t, status: 'in_progress' as const } : t
+        ))
         toast.success(`▶ Running: ${task.title}...`)
       } else {
         toast.error('Something went wrong...')
@@ -371,12 +375,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
         )}
       </div>
 
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
+      {/* SIRI-UX-085: slideInRight moved to index.css */}
     </>
   )
 }

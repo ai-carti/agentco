@@ -29,3 +29,9 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
+
+/* SIRI-UX-085: TaskDetailSidebar slide-in animation (moved from inline <style> tag) */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}

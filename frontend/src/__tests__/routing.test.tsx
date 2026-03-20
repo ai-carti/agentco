@@ -162,12 +162,12 @@ describe('Routing', () => {
       expect(screen.getByTestId('auth-page')).toBeInTheDocument()
     })
 
-    it('renders protected page after isInitialized=true with valid token', () => {
+    it('renders protected page after isInitialized=true with valid token', async () => {
       mockAuthStore.token = 'valid-token'
       mockAuthStore.user = { id: '1', email: 'siri@agentco.dev' }
       mockAuthStore.isInitialized = true
       renderWithRouter('/companies/deep-link-id')
-      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('war-room-page')).toBeInTheDocument())
     })
   })
 })

@@ -47,6 +47,7 @@ export default function WarRoomPage() {
   const agents = useWarRoomStore((s) => s.agents)
   const messages = useWarRoomStore((s) => s.messages)
   const cost = useWarRoomStore((s) => s.cost)
+  const runStatus = useWarRoomStore((s) => s.runStatus)
   const flashingAgents = useWarRoomStore((s) => s.flashingAgents)
   const loadMockData = useWarRoomStore((s) => s.loadMockData)
   const addMessage = useWarRoomStore((s) => s.addMessage)
@@ -360,6 +361,32 @@ export default function WarRoomPage() {
           </Button>
         </div>
       </div>
+
+      {/* SIRI-UX-082: Run status banner — shown when run finishes/fails/stops */}
+      {(runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') && (
+        <div
+          data-testid="run-status-banner"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 20px',
+            background: runStatus === 'done'
+              ? 'rgba(34,197,94,0.12)'
+              : runStatus === 'failed'
+                ? 'rgba(239,68,68,0.12)'
+                : 'rgba(107,114,128,0.12)',
+            borderBottom: `1px solid ${runStatus === 'done' ? 'rgba(34,197,94,0.3)' : runStatus === 'failed' ? 'rgba(239,68,68,0.3)' : 'rgba(107,114,128,0.3)'}`,
+            fontSize: '0.8rem',
+            color: runStatus === 'done' ? '#4ade80' : runStatus === 'failed' ? '#f87171' : '#9ca3af',
+            fontWeight: 600,
+          }}
+        >
+          {runStatus === 'done' && '✓ Run completed'}
+          {runStatus === 'failed' && '✗ Run failed'}
+          {runStatus === 'stopped' && '⏹ Run stopped'}
+        </div>
+      )}
 
       {/* Main content: agent sidebar + activity feed */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
