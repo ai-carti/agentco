@@ -54,7 +54,17 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         if (data.type === 'message') {
           addMessage(data as unknown as FeedMessage)
         } else if (data.type === 'agent_status') {
-          updateAgentStatus(data.agentId as string, data.status as WarRoomAgentStatus)
+          const VALID_STATUSES: WarRoomAgentStatus[] = ['idle', 'thinking', 'running', 'done']
+          const agentId = data.agentId
+          const status = data.status
+
+          if (typeof agentId !== 'string') {
+            console.warn('[useWarRoomSocket] agent_status: missing or invalid agentId field', data)
+          } else if (typeof status !== 'string' || !VALID_STATUSES.includes(status as WarRoomAgentStatus)) {
+            console.warn('[useWarRoomSocket] agent_status: invalid status value', data)
+          } else {
+            updateAgentStatus(agentId, status as WarRoomAgentStatus)
+          }
         }
       } catch {
         // ignore parse errors

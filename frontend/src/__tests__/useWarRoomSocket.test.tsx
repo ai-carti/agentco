@@ -203,4 +203,45 @@ describe('useWarRoomSocket', () => {
     unmount()
     expect(closeSpy).toHaveBeenCalled()
   })
+
+  it('does not crash and logs warning on unexpected agent_status payload (missing agentId)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    act(() => { useWarRoomStore.getState().loadMockData() })
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+
+    // Send payload with wrong field name: agent_id instead of agentId
+    expect(() => {
+      act(() => {
+        MockWebSocket.instances[0].triggerMessage({
+          type: 'agent_status',
+          agent_id: 'agent-1', // wrong key
+          status: 'done',
+        })
+      })
+    }).not.toThrow()
+
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('does not crash and logs warning on invalid status value in agent_status payload', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    act(() => { useWarRoomStore.getState().loadMockData() })
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+
+    expect(() => {
+      act(() => {
+        MockWebSocket.instances[0].triggerMessage({
+          type: 'agent_status',
+          agentId: 'agent-1',
+          status: 'invalid_status_value', // not a valid WarRoomAgentStatus
+        })
+      })
+    }).not.toThrow()
+
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
 })
