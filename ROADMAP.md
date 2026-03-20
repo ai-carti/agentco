@@ -56,6 +56,11 @@
 
 
 
+| BUG-041 | minor | `ApiV1AliasMiddleware`: путь `/api/v1/v1/X` переписывается в `/api/v1/X` и уходит в роутеры без второго rewrite → 404. Двойной v1-prefix не обработан. Маловероятный сценарий, поведение неинтуитивное. | Alex | open |
+| BUG-042 | minor | Deprecation headers не добавляются на старые `/api/...` пути. AC тикета содержит требование `Deprecation` header (`test_old_api_response_has_deprecation_info`), но тест проверяет его только при redirect/410. При 200 (backward compat) header не выставляется — deprecation signaling не реализован. | Alex | open |
+| SIRI-PREDEMO-001 | minor | `FE-007-ErrorBoundary404.test.tsx`: unused imports `Route, Routes` вызывали TS6133 ошибки → prod build падал на `tsc --noEmit`. Удалены лишние импорты. | Siri | fixed |
+| SIRI-PREDEMO-002 | minor | `KanbanBoard.tsx` `handleRun`: 2x `console.error()` захламляли консоль браузера во время демо. Убраны, toast остался. | Siri | fixed |
+
 ### Как добавлять баги
 ```
 | BUG-027 | minor | M2-006: `flash-green` CSS-класс применяется через `className` (`WarRoomPage.tsx:244`), но в проекте нет ни одного CSS-файла и нет определения `@keyframes flash-green`. Визуальный flash на thinking→done не работает в браузере — класс есть, анимации нет. | Siri | fixed |
@@ -239,6 +244,11 @@
 | SIRI-UX-069 | minor | `LibraryPage.tsx` — не использует pagination параметры (`limit`/`offset`) которые бэкенд теперь поддерживает (ALEX-TD-040). При большом количестве агентов в library UI загружает все записи без limit. Нужно добавить `?limit=50` по умолчанию. | Siri | fixed |
 | SIRI-UX-070 | minor | `KanbanBoard.tsx:TaskCard` — task menu dropdown (`···`) не закрывается по Escape. `useEffect` закрывает `editOpen/deleteOpen/assignOpen`, но `menuOpen` не включён. При нажатии Esc меню остаётся открытым — нарушение keyboard UX и WCAG 2.1. Нужно добавить `setMenuOpen(false)` в Escape handler. | Siri | fixed |
 | SIRI-UX-071 | minor | `WarRoomPage.tsx` mobile agents toggle button — нет `aria-expanded`. Кнопка `👥 {agents.length}` открывает/закрывает panel, но не объявляет состояние screen reader. Нужно добавить `aria-expanded={agentPanelOpen}`. | Siri | fixed |
+| SIRI-UX-073 | minor | `AgentEditPage.tsx` — когда fetch агента возвращает null (404 или ошибка), форма рендерится пустой без индикации ошибки. Пользователь видит пустой "Edit Agent" и не понимает что случилось. Добавлен guard `if (!agent)` с error state аналогично `AgentPage.tsx`. | Siri | fixed |
+| SIRI-UX-074 | minor | `CompaniesPage.tsx` "New Company" modal — отсутствуют `role="dialog"`, `aria-modal="true"`, `aria-label`, и Escape key handler. Все остальные модалы в проекте имеют эти атрибуты. Добавлены все недостающие атрибуты. | Siri | fixed |
+| SIRI-UX-075 | minor | `WarRoomPage.tsx` agent status dot (`data-testid="agent-status-dot"`) — `<span>` с CSS классом цвета без `aria-label`. Screen reader не видит статус агента. Добавлено `aria-label={statusLabel[agent.status]}`. | Siri | fixed |
+| SIRI-UX-076 | minor | `TaskDetailSidebar.tsx` кнопка "Run Task" — нет `aria-label`. Кнопка имеет `data-testid="sidebar-run-btn"` но без accessible name. Добавлено `aria-label`. | Siri | fixed |
+| SIRI-UX-077 | minor | `useWarRoomSocket.ts` — при обработке `agent_status` события из WS, `data.agentId` и `data.status` кастятся через `as string/WarRoomAgentStatus` без валидации. Если бэкенд пришлёт другой shape (например `agent_id` вместо `agentId`), статус тихо не обновится. Нужна валидация перед вызовом `updateAgentStatus`. | Siri | open |
 ```
 Severity:
 - **critical** — приложение падает / данные теряются
@@ -865,11 +875,11 @@ API: `POST /library` (сохранить), `GET /library` (список), `GET /
 |----|----------|-----------|--------|
 | FE-001 | **Real WebSocket integration smoke test**: WarRoomPage работает на mock interval. После демо — live-тест с реальным бэкендом: запустить агента, убедиться что `llm_token` WS-события приходят, Activity Feed обновляется. | P0 | fixed |
 | FE-002 | **SettingsPage: реальное управление LLM ключами**: `/settings` — заглушка. Форма добавления ключа (provider select + api_key input + validate button), список ключей с маскировкой `sk-...xxxx`, кнопка удаления. | P0 | fixed |
-| FE-003 | **AgentPage: убрать дублирующийся UX Edit**: AgentPage рендерит одновременно AgentForm (редактируемый) И кнопку "Edit" → AgentEditPage. Решение: AgentPage = view-only, "Edit" → AgentEditPage. | P1 | open |
-| FE-004 | **KanbanBoard: stress-test drag & drop + persist**: stress-test drag 10 карточек быстро, проверить rollback при ошибке, добавить aria-grabbed/aria-dropeffect. Сохранять порядок в localStorage. | P1 | open |
+| FE-003 | **AgentPage: убрать дублирующийся UX Edit**: AgentPage рендерит одновременно AgentForm (редактируемый) И кнопку "Edit" → AgentEditPage. Решение: AgentPage = view-only, "Edit" → AgentEditPage. | P1 | fixed |
+| FE-004 | **KanbanBoard: stress-test drag &amp; drop + persist**: stress-test drag 10 карточек быстро, проверить rollback при ошибке, добавить aria-grabbed/aria-dropeffect. Сохранять порядок в localStorage. | P1 | fixed |
 | FE-005 | **Performance при >50 карточках**: добавить виртуализацию (`@tanstack/react-virtual`) или lazy-load (20 карточек per page). `GET /tasks` без пагинации на фронте — добавить `limit=50&offset=N`. | P1 | fixed |
 | FE-006 | **Mobile War Room**: провести полный мобайл-тест (375px), agent-панель → drawer-паттерн. | P2 | fixed |
-| FE-007 | **Error Boundary + 404 page**: добавить ErrorBoundary на уровне роутов, страница ошибки, обработать несуществующий `/companies/:id`. | P2 | open |
+| FE-007 | **Error Boundary + 404 page**: добавить ErrorBoundary на уровне роутов, страница ошибки, обработать несуществующий `/companies/:id`. | P2 | fixed |
 
 ### Backend (Alex)
 
@@ -878,10 +888,10 @@ API: `POST /library` (сохранить), `GET /library` (список), `GET /
 | ALEX-POST-001 | **SQLite → PostgreSQL**: SQLite на Railway теряет данные при pod eviction. Алembic migration, `DATABASE_URL` env, dialect swap. Блокер для платящих клиентов. | 🔴 Critical | fixed |
 | ALEX-POST-002 | **Horizontal scalability (EventBus)**: in-process asyncio.Queue не работает при multiple workers. Нужен Redis pub/sub или NATS. | 🔴 Critical | fixed |
 | ALEX-POST-003 | **Rate limiting**: нет лимитов — пользователь может запустить 1000 агентов → bankrupt. `slowapi` + Redis counter на `/tasks/*/run`. | 🟠 High | fixed |
-| ALEX-POST-004 | **Structured logging + tracing**: plain print() → `structlog` + `opentelemetry-sdk` с OTLP export. Correlation ID по запросам. | 🟠 High | open |
-| ALEX-POST-005 | **LangGraph checkpointing persistence**: `MemorySaver` в RAM — при crash теряется прогресс агентов. Нужен `SqliteSaver`/`PostgresSaver`. | 🟠 High | open |
-| ALEX-POST-006 | **API versioning**: все на `/api/...` без версии. `/api/v1/...` prefix + deprecation headers. | 🟡 Medium | open |
-| ALEX-POST-007 | **Background job queue (arq)**: bare asyncio tasks без retry. `arq` (async Redis queue) с retry policy, dead-letter queue. | 🟡 Medium | open |
+| ALEX-POST-004 | **Structured logging + tracing**: plain print() → `structlog` + `opentelemetry-sdk` с OTLP export. Correlation ID по запросам. | 🟠 High | fixed |
+| ALEX-POST-005 | **LangGraph checkpointing persistence**: `MemorySaver` в RAM — при crash теряется прогресс агентов. Нужен `SqliteSaver`/`PostgresSaver`. | 🟠 High | fixed |
+| ALEX-POST-006 | **API versioning**: все эндпоинты монтированы как /api/v1/ alias middleware. Backward compat: старые /api/ пути работают. | 🟡 Medium | fixed |
+| ALEX-POST-007 | **Background job queue (arq)**: bare asyncio tasks без retry. `arq` (async Redis queue) с retry policy, dead-letter queue. | 🟡 Medium | fixed |
 
 ## Post-MVP (после WoW момента)
 
