@@ -41,9 +41,11 @@ interface TaskCardProps {
   companyId: string
   onCardClick: (task: Task) => void
   onDragStart?: (e: React.DragEvent, taskId: string) => void
+  onDragEnd?: () => void
+  isGrabbed?: boolean
 }
 
-function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) {
+function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrabbed = false }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -198,7 +200,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart }: TaskCardProps) 
     <div
       data-testid={`task-card-${task.id}`}
       draggable
+      aria-grabbed={isGrabbed}
       onDragStart={(e) => onDragStart?.(e, task.id)}
+      onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}
       style={{
         background: '#1f2937',
@@ -755,6 +759,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
   const setTasks = useAgentStore((s) => s.setTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
+  const [grabbedTaskId, setGrabbedTaskId] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDesc, setNewTaskDesc] = useState('')
@@ -857,6 +862,11 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
 
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId)
+    setGrabbedTaskId(taskId)
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    setGrabbedTaskId(null)
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
@@ -868,9 +878,19 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
     setDragOverCol(null)
   }, [])
 
+  const persistTaskOrder = useCallback((updatedTasks: Task[]) => {
+    try {
+      const order = updatedTasks.map((t) => t.id)
+      localStorage.setItem(`kanban-task-order-${companyId}`, JSON.stringify(order))
+    } catch {
+      // localStorage may be unavailable in some envs — silently ignore
+    }
+  }, [companyId])
+
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: TaskStatus) => {
     e.preventDefault()
     setDragOverCol(null)
+    setGrabbedTaskId(null)
     const taskId = e.dataTransfer.getData('text/plain')
     if (!taskId) return
 
@@ -881,7 +901,8 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
     const oldStatus = task.status
 
     // Optimistic update
-    setTasks(currentTasks.map((t) => t.id === taskId ? { ...t, status: newStatus } : t))
+    const optimisticTasks = currentTasks.map((t) => t.id === taskId ? { ...t, status: newStatus } : t)
+    setTasks(optimisticTasks)
 
     try {
       const token = getStoredToken()
@@ -898,6 +919,9 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
         const rollbackTasks = useAgentStore.getState().tasks
         setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
         toast.error('Failed to move task')
+      } else {
+        // Persist order to localStorage on success
+        persistTaskOrder(optimisticTasks)
       }
     } catch {
       // Rollback
@@ -905,7 +929,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
       setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
       toast.error('Failed to move task')
     }
-  }, [companyId, setTasks, toast])
+  }, [companyId, setTasks, toast, persistTaskOrder])
 
   const showEmpty = isLoaded && tasks.length === 0
   const showFilterEmpty = isLoaded && tasks.length > 0 && filteredTasks.length === 0 && hasActiveFilters
@@ -972,6 +996,7 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
           <div
             key={col.id}
             data-testid={`kanban-column-${col.id}`}
+            aria-dropeffect="move"
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}
@@ -1006,6 +1031,8 @@ export default function KanbanBoard({ companyId, isLoaded = true }: KanbanBoardP
                       companyId={companyId}
                       onCardClick={setSelectedTask}
                       onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      isGrabbed={grabbedTaskId === task.id}
                     />
                   ))
               )}
