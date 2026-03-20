@@ -83,9 +83,15 @@ describe('FE-005: KanbanBoard pagination', () => {
   })
 
   it('CompanyPage fetches tasks with ?limit=50 by default', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/agents')) {
+        return Promise.resolve({ ok: true, json: async () => [] })
+      }
+      if (url.includes('/tasks')) {
+        return Promise.resolve({ ok: true, json: async () => [] })
+      }
+      // Company endpoint
+      return Promise.resolve({ ok: true, json: async () => ({ id: 'comp-1', name: 'Test Corp' }) })
     })
     globalThis.fetch = fetchMock
 
