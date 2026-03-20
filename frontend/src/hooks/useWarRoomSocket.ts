@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useWarRoomStore, type FeedMessage, type WarRoomAgentStatus } from '../store/warRoomStore'
+import { getStoredToken } from '../api/client'
 
 const BASE_WS_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
   .replace(/^http/, 'ws')
@@ -35,7 +36,12 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const connect = useCallback(() => {
     if (unmountedRef.current) return
 
-    const url = `${BASE_WS_URL}/ws/companies/${companyId}/events`
+    // SIRI-UX-096: pass auth token as query param — backend requires ?token=<jwt>
+    // Without it, backend closes with code 4001 (unauthorized), wiping mock data
+    const token = getStoredToken()
+    const url = token
+      ? `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${encodeURIComponent(token)}`
+      : `${BASE_WS_URL}/ws/companies/${companyId}/events`
     const ws = new WebSocket(url)
     wsRef.current = ws
 
@@ -90,6 +96,16 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
       if (unmountedRef.current) return
       // Clean close (1000) — don't reconnect
       if (event.wasClean && event.code === 1000) return
+      // 4001 = Unauthorized (missing/invalid token) — don't retry, would loop forever
+      if (event.code === 4001) {
+        setError('WebSocket unauthorized — check authentication')
+        return
+      }
+      // 4003 = Forbidden (no access to company) — don't retry
+      if (event.code === 4003) {
+        setError('WebSocket forbidden — no access to this company')
+        return
+      }
 
       // Exponential backoff reconnect
       const delay = Math.min(retryDelayRef.current, MAX_BACKOFF_MS)

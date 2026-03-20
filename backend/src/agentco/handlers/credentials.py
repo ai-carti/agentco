@@ -190,17 +190,13 @@ async def validate_llm_key(
     # ALEX-TD-009 fix: pass api_key directly to LiteLLM instead of mutating os.environ
     # (os.environ mutation is NOT thread-safe in async context — concurrent requests
     #  can end up using each other's keys)
+    # ALEX-TD-058 fix: removed dead if/elif — all providers pass api_key identically.
     litellm_kwargs: dict = {
         "model": test_model,
         "messages": [{"role": "user", "content": "Hi"}],
         "max_tokens": 1,
+        "api_key": body.api_key,
     }
-    if provider == "openai":
-        litellm_kwargs["api_key"] = body.api_key
-    elif provider == "anthropic":
-        litellm_kwargs["api_key"] = body.api_key
-    elif provider == "gemini":
-        litellm_kwargs["api_key"] = body.api_key
 
     try:
         await acompletion(**litellm_kwargs)
