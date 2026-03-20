@@ -20,6 +20,7 @@ dependencies = [
     "langgraph-checkpoint-sqlite>=1.0",
     "sqlite-vec>=0.1.6",
     "slowapi>=0.1.9",
+    "structlog>=24.0",
 ]
 
 [project.scripts]
