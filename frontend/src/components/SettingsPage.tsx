@@ -15,8 +15,14 @@ interface LLMCredential {
 const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
-  { value: 'google', label: 'Google' },
+  { value: 'gemini', label: 'Gemini' },
 ]
+
+/** Returns last 4 chars of a key, formatted as sk-...xxxx */
+function maskKey(key: string): string {
+  if (key.length <= 4) return `sk-...${key}`
+  return `sk-...${key.slice(-4)}`
+}
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -45,6 +51,11 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 500,
 }
 
+function authHeaders(): Record<string, string> {
+  const token = getStoredToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export default function SettingsPage() {
   const toast = useToast()
   const [provider, setProvider] = useState('openai')
@@ -54,13 +65,8 @@ export default function SettingsPage() {
   const [credentials, setCredentials] = useState<LLMCredential[]>([])
   const [credentialsLoaded, setCredentialsLoaded] = useState(false)
 
-  const authHeaders = (): Record<string, string> => {
-    const token = getStoredToken()
-    return token ? { Authorization: `Bearer ${token}` } : {}
-  }
-
   useEffect(() => {
-    fetch(`${BASE_URL}/api/llm/credentials`, { headers: authHeaders() })
+    globalThis.fetch(`${BASE_URL}/api/credentials`, { headers: authHeaders() })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setCredentials(Array.isArray(data) ? data : [])
@@ -74,22 +80,45 @@ export default function SettingsPage() {
     e.preventDefault()
     setSubmitError('')
     setSubmitting(true)
+
     try {
-      const res = await fetch(`${BASE_URL}/api/llm/credentials`, {
+      // Step 1: Validate key
+      const validateRes = await globalThis.fetch(`${BASE_URL}/api/llm/validate-key`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders(),
-        },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ provider, api_key: apiKey }),
       })
-      if (!res.ok) {
-        const msg = `Failed to save credential (${res.status})`
+
+      if (!validateRes.ok) {
+        let errMsg = `API key validation failed (${validateRes.status})`
+        try {
+          const body = await validateRes.json() as { detail?: string }
+          if (body.detail) errMsg = body.detail
+        } catch { /* ignore */ }
+        setSubmitError(errMsg)
+        toast.error(errMsg)
+        return
+      }
+
+      // Step 2: Save credential
+      const saveRes = await globalThis.fetch(`${BASE_URL}/api/credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ provider, api_key: apiKey }),
+      })
+
+      if (!saveRes.ok) {
+        const msg = `Failed to save credential (${saveRes.status})`
         setSubmitError(msg)
         toast.error(msg)
         return
       }
-      const newCred = await res.json()
+
+      const newCred = await saveRes.json() as LLMCredential
+      // If backend doesn't return key_hint, generate one from the input
+      if (!newCred.key_hint) {
+        newCred.key_hint = maskKey(apiKey)
+      }
       setCredentials((prev) => [...prev, newCred])
       setApiKey('')
       toast.success('API key saved')
@@ -104,7 +133,7 @@ export default function SettingsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/llm/credentials/${id}`, {
+      const res = await globalThis.fetch(`${BASE_URL}/api/credentials/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
       })
@@ -182,7 +211,7 @@ export default function SettingsPage() {
             disabled={submitting}
             style={{ alignSelf: 'flex-start' }}
           >
-            {submitting ? 'Saving…' : 'Add Key'}
+            {submitting ? 'Validating…' : 'Validate & Save'}
           </Button>
         </form>
 
@@ -209,7 +238,10 @@ export default function SettingsPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
-                  <span style={{ color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', flexShrink: 0 }}>
+                  <span
+                    data-testid="llm-credential-provider"
+                    style={{ color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', flexShrink: 0 }}
+                  >
                     {cred.provider}
                   </span>
                   <span style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>

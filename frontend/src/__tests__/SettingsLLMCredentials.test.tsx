@@ -27,7 +27,7 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
     expect(screen.getByTestId('llm-credentials-section')).toBeInTheDocument()
   })
 
-  it('shows provider select with openai/anthropic/google options', () => {
+  it('shows provider select with openai/anthropic/gemini options', () => {
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
     renderSettings()
     const providerSelect = screen.getByTestId('llm-provider-select')
@@ -42,10 +42,11 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
     expect(keyInput).toHaveAttribute('type', 'password')
   })
 
-  it('submits POST /api/llm/credentials on form submit', async () => {
+  it('submits validate then POST /api/credentials on form submit', async () => {
     globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET credentials
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '3', provider: 'openai', key_hint: 'sk-...new1' }) }) // POST
+      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET /api/credentials
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // POST /api/llm/validate-key
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '3', provider: 'openai', key_hint: 'sk-...new1' }) }) // POST /api/credentials
 
     renderSettings()
 
@@ -57,9 +58,10 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
 
     await waitFor(() => {
       const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
-      const postCall = calls.find((c) => c[1]?.method === 'POST')
+      const validateCall = calls.find((c: unknown[]) => (c[0] as string).includes('/api/llm/validate-key'))
+      expect(validateCall).toBeDefined()
+      const postCall = calls.find((c: unknown[]) => (c[1] as RequestInit)?.method === 'POST' && (c[0] as string).includes('/api/credentials') && !(c[0] as string).includes('validate'))
       expect(postCall).toBeDefined()
-      expect(postCall![0]).toContain('/api/llm/credentials')
     })
   })
 
@@ -90,16 +92,16 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
 
     await waitFor(() => {
       const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
-      const deleteCall = calls.find((c) => c[1]?.method === 'DELETE')
+      const deleteCall = calls.find((c: unknown[]) => (c[1] as RequestInit)?.method === 'DELETE')
       expect(deleteCall).toBeDefined()
-      expect(deleteCall![0]).toContain('/api/llm/credentials/1')
+      expect(deleteCall![0]).toContain('/api/credentials/1')
     })
   })
 
-  it('shows error toast when POST fails', async () => {
+  it('shows error toast when validation fails', async () => {
     globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET
-      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) }) // POST fail
+      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ detail: 'Invalid API key' }) }) // validate fail
 
     renderSettings()
 
