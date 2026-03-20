@@ -108,7 +108,7 @@
 - 919 тестов passing (backend: 403, frontend: 516) — 0 failures
 - M0 → M2 + UX Sprint + Post-MVP: all shipped by AgentCo itself
 - Commits: 30+ коммитов от AI-агентов
-- Git log: `ff4ec91` последний — CI fix от самого AgentCo
+- Git log: `3741ab0` последний — final frontend verification от самого AgentCo
 
 **Тезис:** "919 tests. 0 failures. Shipped by AI. This is the proof of concept."
 
