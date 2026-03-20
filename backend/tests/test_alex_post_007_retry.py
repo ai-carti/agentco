@@ -247,3 +247,38 @@ async def test_execute_agent_max_retries_configurable_via_env():
             )
 
     assert call_count == 2, f"С RUN_MAX_RETRIES=2 ожидалось 2 вызова, получено: {call_count}"
+
+
+# ── Test 7: RUN_MAX_RETRIES=0 clamped to 1 (ALEX-TD-048 regression) ──────────
+
+@pytest.mark.asyncio
+async def test_execute_agent_zero_max_retries_clamped_to_one():
+    """
+    ALEX-TD-048: When RUN_MAX_RETRIES=0, the guard clamps it to 1.
+    - No TypeError raised (range(1, 0+1) → range(1,1) is empty; guard prevents this)
+    - execute_run called exactly 1 time (at least one attempt)
+    - asyncio.sleep NOT called (no retries needed after single success)
+    """
+    svc = _make_service()
+    call_count = 0
+
+    async def mock_execute_run(run_id, session_factory=None):
+        nonlocal call_count
+        call_count += 1
+        return "done"
+
+    with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
+         patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
+         patch.dict("os.environ", {"RUN_MAX_RETRIES": "0"}):
+        # Must not raise TypeError and must complete successfully
+        result = await svc._execute_agent(
+            run_id="run-007",
+            task_id="task-007",
+            agent_id="agent-007",
+            company_id="company-007",
+            session_factory=_noop_session_factory,
+        )
+
+    assert result == "done", f"Ожидался результат 'done', получено: {result!r}"
+    assert call_count >= 1, f"execute_run должен быть вызван хотя бы 1 раз, вызван: {call_count}"
+    mock_sleep.assert_not_called()  # single attempt — no backoff sleep
