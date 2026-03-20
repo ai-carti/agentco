@@ -60,6 +60,37 @@ describe('WarRoomPage', () => {
     expect(pulsingDots.length).toBeGreaterThan(0)
   })
 
+  // BUG-054: specific aria-label value on agent-status-dot
+  it('agent-status-dot has correct aria-label matching agent status text', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // Force a known status so we can check a specific aria-label
+    act(() => {
+      useWarRoomStore.getState().updateAgentStatus('agent-1', 'idle')
+    })
+
+    // Find the dot for agent-1 by checking aria-label values
+    const dots = screen.getAllByTestId('agent-status-dot')
+    const idleDot = dots.find((d) => d.getAttribute('aria-label') === 'Idle')
+    expect(idleDot).toBeDefined()
+    expect(idleDot!.getAttribute('aria-label')).toBe('Idle')
+  })
+
+  it('agent-status-dot aria-label reflects "Thinking…" for thinking status', () => {
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    act(() => {
+      useWarRoomStore.getState().updateAgentStatus('agent-1', 'thinking')
+    })
+
+    const dots = screen.getAllByTestId('agent-status-dot')
+    const thinkingDot = dots.find((d) => d.getAttribute('aria-label') === 'Thinking…')
+    expect(thinkingDot).toBeDefined()
+    expect(thinkingDot!.getAttribute('aria-label')).toBe('Thinking…')
+  })
+
   it('shows idle status without pulsing', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })

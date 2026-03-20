@@ -102,4 +102,44 @@ describe('BUG-021: Toast integration in create/delete operations', () => {
       })
     })
   })
+
+  // BUG-054: CompaniesPage modal — role="dialog", aria-modal, Escape handler
+  describe('CompaniesPage modal accessibility', () => {
+    it('modal has role="dialog" and aria-modal="true"', async () => {
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'c1', name: 'Existing Co' }]) })
+
+      renderCompaniesPage()
+
+      await waitFor(() => expect(screen.getByText('Companies')).toBeInTheDocument())
+
+      const buttons = screen.getAllByText('+ New Company')
+      fireEvent.click(buttons[0])
+
+      const dialog = screen.getByRole('dialog')
+      expect(dialog).toBeInTheDocument()
+      expect(dialog.getAttribute('aria-modal')).toBe('true')
+    })
+
+    it('pressing Escape closes the CompaniesPage modal', async () => {
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ([{ id: 'c1', name: 'Existing Co' }]) })
+
+      renderCompaniesPage()
+
+      await waitFor(() => expect(screen.getByText('Companies')).toBeInTheDocument())
+
+      const buttons = screen.getAllByText('+ New Company')
+      fireEvent.click(buttons[0])
+
+      // Modal should be open
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+      // Press Escape
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+      // Modal should close
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
 })

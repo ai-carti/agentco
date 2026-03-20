@@ -183,4 +183,31 @@ describe('AgentEditPage — POST-003', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/companies/c1/agents/a1')
     })
   })
+
+  // BUG-054: fetch agent fails → agent-edit-not-found UI
+  it('shows agent-edit-not-found UI when fetch agent fails (non-ok response)', async () => {
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
+
+    renderAgentEditPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('agent-edit-not-found')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('agent-name-input')).not.toBeInTheDocument()
+  })
+
+  it('shows agent-edit-not-found UI when fetch agent throws network error', async () => {
+    globalThis.fetch = vi.fn()
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ models: ['gpt-4o'] }) })
+
+    renderAgentEditPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('agent-edit-not-found')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('agent-name-input')).not.toBeInTheDocument()
+  })
 })

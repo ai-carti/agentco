@@ -164,6 +164,13 @@ describe('TaskDetailSidebar — UX-010', () => {
     expect(screen.getByTestId('sidebar-run-btn')).toBeInTheDocument()
   })
 
+  // BUG-054: aria-label on sidebar-run-btn
+  it('sidebar-run-btn has aria-label="Run task" in idle state', () => {
+    render(<TaskDetailSidebar {...defaultProps} />)
+    const runBtn = screen.getByTestId('sidebar-run-btn')
+    expect(runBtn).toHaveAttribute('aria-label', 'Run task')
+  })
+
   it('shows Run button for backlog tasks', () => {
     const backlogTask: Task = { ...mockTask, status: 'backlog' }
     render(<TaskDetailSidebar {...defaultProps} task={backlogTask} />)
