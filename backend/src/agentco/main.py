@@ -69,15 +69,46 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 
 class ApiV1AliasMiddleware(BaseHTTPMiddleware):
-    """Transparently re-maps /api/v1/{rest} → /api/{rest} for backward compat."""
+    """Transparently re-maps /api/v1/{rest} → /api/{rest} for backward compat.
+
+    BUG-041: double v1 prefix /api/v1/v1/X → return 400 Bad Request.
+    BUG-042: old /api/... paths (backward compat, 200) get Deprecation header.
+    """
     async def dispatch(self, request, call_next):
+        from starlette.responses import Response as StarletteResponse
+        import json
+
         path = request.url.path
+
+        # BUG-041: detect double v1 prefix — /api/v1/v1/...
+        if path.startswith("/api/v1/v1/"):
+            return StarletteResponse(
+                content=json.dumps({
+                    "detail": "Bad Request: malformed path — double /v1/ prefix detected. "
+                              "Use /api/v1/{resource} or /api/{resource}."
+                }),
+                status_code=400,
+                media_type="application/json",
+            )
+
+        is_old_api_path = False
         if path.startswith("/api/v1/") and path != "/api/v1/":
             # Rewrite scope path for internal routing (no external redirect)
             new_path = "/api/" + path[len("/api/v1/"):]
             request.scope["path"] = new_path
             request.scope["raw_path"] = new_path.encode()
-        return await call_next(request)
+        elif path.startswith("/api/") and not path.startswith("/api/v1/"):
+            # Old /api/... path — mark for Deprecation header (BUG-042)
+            is_old_api_path = True
+
+        response = await call_next(request)
+
+        # BUG-042: add Deprecation header to old /api/... 200 responses
+        if is_old_api_path and response.status_code == 200:
+            response.headers["Deprecation"] = "true"
+            response.headers["Link"] = '</api/v1/>; rel="successor-version"'
+
+        return response
 
 app.add_middleware(ApiV1AliasMiddleware)
 

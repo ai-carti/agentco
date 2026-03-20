@@ -345,6 +345,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <button
               data-testid="sidebar-run-btn"
+              aria-label={running ? 'Running task…' : 'Run task'}
               onClick={handleRun}
               disabled={running}
               style={{

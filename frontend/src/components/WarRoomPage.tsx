@@ -431,6 +431,7 @@ export default function WarRoomPage() {
                     <span
                       data-testid="agent-status-dot"
                       className={statusDotStyle[agent.status]}
+                      aria-label={statusLabel[agent.status]}
                       style={{
                         width: 10,
                         height: 10,

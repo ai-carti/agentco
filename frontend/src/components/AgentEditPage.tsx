@@ -84,6 +84,35 @@ export default function AgentEditPage() {
     )
   }
 
+  // SIRI-UX-073: if agent failed to load, show error instead of empty form
+  if (!agent) {
+    return (
+      <div
+        data-testid="agent-edit-not-found"
+        style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#9ca3af' }}
+      >
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤖</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>
+          Agent not found
+        </div>
+        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+          This agent may have been deleted or you don't have access.
+        </div>
+        <button
+          data-testid="agent-edit-not-found-back-btn"
+          onClick={() => navigate(`/companies/${companyId}`)}
+          style={{
+            padding: '0.5rem 1.25rem', background: 'transparent',
+            border: '1px solid #374151', borderRadius: 6, color: '#9ca3af',
+            fontSize: '0.875rem', cursor: 'pointer',
+          }}
+        >
+          ← Back to Company
+        </button>
+      </div>
+    )
+  }
+
   const initialValues: Partial<AgentFormData> = {
     name: agent?.name ?? '',
     role: agent?.role ?? '',

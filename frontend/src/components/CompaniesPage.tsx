@@ -153,11 +153,15 @@ export default function CompaniesPage() {
       {/* New Company modal */}
       {showNewModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="New Company"
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowNewModal(false) }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowNewModal(false) }}
         >
           <div style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
