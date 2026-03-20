@@ -138,9 +138,8 @@ describe('UX-011: Company Header mobile responsive', () => {
       expect(screen.getByTestId('company-header')).toBeInTheDocument()
     })
 
-    // On mobile: "AgentCo" text should not be visible (button is hidden)
-    const homeLink = screen.getByTestId('company-header-home-link')
-    expect(homeLink.style.display).toBe('none')
+    // On mobile: "AgentCo" breadcrumb button is not rendered (SIRI-UX-084: conditional render instead of display:none)
+    expect(screen.queryByTestId('company-header-home-link')).not.toBeInTheDocument()
 
     // Avatar and company name are still visible
     expect(screen.getByTestId('company-avatar')).toBeInTheDocument()
