@@ -182,3 +182,33 @@ def test_empty_url_returns_422(auth_client):
         headers=_auth(token),
     )
     assert resp.status_code == 422
+
+
+
+def test_list_mcp_servers_order_is_stable(auth_client):
+    """ALEX-TD-069: list_mcp_servers должен возвращать серверы в стабильном порядке (ORDER BY created_at asc)."""
+    client, _ = auth_client
+    token = _register_and_login(client, "mcp_order@example.com")
+    company_id = _create_company(client, token, "Order Corp")
+    agent_id = _create_agent(client, token, company_id, "Order Agent")
+
+    server_names = ["alpha-server", "beta-server", "gamma-server"]
+    created_ids = []
+    for name in server_names:
+        r = client.post(
+            _mcp_url(company_id, agent_id),
+            json={"name": name, "server_url": f"http://{name}.test", "transport": "sse"},
+            headers=_auth(token),
+        )
+        assert r.status_code == 201
+        created_ids.append(r.json()["id"])
+
+    r = client.get(_mcp_url(company_id, agent_id), headers=_auth(token))
+    assert r.status_code == 200
+    items = r.json()
+    returned_ids = [item["id"] for item in items]
+
+    # All created servers must be present in stable order (created_at asc)
+    assert returned_ids == created_ids, (
+        f"ALEX-TD-069: ожидали порядок по created_at asc: {created_ids}, получили: {returned_ids}"
+    )

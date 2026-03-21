@@ -611,3 +611,50 @@ class TestMemoryIntegration:
 
         # save_memory должен быть вызван с результатом
         mock_memory_service.save_memory.assert_called_once()
+
+
+class TestLlmTokenCostField:
+    """ALEX-TD-068: llm_token events must include cost field for frontend cost counter."""
+
+    @pytest.mark.asyncio
+    async def test_llm_token_event_contains_cost_field(self):
+        """ALEX-TD-068: _publish_chunk должен включать поле `cost` в llm_token event.
+
+        SIRI-POST-004 frontend читает data.cost из llm_token событий.
+        До фикса поле отсутствовало → cost counter всегда 0.
+        """
+        from agentco.orchestration.agent_node import agent_node
+        from agentco.eventbus import EventBus
+
+        chunks = [_make_text_chunk("Hello"), _make_finish_chunk("stop")]
+        stream = _make_async_stream(chunks)
+
+        bus = EventBus.get()
+        original_publish = bus.publish
+        published = []
+
+        async def capture(event):
+            published.append(event)
+            await original_publish(event)
+
+        bus.publish = capture
+        try:
+            with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+                mock_acomp.return_value = stream
+                state = _make_base_state()
+                state["company_id"] = "company-001"
+                state["agent_id"] = "ceo"
+                state["model"] = "gpt-4o"
+                await agent_node(state)
+        finally:
+            bus.publish = original_publish
+
+        llm_token_events = [e for e in published if e.get("type") == "llm_token"]
+        assert len(llm_token_events) > 0, "Должны быть llm_token события"
+        for event in llm_token_events:
+            assert "cost" in event, (
+                f"llm_token event должен содержать поле 'cost' для SIRI-POST-004. "
+                f"Got: {list(event.keys())}"
+            )
+            assert isinstance(event["cost"], float), f"cost должен быть float, got {type(event['cost'])}"
+            assert event["cost"] >= 0.0, "cost не может быть отрицательным"

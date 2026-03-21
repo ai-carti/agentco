@@ -130,19 +130,29 @@ def _extract_tokens(chunk) -> int:
 
 
 async def _publish_chunk(state: AgentState, content: str) -> None:
-    """Публикует стриминговый чанк в EventBus."""
+    """Публикует стриминговый чанк в EventBus.
+
+    ALEX-TD-068: включает поле `cost` (стоимость чанка в USD) для поддержки
+    SIRI-POST-004 — frontend warRoomStore читает data.cost из llm_token событий.
+    Стоимость оценивается per-character (приблизительно ~1 токен = 4 символа).
+    """
     company_id = state.get("company_id")
     if not company_id:
         return
     try:
         from agentco.eventbus import EventBus
         bus = EventBus.get()
+        # ALEX-TD-068: оцениваем стоимость чанка по длине (1 char ≈ 0.25 токена)
+        model = state.get("model", "gpt-4o")
+        chunk_tokens = max(1, len(content) // 4)
+        chunk_cost = _estimate_cost(model, chunk_tokens)
         await bus.publish({
             "company_id": company_id,
             "type": "llm_token",
             "agent_id": state.get("agent_id", "unknown"),
             "run_id": state.get("run_id", ""),
             "data": content,
+            "cost": chunk_cost,
         })
     except Exception as e:
         logger.debug("EventBus publish failed: %s", e)

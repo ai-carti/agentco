@@ -116,6 +116,7 @@ def list_mcp_servers(
     servers = session.scalars(
         select(MCPServerORM)
         .where(MCPServerORM.agent_id == agent_id)
+        .order_by(MCPServerORM.created_at.asc())
         .offset(offset)
         .limit(limit)
     ).all()
