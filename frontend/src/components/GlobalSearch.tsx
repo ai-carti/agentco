@@ -162,8 +162,6 @@ export default function GlobalSearch() {
     )
   }
 
-  let flatIndex = -1
-
   return (
     <>
       <button
@@ -212,9 +210,8 @@ export default function GlobalSearch() {
                       {groupLabels[type]}
                     </div>
                     {group.map((result) => {
-                      flatIndex++
-                      const isActive = flatIndex === activeIndex
-                      const idx = flatIndex
+                      const flatIdx = flatResults.indexOf(result)
+                      const isActive = flatIdx === activeIndex
                       return (
                         <div
                           key={result.id}
@@ -225,7 +222,7 @@ export default function GlobalSearch() {
                             background: isActive ? '#374151' : 'transparent',
                             display: 'flex', flexDirection: 'column', gap: '0.1rem',
                           }}
-                          onMouseEnter={() => setActiveIndex(idx)}
+                          onMouseEnter={() => setActiveIndex(flatIdx)}
                         >
                           <span style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{result.title}</span>
                           {result.subtitle && (

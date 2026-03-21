@@ -146,10 +146,12 @@ export default function CompanyPage() {
 
   useEffect(() => {
     if (!id) return
+    const controller = new AbortController()
+    const { signal } = controller
     const token = getStoredToken()
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
-    fetch(`${BASE_URL}/api/companies/${id}`, { headers })
+    fetch(`${BASE_URL}/api/companies/${id}`, { headers, signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setCurrentCompany({ id: data.id, name: data.name })
@@ -159,7 +161,7 @@ export default function CompanyPage() {
     setTasksLoaded(false)
     setTaskOffset(0)
     setHasMoreTasks(false)
-    fetch(`${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=0`, { headers })
+    fetch(`${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=0`, { headers, signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         const items = Array.isArray(data) ? data : []
@@ -173,7 +175,7 @@ export default function CompanyPage() {
       })
 
     setAgentsLoaded(false)
-    fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers })
+    fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers, signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
@@ -184,6 +186,7 @@ export default function CompanyPage() {
       })
 
     return () => {
+      controller.abort()
       setCurrentCompany(null)
       setTasks([])
       setAgents([])

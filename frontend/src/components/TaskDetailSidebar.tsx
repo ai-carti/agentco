@@ -58,6 +58,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
 
   // Fetch logs
   useEffect(() => {
+    const controller = new AbortController()
+    const { signal } = controller
+
     const fetchLogs = async () => {
       setLogsLoading(true)
       setLogsError(false)
@@ -67,6 +70,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           `${BASE_URL}/api/companies/${companyId}/tasks/${task.id}/logs`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal,
           }
         )
         if (res.ok) {
@@ -77,14 +81,19 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           // SIRI-UX-109: distinguish API error from empty logs
           setLogsError(true)
         }
-      } catch {
-        // SIRI-UX-109: network error — show error state, not empty state
-        setLogsError(true)
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          // SIRI-UX-109: network error — show error state, not empty state
+          setLogsError(true)
+        }
       } finally {
-        setLogsLoading(false)
+        if (!signal.aborted) {
+          setLogsLoading(false)
+        }
       }
     }
     fetchLogs()
+    return () => controller.abort()
   }, [task.id, companyId])
 
   // Close on Escape
@@ -310,7 +319,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (
                 logs.map((entry, i) => (
-                  <div key={i} style={{ marginBottom: '0.25rem' }}>
+                  <div key={`${entry.timestamp}-${i}`} style={{ marginBottom: '0.25rem' }}>
                     <span style={{ color: '#64748b', marginRight: '0.5rem' }}>
                       [{formatTimestamp(entry.timestamp)}]
                     </span>
@@ -334,7 +343,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                   const sc = STATUS_COLORS[entry.status] ?? STATUS_COLORS.todo
                   return (
                     <div
-                      key={i}
+                      key={`${entry.status}-${entry.changed_at}-${i}`}
                       data-testid={`status-history-${entry.status}`}
                       style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
