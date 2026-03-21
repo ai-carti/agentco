@@ -254,6 +254,56 @@ describe('FE-002: Credentials list', () => {
   })
 })
 
+// ─── BUG-056: Credentials fetch error handling ───────────────────────────────
+
+describe('BUG-056: GET /credentials error → UI error message', () => {
+  it('shows error message when GET /credentials returns 403', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      const method = (init?.method ?? 'GET').toUpperCase()
+      if (method === 'GET' && url.match(/\/api\/companies\/?$/)) {
+        return Promise.resolve({ ok: true, json: async () => [MOCK_COMPANY] })
+      }
+      if (method === 'GET' && url.includes('/credentials')) {
+        return Promise.resolve({ ok: false, status: 403, json: async () => ({ detail: 'Forbidden' }) })
+      }
+      return Promise.resolve({ ok: true, json: async () => [] })
+    })
+
+    renderSettings()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('credentials-fetch-error')).toBeInTheDocument()
+    })
+  })
+
+  it('does NOT show credentials-fetch-error on success', async () => {
+    setupFetch({ credentials: [] })
+    renderSettings()
+    await waitForForm()
+
+    expect(screen.queryByTestId('credentials-fetch-error')).not.toBeInTheDocument()
+  })
+
+  it('shows error message on any non-ok status (e.g. 500)', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      const method = (init?.method ?? 'GET').toUpperCase()
+      if (method === 'GET' && url.match(/\/api\/companies\/?$/)) {
+        return Promise.resolve({ ok: true, json: async () => [MOCK_COMPANY] })
+      }
+      if (method === 'GET' && url.includes('/credentials')) {
+        return Promise.resolve({ ok: false, status: 500, json: async () => ({}) })
+      }
+      return Promise.resolve({ ok: true, json: async () => [] })
+    })
+
+    renderSettings()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('credentials-fetch-error')).toBeInTheDocument()
+    })
+  })
+})
+
 // ─── Key masking ──────────────────────────────────────────────────────────────
 
 describe('FE-002: Key masking (sk-...xxxx format)', () => {

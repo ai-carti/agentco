@@ -90,6 +90,7 @@ export default function SettingsPage() {
   const [submitError, setSubmitError] = useState('')
   const [credentials, setCredentials] = useState<LLMCredential[]>([])
   const [credentialsLoaded, setCredentialsLoaded] = useState(false)
+  const [credentialsError, setCredentialsError] = useState<string | null>(null)
 
   // ── Step 1: load companies ───────────────────────────────────────────────
   useEffect(() => {
@@ -108,15 +109,28 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!selectedCompanyId) return
     setCredentialsLoaded(false)
+    setCredentialsError(null)
     globalThis.fetch(`${BASE_URL}/api/companies/${selectedCompanyId}/credentials`, {
       headers: authHeaders(),
     })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: LLMCredential[]) => {
-        setCredentials(Array.isArray(data) ? data : [])
+      .then((res) => {
+        if (!res.ok) {
+          setCredentialsError(`Failed to load credentials (${res.status})`)
+          setCredentialsLoaded(true)
+          return null
+        }
+        return res.json()
+      })
+      .then((data: LLMCredential[] | null) => {
+        if (data !== null) {
+          setCredentials(Array.isArray(data) ? data : [])
+          setCredentialsLoaded(true)
+        }
+      })
+      .catch(() => {
+        setCredentialsError('Network error — could not load credentials')
         setCredentialsLoaded(true)
       })
-      .catch(() => setCredentialsLoaded(true))
   }, [selectedCompanyId])
 
   const handleSubmit = async (e: FormEvent) => {
@@ -309,6 +323,24 @@ export default function SettingsPage() {
                 {submitting ? 'Validating…' : 'Validate & Save'}
               </Button>
             </form>
+
+            {/* Credentials fetch error */}
+            {credentialsError && (
+              <div
+                data-testid="credentials-fetch-error"
+                style={{
+                  padding: '0.75rem',
+                  background: '#1f2937',
+                  border: '1px solid #ef4444',
+                  borderRadius: 6,
+                  color: '#f87171',
+                  fontSize: '0.875rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                {credentialsError}
+              </div>
+            )}
 
             {/* Saved credentials list */}
             {credentialsLoaded && credentials.length > 0 && (

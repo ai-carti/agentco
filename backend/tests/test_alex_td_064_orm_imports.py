@@ -72,3 +72,74 @@ def test_orm_all_is_complete():
     assert not missing, (
         f"Core ORM models missing from agentco.orm.__all__: {missing}"
     )
+
+
+def test_orm_all_covers_all_defined_orm_classes():
+    """Every ORM class defined in orm/*.py must be exported via agentco.orm.__all__.
+
+    BUG-057: the previous test only checked a hardcoded set of core models.
+    This test dynamically scans all *.py files in the orm package, finds every
+    ``class *ORM(Base)`` definition via AST, and verifies the class object is
+    reachable through agentco.orm.__all__ (handles aliases like MCPServerORM →
+    McpServerORM correctly by comparing by object identity, not name).
+    """
+    import ast
+    import importlib
+    import importlib.util
+    import pathlib
+
+    # Locate the orm package directory via the module spec
+    orm_spec = importlib.util.find_spec("agentco.orm")
+    assert orm_spec is not None, "agentco.orm package not found"
+    orm_dir = pathlib.Path(orm_spec.origin).parent  # …/src/agentco/orm/
+
+    orm_module = importlib.import_module("agentco.orm")
+    all_names = _get_orm_all()
+
+    # Build a set of class objects that are exported via __all__
+    exported_objects = set()
+    for name in all_names:
+        obj = getattr(orm_module, name, None)
+        if obj is not None:
+            exported_objects.add(obj)
+
+    not_exported: list[str] = []
+
+    for py_file in sorted(orm_dir.glob("*.py")):
+        if py_file.name in ("__init__.py", "base.py"):
+            continue  # skip package init and Base definition
+
+        source = py_file.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(py_file))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if not node.name.endswith("ORM"):
+                continue
+            # Only classes that inherit from Base (direct Base reference)
+            base_names = []
+            for base in node.bases:
+                if isinstance(base, ast.Name):
+                    base_names.append(base.id)
+                elif isinstance(base, ast.Attribute):
+                    base_names.append(base.attr)
+            if "Base" not in base_names:
+                continue
+
+            # Import the defining module and get the class object
+            module_name = f"agentco.orm.{py_file.stem}"
+            defining_module = importlib.import_module(module_name)
+            cls_obj = getattr(defining_module, node.name, None)
+
+            if cls_obj is None or cls_obj not in exported_objects:
+                not_exported.append(
+                    f"{node.name} (defined in orm/{py_file.name})"
+                )
+
+    assert not not_exported, (
+        "The following ORM classes are defined in orm/*.py but NOT exported via "
+        "agentco.orm.__all__:\n"
+        + "\n".join(f"  - {entry}" for entry in not_exported)
+        + "\n\nFix: add the class (or an alias) to orm/__init__.py and __all__."
+    )
