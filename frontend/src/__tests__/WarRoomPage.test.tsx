@@ -169,8 +169,10 @@ describe('WarRoomPage', () => {
     expect(useWarRoomStore.getState().cost).toBeGreaterThan(initialCost)
   })
 
-  // --- AC 6: Mock WS — setInterval ~3 sec cycling ---
+  // --- AC 6: Mock WS — setInterval ~3 sec cycling (requires VITE_MOCK_WAR_ROOM=true) ---
   it('cycles agent statuses via setInterval every ~3 seconds', () => {
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
+
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
 
@@ -183,9 +185,13 @@ describe('WarRoomPage', () => {
     // At least one agent status should have changed
     const changed = statusBefore.some((s, i) => s !== statusAfter[i])
     expect(changed).toBe(true)
+
+    vi.unstubAllEnvs()
   })
 
   it('adds new feed messages via setInterval', () => {
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
+
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
 
@@ -195,6 +201,8 @@ describe('WarRoomPage', () => {
 
     const msgCountAfter = useWarRoomStore.getState().messages.length
     expect(msgCountAfter).toBeGreaterThan(msgCountBefore)
+
+    vi.unstubAllEnvs()
   })
 
   // --- AC 7: Green flash on thinking → done ---
@@ -293,5 +301,24 @@ describe('WarRoomPage', () => {
     expect(store.agents.length).toBeLessThanOrEqual(4)
   })
 
+  // --- SIRI-POST-003: mock interval behind feature flag ---
+  it('does NOT grow messages via interval when VITE_MOCK_WAR_ROOM is not set', () => {
+    // Ensure flag is NOT set (default)
+    vi.unstubAllEnvs()
+    useWarRoomStore.getState().reset()
+
+    renderWarRoom()
+
+    // After mount + loadMockData, record initial message count
+    act(() => { vi.advanceTimersByTime(100) })
+    const msgCountAfterMount = useWarRoomStore.getState().messages.length
+
+    // Advance well past 3 interval ticks
+    act(() => { vi.advanceTimersByTime(10000) })
+
+    // Message count should NOT have grown (interval is not running)
+    const msgCountAfterInterval = useWarRoomStore.getState().messages.length
+    expect(msgCountAfterInterval).toBe(msgCountAfterMount)
+  })
 
 })

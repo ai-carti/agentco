@@ -135,8 +135,9 @@ export default function WarRoomPage() {
   }, [isConnected])
 
   // Mock WS fallback: setInterval ~3 sec cycling agent statuses + adding messages
-  // Only run when not connected to real WS
+  // Only run when not connected to real WS AND VITE_MOCK_WAR_ROOM flag is enabled
   useEffect(() => {
+    if (import.meta.env.VITE_MOCK_WAR_ROOM !== 'true') return
     if (agents.length === 0) return
     if (isConnected) {
       // Stop interval if running
