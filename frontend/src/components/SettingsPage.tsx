@@ -136,6 +136,11 @@ export default function SettingsPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!selectedCompanyId) return
+    const trimmedKey = apiKey.trim()
+    if (trimmedKey === '') {
+      setSubmitError('API key cannot be empty or whitespace')
+      return
+    }
     setSubmitError('')
     setSubmitting(true)
 
@@ -144,7 +149,7 @@ export default function SettingsPage() {
       const validateRes = await globalThis.fetch(`${BASE_URL}/api/llm/validate-key`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ provider, api_key: apiKey }),
+        body: JSON.stringify({ provider, api_key: trimmedKey }),
       })
 
       if (!validateRes.ok) {
@@ -164,7 +169,7 @@ export default function SettingsPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify({ provider, api_key: apiKey }),
+          body: JSON.stringify({ provider, api_key: trimmedKey }),
         },
       )
 
@@ -294,7 +299,7 @@ export default function SettingsPage() {
                   data-testid="llm-api-key-input"
                   type="password"
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  onChange={(e) => setApiKey(e.target.value.trim())}
                   onFocus={handleInputFocus}
                   onBlur={handleInputBlur}
                   placeholder="sk-..."

@@ -304,6 +304,45 @@ describe('BUG-056: GET /credentials error → UI error message', () => {
   })
 })
 
+// ─── BUG-060: trim apiKey ─────────────────────────────────────────────────────
+
+describe('BUG-060: apiKey trim before submit', () => {
+  it('does NOT call fetch when apiKey is whitespace-only', async () => {
+    setupFetch()
+    renderSettings()
+    await waitForForm()
+
+    fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByTestId('llm-credentials-submit'))
+
+    // fetch should NOT have been called with validate-key
+    const fetchCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as unknown[][]
+    const validateCall = fetchCalls.find((args) =>
+      typeof args[0] === 'string' && (args[0] as string).includes('/api/llm/validate-key')
+    )
+    expect(validateCall).toBeUndefined()
+  })
+
+  it('trims leading/trailing spaces from apiKey before sending to validate-key', async () => {
+    setupFetch()
+    renderSettings()
+    await waitForForm()
+
+    fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: '  sk-actual-key  ' } })
+    fireEvent.click(screen.getByTestId('llm-credentials-submit'))
+
+    await waitFor(() => {
+      const fetchCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as unknown[][]
+      const validateCall = fetchCalls.find((args) =>
+        typeof args[0] === 'string' && (args[0] as string).includes('/api/llm/validate-key')
+      )
+      expect(validateCall).toBeDefined()
+      const body = JSON.parse((validateCall![1] as RequestInit).body as string)
+      expect(body.api_key).toBe('sk-actual-key')
+    })
+  })
+})
+
 // ─── Key masking ──────────────────────────────────────────────────────────────
 
 describe('FE-002: Key masking (sk-...xxxx format)', () => {
