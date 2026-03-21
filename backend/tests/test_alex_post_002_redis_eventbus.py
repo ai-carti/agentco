@@ -254,3 +254,178 @@ class TestRedisEventBus:
 
         assert len(received) == 1
         assert received[0] == valid_event
+
+    @pytest.mark.asyncio
+    async def test_subscribe_filters_by_company_id(self):
+        """RedisEventBus subscribes to per-company channel, not global."""
+        bus = RedisEventBus("redis://localhost:6379/0")
+
+        event_c1 = {"type": "run.started", "company_id": "c1", "run_id": "r1", "payload": {}}
+        # Only c1 events on the c1 channel — c2 events arrive on a different channel
+        # and Redis routing ensures they never appear here.
+        async def fake_listen():
+            yield {"type": "subscribe", "data": 1}
+            yield {"type": "message", "data": json.dumps(event_c1)}
+
+        mock_client, mock_pubsub = self._make_pubsub_mock(fake_listen)
+        bus._client = mock_client
+
+        received = []
+        async for ev in bus.subscribe("c1"):
+            received.append(ev)
+            break
+
+        assert len(received) == 1
+        assert received[0]["company_id"] == "c1"
+        # Channel subscribed must be per-company
+        mock_pubsub.subscribe.assert_called_once_with("agentco:events:c1")
+
+    @pytest.mark.asyncio
+    async def test_subscribe_uses_correct_channel_prefix(self):
+        """Channel is REDIS_CHANNEL_PREFIX + company_id."""
+        bus = RedisEventBus("redis://localhost:6379/0")
+        event = {"type": "run.done", "company_id": "acme", "run_id": "r99", "payload": {}}
+
+        async def fake_listen():
+            yield {"type": "message", "data": json.dumps(event)}
+
+        mock_client, mock_pubsub = self._make_pubsub_mock(fake_listen)
+        bus._client = mock_client
+
+        async for _ in bus.subscribe("acme"):
+            break
+
+        mock_pubsub.subscribe.assert_called_once_with("agentco:events:acme")
+
+    @pytest.mark.asyncio
+    async def test_publish_uses_correct_channel_prefix(self):
+        """publish() sends to REDIS_CHANNEL_PREFIX + company_id."""
+        bus = RedisEventBus("redis://localhost:6379/0")
+        mock_client = AsyncMock()
+        bus._client = mock_client
+
+        event = {"type": "run.done", "company_id": "corp42", "run_id": "r1", "payload": {}}
+        await bus.publish(event)
+
+        mock_client.publish.assert_called_once_with(
+            "agentco:events:corp42",
+            json.dumps(event),
+        )
+
+    @pytest.mark.asyncio
+    async def test_publish_missing_company_id(self):
+        """publish() with no company_id uses empty string as channel suffix."""
+        bus = RedisEventBus("redis://localhost:6379/0")
+        mock_client = AsyncMock()
+        bus._client = mock_client
+
+        event = {"type": "run.started", "run_id": "r1"}  # no company_id
+        await bus.publish(event)
+
+        mock_client.publish.assert_called_once_with(
+            "agentco:events:",
+            json.dumps(event),
+        )
+
+    @pytest.mark.asyncio
+    async def test_concurrent_subscribers_inprocess(self):
+        """InProcessEventBus delivers to multiple concurrent subscribers."""
+        bus = InProcessEventBus()
+        event = {"type": "run.started", "company_id": "c1", "run_id": "r1", "payload": {}}
+
+        results = [[], []]
+
+        async def consume(idx: int):
+            async for ev in bus.subscribe("c1"):
+                results[idx].append(ev)
+                break
+
+        tasks = [asyncio.create_task(consume(0)), asyncio.create_task(consume(1))]
+        await asyncio.sleep(0)
+        await bus.publish(event)
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=2.0)
+
+        assert len(results[0]) == 1
+        assert len(results[1]) == 1
+        assert results[0][0] == event
+        assert results[1][0] == event
+
+    @pytest.mark.asyncio
+    async def test_backpressure_full_queue_drops_event(self):
+        """InProcessEventBus drops events when queue is full (no OOM)."""
+        import agentco.core.event_bus as eb_module
+
+        original_maxsize = eb_module._QUEUE_MAXSIZE
+        eb_module._QUEUE_MAXSIZE = 2  # tiny queue for test
+        try:
+            bus = InProcessEventBus()
+
+            # Subscribe but don't consume — queue fills up
+            queue: asyncio.Queue = asyncio.Queue(maxsize=2)
+            bus._subscribers.append(("c1", queue))
+
+            # Fill the queue
+            for i in range(2):
+                await bus.publish({"type": "run.started", "company_id": "c1", "run_id": f"r{i}", "payload": {}})
+
+            # One more publish should NOT raise — event silently dropped
+            overflow_event = {"type": "overflow", "company_id": "c1", "run_id": "r99", "payload": {}}
+            # Should not raise QueueFull
+            await bus.publish(overflow_event)
+
+            # Queue has exactly 2 items (the first two), overflow dropped
+            assert queue.qsize() == 2
+        finally:
+            eb_module._QUEUE_MAXSIZE = original_maxsize
+
+    @pytest.mark.asyncio
+    async def test_message_ordering_preserved(self):
+        """InProcessEventBus delivers events in FIFO order."""
+        bus = InProcessEventBus()
+
+        events = [
+            {"type": "run.started", "company_id": "c1", "run_id": "r1", "seq": i, "payload": {}}
+            for i in range(5)
+        ]
+
+        received = []
+
+        async def consume():
+            async for ev in bus.subscribe("c1"):
+                received.append(ev["seq"])
+                if len(received) == 5:
+                    break
+
+        task = asyncio.create_task(consume())
+        await asyncio.sleep(0)
+
+        for ev in events:
+            await bus.publish(ev)
+
+        await asyncio.wait_for(task, timeout=2.0)
+
+        assert received == [0, 1, 2, 3, 4], f"Order broken: {received}"
+
+    @pytest.mark.asyncio
+    async def test_subscribe_cleanup_removes_subscriber(self):
+        """After subscribe generator exits, subscriber entry is removed from list."""
+        bus = InProcessEventBus()
+
+        async def consume_one():
+            gen = bus.subscribe("c1")
+            try:
+                async for _ in gen:
+                    break  # consume exactly one event, then exit
+            finally:
+                await gen.aclose()  # explicit close to ensure finally block runs
+
+        # Publish one event so consume_one can exit cleanly
+        task = asyncio.create_task(consume_one())
+        await asyncio.sleep(0)
+        await bus.publish({"type": "x", "company_id": "c1", "run_id": "r1", "payload": {}})
+        await asyncio.wait_for(task, timeout=2.0)
+        # Give event loop one iteration for async gen finalization
+        await asyncio.sleep(0)
+
+        # After explicit close, no lingering subscribers
+        assert len(bus._subscribers) == 0

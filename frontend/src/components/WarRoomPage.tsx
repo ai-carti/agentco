@@ -379,8 +379,8 @@ export default function WarRoomPage() {
             data-testid="stop-btn"
             variant="danger"
             onClick={handleStop}
-            disabled={stopping || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'}
-            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: (runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') ? 0.4 : 1 }}
+            disabled={stopping || runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'}
+            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: (runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') ? 0.4 : 1 }}
           >
             {stopping ? 'Stopping…' : 'Stop'}
           </Button>

@@ -21,7 +21,8 @@ export interface FeedMessage {
   timestamp: string
 }
 
-export type RunStatus = 'active' | 'stopped' | 'done' | 'failed'
+// SIRI-UX-121: 'idle' = no run started yet (Stop button disabled on initial load)
+export type RunStatus = 'idle' | 'active' | 'stopped' | 'done' | 'failed'
 
 interface WarRoomState {
   agents: WarRoomAgent[]
@@ -119,7 +120,8 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
   agents: [],
   messages: [],
   cost: 0,
-  runStatus: 'active' as RunStatus,
+  // SIRI-UX-121: start in 'idle' so Stop button is disabled until real run starts
+  runStatus: 'idle' as RunStatus,
   prevStatuses: {},
   flashingAgents: new Set<string>(),
 
@@ -161,7 +163,8 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
       agents: MOCK_AGENTS,
       messages: MOCK_MESSAGES,
       cost: 0.042,
-      runStatus: 'active' as RunStatus,
+      // SIRI-UX-121: mock mode still uses 'idle' — no real run is happening
+      runStatus: 'idle' as RunStatus,
     }),
 
   reset: () => {
@@ -170,7 +173,7 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
       agents: [],
       messages: [],
       cost: 0,
-      runStatus: 'active' as RunStatus,
+      runStatus: 'idle' as RunStatus,
       prevStatuses: {},
       flashingAgents: new Set<string>(),
     })

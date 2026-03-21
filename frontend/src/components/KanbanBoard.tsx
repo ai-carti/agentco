@@ -864,6 +864,12 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
 
   const handleClose = useCallback(() => setSelectedTaskId(null), [])
 
+  // SIRI-UX-119: reset filters when company changes so stale filters don't persist
+  useEffect(() => {
+    clearAllFilters()
+    setSelectedTaskId(null)
+  }, [companyId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // SIRI-UX-061 / SIRI-UX-100: close Create modal on Escape — gated on showCreateModal to avoid always-on listener
   useEffect(() => {
     if (!showCreateModal) return
