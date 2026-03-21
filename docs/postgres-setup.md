@@ -108,6 +108,71 @@ def list_items_sync(session: Session = Depends(get_session)):
 Все миграции используют SQLAlchemy-абстракции (`sa.Text`, `sa.DateTime`, etc.).  
 SQLite-специфичные `PRAGMA` гуарданы проверкой `bind.dialect.name == "sqlite"`.
 
+## Миграция vector memory: sqlite-vec → pgvector (ALEX-POST-011)
+
+При переходе на Postgres память агентов автоматически использует `pgvector` вместо `sqlite-vec`.
+
+### 1. Установить pgvector зависимости
+
+```bash
+uv add "agentco[postgres-vector]"
+# или: pip install "agentco[postgres-vector]"
+```
+
+Это устанавливает `pgvector>=0.3` и `numpy`.
+
+### 2. Включить pgvector расширение в Postgres
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+Это делается автоматически при первом подключении `PgVectorStore`.
+
+### 3. Как работает выбор backend
+
+```python
+# backend/src/agentco/memory/vector_store.py
+from agentco.memory.vector_store import get_vector_store
+
+# sqlite:// → SqliteVecStore (sqlite-vec)
+store = get_vector_store("sqlite:///./agentco_memory.db")
+
+# postgresql:// → PgVectorStore (pgvector)
+store = get_vector_store("postgresql://user:pass@localhost/agentco")
+```
+
+`MemoryStore` в `memory/store.py` автоматически выбирает реализацию по `DATABASE_URL`.
+
+### 4. Схема таблицы (pgvector)
+
+```sql
+CREATE TABLE agent_memory_meta (
+    id         TEXT PRIMARY KEY,
+    agent_id   TEXT NOT NULL,
+    task_id    TEXT,
+    content    TEXT NOT NULL,
+    embedding  vector(1536),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- HNSW индекс для быстрого ANN поиска:
+CREATE INDEX agent_memory_hnsw_idx
+    ON agent_memory_meta USING hnsw (embedding vector_cosine_ops);
+```
+
+### 5. Миграция данных из SQLite в Postgres
+
+При переходе необходимо перегенерировать эмбеддинги (или экспортировать/импортировать):
+
+```bash
+# Экспорт из SQLite:
+sqlite3 agentco_memory.db "SELECT agent_id, task_id, content FROM agent_memory_meta" > memories.csv
+
+# Повторно сохранить через MemoryService (перегенерирует эмбеддинги):
+DATABASE_URL=postgresql://... python scripts/migrate_memory.py memories.csv
+```
+
 ## Откат на SQLite
 
 ```bash
@@ -117,4 +182,4 @@ unset DATABASE_URL
 DATABASE_URL=sqlite:///./agentco.db
 ```
 
-Дополнительные зависимости (`psycopg2-binary`) не мешают работе SQLite.
+Дополнительные зависимости (`psycopg2-binary`, `pgvector`) не мешают работе SQLite.

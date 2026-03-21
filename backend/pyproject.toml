@@ -44,6 +44,13 @@ async = [
     "sqlalchemy[asyncio]>=2.0",
     "asyncpg>=0.29",
 ]
+# pgvector extension for vector memory on PostgreSQL (ALEX-POST-011).
+# Install with: pip install "agentco[postgres-vector]"
+# Requires pgvector extension in the database: CREATE EXTENSION IF NOT EXISTS vector;
+postgres-vector = [
+    "pgvector>=0.3",
+    "numpy>=1.26",
+]
 # Redis pub/sub for multi-worker EventBus (ALEX-POST-002).
 # Install with: pip install "agentco[redis]" or uv add "agentco[redis]"
 # Required when REDIS_URL env var is set.
