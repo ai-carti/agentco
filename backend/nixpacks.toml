@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python312", "gcc"]
+
+[phases.install]
+cmds = [
+  "pip install uv",
+  "uv sync --no-dev --frozen"
+]
+
+[start]
+cmd = "PYTHONPATH=src python -c 'from agentco.orm.base import Base; from agentco.orm.user import UserORM; from agentco.orm.company import CompanyORM; from agentco.orm.agent import AgentORM; from agentco.orm.agent_library import AgentLibraryORM; from agentco.orm.task import TaskORM; from agentco.orm.run import RunORM, RunEventORM; from agentco.orm.credential import CredentialORM; from agentco.orm.mcp_server import McpServerORM; from agentco.db.session import engine; Base.metadata.create_all(bind=engine)' && PYTHONPATH=src uvicorn agentco.main:app --host 0.0.0.0 --port $PORT"
