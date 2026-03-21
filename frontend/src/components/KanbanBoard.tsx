@@ -917,6 +917,30 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     }
   }, [companyId])
 
+  // SIRI-POST-005: sync task order from another tab via storage event
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== `kanban-task-order-${companyId}`) return
+      if (!e.newValue) return
+      try {
+        const order: string[] = JSON.parse(e.newValue)
+        const currentTasks = useAgentStore.getState().tasks
+        const sorted = [...currentTasks].sort((a, b) => {
+          const ai = order.indexOf(a.id)
+          const bi = order.indexOf(b.id)
+          if (ai === -1) return 1
+          if (bi === -1) return -1
+          return ai - bi
+        })
+        setTasks(sorted)
+      } catch {
+        // malformed data — ignore
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [companyId, setTasks])
+
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: TaskStatus) => {
     e.preventDefault()
     setDragOverCol(null)

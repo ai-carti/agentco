@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import KanbanBoard from '../components/KanbanBoard'
 import { useAgentStore } from '../store/agentStore'
@@ -176,5 +176,35 @@ describe('KanbanBoard', () => {
     // press Escape
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByTestId('confirm-delete-dialog')).not.toBeInTheDocument()
+  })
+
+  // SIRI-POST-005: storage event cross-tab sync
+  it('SIRI-POST-005: updates task order when storage event fires from another tab', async () => {
+    useAgentStore.setState({
+      tasks: [
+        { id: 'ta', title: 'Task A', status: 'todo', assignee_name: 'Alice' },
+        { id: 'tb', title: 'Task B', status: 'todo', assignee_name: 'Bob' },
+        { id: 'tc', title: 'Task C', status: 'todo', assignee_name: 'Carol' },
+      ],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    // Simulate another tab writing a reordered key
+    const newOrder = ['tc', 'ta', 'tb']
+    const storageEvent = new StorageEvent('storage', {
+      key: 'kanban-task-order-c1',
+      newValue: JSON.stringify(newOrder),
+      storageArea: window.localStorage,
+    })
+
+    await act(async () => {
+      window.dispatchEvent(storageEvent)
+    })
+
+    // After sync, tasks in todo column should reflect new order: tc first, then ta, then tb
+    const todoColumn = screen.getByTestId('kanban-column-todo')
+    const cards = todoColumn.querySelectorAll('[data-testid^="task-card-"]')
+    const ids = Array.from(cards).map((c) => c.getAttribute('data-testid')?.replace('task-card-', ''))
+    expect(ids).toEqual(['tc', 'ta', 'tb'])
   })
 })
