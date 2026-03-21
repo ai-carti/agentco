@@ -6,6 +6,7 @@ from ..services.task import TaskService, InvalidTransitionError
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import UserORM
+from ..models.task import TaskStatus
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/tasks",
@@ -16,8 +17,10 @@ router = APIRouter(
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class TaskCreate(BaseModel):
-    title: str = Field(..., min_length=1)
-    description: str | None = None
+    # ALEX-TD-072: max_length=500 prevents oversized titles hitting DB/LLM
+    title: str = Field(..., min_length=1, max_length=500)
+    # ALEX-TD-072: max_length=5000 for description
+    description: str | None = Field(default=None, max_length=5000)
 
     @field_validator("title")
     @classmethod
@@ -29,8 +32,9 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    # ALEX-TD-072: max_length mirrors TaskCreate
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    description: str | None = Field(default=None, max_length=5000)
 
     @field_validator("title")
     @classmethod
@@ -44,7 +48,9 @@ class TaskUpdate(BaseModel):
 
 
 class TaskStatusUpdate(BaseModel):
-    status: str
+    # ALEX-TD-073: use TaskStatus Literal instead of bare str — validates at API boundary
+    # before reaching service layer FSM check
+    status: TaskStatus
 
 
 class TaskOut(BaseModel):

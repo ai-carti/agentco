@@ -19,10 +19,11 @@ router = APIRouter(prefix="/api/companies/{company_id}/agents", tags=["agents"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class AgentCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-    role: str | None = None
-    system_prompt: str | None = None
-    model: str = "gpt-4o-mini"
+    # ALEX-TD-072: max_length guards to prevent oversized payloads
+    name: str = Field(..., min_length=1, max_length=200)
+    role: str | None = Field(default=None, max_length=200)
+    system_prompt: str | None = Field(default=None, max_length=10000)
+    model: str = Field(default="gpt-4o-mini", max_length=100)
     parent_agent_id: str | None = None  # POST-006
 
     @field_validator("name")
@@ -35,10 +36,11 @@ class AgentCreate(BaseModel):
 
 
 class AgentUpdate(BaseModel):
-    name: str | None = None
-    role: str | None = None
-    system_prompt: str | None = None
-    model: str | None = None
+    # ALEX-TD-072: max_length mirrors AgentCreate
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    role: str | None = Field(default=None, max_length=200)
+    system_prompt: str | None = Field(default=None, max_length=10000)
+    model: str | None = Field(default=None, max_length=100)
 
     @field_validator("name")
     @classmethod
