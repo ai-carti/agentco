@@ -9,6 +9,8 @@ import SkeletonCard from './SkeletonCard'
 import { ClipboardList } from 'lucide-react'
 // SIRI-UX-049: import shared utilities to eliminate duplication
 import { STATUS_COLORS, getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
+// SIRI-POST-006: focus trap hook for modals
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -58,6 +60,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const agents = useAgentStore((s) => s.agents)
   const setTasks = useAgentStore((s) => s.setTasks)
   const tasks = useAgentStore((s) => s.tasks)
+  // SIRI-POST-006: focus trap refs for each modal
+  const editTrapRef = useFocusTrap(editOpen)
+  const deleteTrapRef = useFocusTrap(deleteOpen)
+  const assignTrapRef = useFocusTrap(assignOpen)
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
@@ -385,7 +391,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false) }}
         >
-          <div style={{
+          <div ref={editTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>
@@ -456,7 +462,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteOpen(false) }}
         >
-          <div style={{
+          <div ref={deleteTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>
@@ -499,7 +505,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setAssignOpen(false) }}
         >
-          <div style={{
+          <div ref={assignTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1rem', width: 280,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>
@@ -781,6 +787,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   // SIRI-UX-111: track attempted submit with empty title for validation feedback
   const [titleTouched, setTitleTouched] = useState(false)
   const toast = useToast()
+  // SIRI-POST-006: focus trap for Create Task modal
+  const createModalTrapRef = useFocusTrap(showCreateModal)
 
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
@@ -1135,7 +1143,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           }}
           onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') } }}
         >
-          <div style={{
+          <div ref={createModalTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>

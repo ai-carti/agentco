@@ -4,6 +4,8 @@ import { getStoredToken } from '../api/client'
 import { Bot } from 'lucide-react'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
+// SIRI-POST-006: focus trap
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -31,6 +33,8 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   const [forking, setForking] = useState<string | null>(null)
   const [error, setError] = useState('')
   const toast = useToast()
+  // SIRI-POST-006: focus trap
+  const trapRef = useFocusTrap(true)
 
   // SIRI-UX-065: close on Escape key
   useEffect(() => {
@@ -102,6 +106,7 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
       }}
     >
       <div
+        ref={trapRef}
         style={{
           background: '#1e293b',
           border: '1px solid #334155',

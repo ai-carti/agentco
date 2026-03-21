@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import Button from './Button'
+// SIRI-POST-006: focus trap for modals
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -23,6 +25,8 @@ export default function CompanySettingsPage() {
   const [saving, setSaving] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
+  // SIRI-POST-006: focus trap
+  const deleteTrapRef = useFocusTrap(deleteModalOpen)
 
   useEffect(() => {
     if (!companyId) return
@@ -176,7 +180,7 @@ export default function CompanySettingsPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteModalOpen(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape') setDeleteModalOpen(false) }}
         >
-          <div style={{
+          <div ref={deleteTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 400,
             border: '1px solid #374151',
           }} onClick={(e) => e.stopPropagation()}>
