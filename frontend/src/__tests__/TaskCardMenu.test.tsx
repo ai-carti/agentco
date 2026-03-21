@@ -127,3 +127,29 @@ describe('BUG-019: TaskCard menu actions', () => {
     })
   })
 })
+
+describe('SIRI-UX-120: Edit modal Cancel resets editTitle/editDesc', () => {
+  it('Cancel resets edited values so re-opening shows original task values', () => {
+    renderBoard()
+
+    // Open edit modal
+    fireEvent.click(screen.getByTestId('task-menu-t1'))
+    fireEvent.click(screen.getByText('Edit'))
+
+    // Change title and description
+    const titleInput = screen.getByDisplayValue('Fix login bug')
+    fireEvent.change(titleInput, { target: { value: 'Unsaved changed title' } })
+
+    // Cancel without saving
+    fireEvent.click(screen.getByText('Cancel'))
+    expect(screen.queryByTestId('edit-task-modal')).not.toBeInTheDocument()
+
+    // Re-open edit modal
+    fireEvent.click(screen.getByTestId('task-menu-t1'))
+    fireEvent.click(screen.getByText('Edit'))
+
+    // Should show original values, not unsaved ones
+    expect(screen.getByDisplayValue('Fix login bug')).toBeInTheDocument()
+    expect(screen.queryByDisplayValue('Unsaved changed title')).not.toBeInTheDocument()
+  })
+})

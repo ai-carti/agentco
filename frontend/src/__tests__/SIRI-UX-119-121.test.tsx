@@ -2,7 +2,7 @@
  * SIRI-UX-119: KanbanBoard filters reset on companyId change
  * SIRI-UX-121: WarRoomPage Stop button disabled in idle state
  */
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import KanbanBoard from '../components/KanbanBoard'

@@ -421,7 +421,11 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               <Button
                 variant="secondary"
-                onClick={() => setEditOpen(false)}
+                onClick={() => {
+                  setEditTitle(task.title)
+                  setEditDesc(task.description ?? '')
+                  setEditOpen(false)
+                }}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel

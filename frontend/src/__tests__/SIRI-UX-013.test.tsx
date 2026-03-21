@@ -26,6 +26,8 @@ vi.mock('../context/ToastContext', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   useWarRoomStore.getState().loadMockData()
+  // SIRI-UX-121 fix: loadMockData now sets runStatus='idle'; set to 'active' so Stop is enabled in tests
+  useWarRoomStore.getState().setRunStatus('active')
 })
 
 function renderWarRoom(companyId = 'c1') {
@@ -52,6 +54,8 @@ describe('SIRI-UX-013: Stop button calls API', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
     globalThis.fetch = fetchMock
     renderWarRoom()
+    // SIRI-UX-121: set active so Stop is enabled
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('stop-btn'))
@@ -68,6 +72,7 @@ describe('SIRI-UX-013: Stop button calls API', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => [{ run_id: 'run-1' }] })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('stop-btn'))
@@ -82,6 +87,7 @@ describe('SIRI-UX-013: Stop button calls API', () => {
     globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('stop-btn'))
@@ -97,6 +103,7 @@ describe('SIRI-UX-013: Stop button calls API', () => {
     globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('stop-btn'))

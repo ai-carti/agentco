@@ -1,7 +1,7 @@
 /**
  * SIRI-UX-013 — WarRoomPage Stop button: API call, toast, state
  */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { useWarRoomStore } from '../store/warRoomStore'
@@ -36,6 +36,8 @@ function renderWarRoom() {
 beforeEach(() => {
   useWarRoomStore.getState().reset()
   useWarRoomStore.getState().loadMockData()
+  // SIRI-UX-121 fix: loadMockData now sets runStatus='idle'; set to 'active' so Stop is enabled
+  useWarRoomStore.getState().setRunStatus('active')
   vi.restoreAllMocks()
 })
 
@@ -63,6 +65,8 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     renderWarRoom()
+    // SIRI-UX-121: loadMockData sets runStatus='idle'; enable Stop for this test
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     const stopBtn = screen.getByTestId('stop-btn')
     fireEvent.click(stopBtn)
@@ -95,6 +99,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     fireEvent.click(screen.getByTestId('stop-btn'))
 
@@ -114,6 +119,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     fireEvent.click(screen.getByTestId('stop-btn'))
 
@@ -131,6 +137,7 @@ describe('SIRI-UX-013: WarRoomPage Stop button', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     renderWarRoom()
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     fireEvent.click(screen.getByTestId('stop-btn'))
 
