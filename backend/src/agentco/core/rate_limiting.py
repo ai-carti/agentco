@@ -1,5 +1,5 @@
 """
-Rate limiting configuration (ALEX-POST-003).
+Rate limiting configuration (ALEX-POST-003, ALEX-POST-012).
 
 Provides a module-level Limiter instance to avoid circular imports.
 Import this in handlers instead of importing from main.py.
@@ -13,6 +13,10 @@ Usage in handler:
         ...
 
 main.py registers the limiter on app.state and exception handler.
+
+ALEX-POST-012: Redis-backed storage for multi-replica Railway deployments.
+- If REDIS_URL env var is set → slowapi uses Redis storage (storage_uri=REDIS_URL)
+- If REDIS_URL is not set → fallback to in-memory (single-process, resets on restart)
 """
 import os
 
@@ -42,8 +46,31 @@ def _get_rate_limit_key(request: Request) -> str:
     return get_remote_address(request)
 
 
+def create_limiter(storage_uri: str | None = None) -> Limiter:
+    """Create a Limiter instance with optional Redis storage.
+
+    Args:
+        storage_uri: Redis URL (e.g. redis://localhost:6379/0) or None for in-memory.
+
+    Returns:
+        Configured Limiter instance.
+    """
+    return Limiter(key_func=_get_rate_limit_key, storage_uri=storage_uri)
+
+
+def get_limiter_for_env() -> Limiter:
+    """Create Limiter based on REDIS_URL environment variable.
+
+    - REDIS_URL set → Redis storage (for multi-replica Railway deployments)
+    - REDIS_URL absent → in-memory storage (single-worker fallback)
+    """
+    redis_url = os.environ.get("REDIS_URL") or None
+    return create_limiter(storage_uri=redis_url)
+
+
 # Global Limiter — shared across all handlers
-limiter = Limiter(key_func=_get_rate_limit_key)
+# ALEX-POST-012: uses Redis when REDIS_URL is set, in-memory otherwise
+limiter = get_limiter_for_env()
 
 
 def rate_limit_exceeded_handler(request: Request, exc) -> JSONResponse:
