@@ -32,12 +32,12 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
     const loadModels = async () => {
       try {
         const token = getStoredToken()
-        const res = await fetch(`${BASE_URL}/api/llm/providers`, {
+        const res = await fetch(`${BASE_URL}/api/llm/providers/available`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
         if (!res.ok) throw new Error('Failed to load models')
         const data = await res.json()
-        const list: string[] = data.models ?? data.providers ?? data ?? FALLBACK_MODELS
+        const list: string[] = data.all_models ?? FALLBACK_MODELS
         const resolved = Array.isArray(list) && list.length > 0 ? list : FALLBACK_MODELS
         setModels(resolved)
       } catch {

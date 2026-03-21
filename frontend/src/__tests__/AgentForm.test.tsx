@@ -12,7 +12,7 @@ describe('AgentForm - model selector', () => {
   it('renders a select element for model field', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o', 'claude-sonnet-4-5'] }),
+      json: async () => ({ all_models: ['gpt-4o', 'claude-sonnet-4-5'] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     await waitFor(() => {
@@ -21,10 +21,13 @@ describe('AgentForm - model selector', () => {
     expect(screen.getByTestId('model-select').tagName).toBe('SELECT')
   })
 
-  it('loads model options from GET /api/llm/providers', async () => {
+  it('loads model options from GET /api/llm/providers/available', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o', 'claude-sonnet-4-5'] }),
+      json: async () => ({
+        providers: [{ provider: 'openai', models: ['gpt-4o', 'claude-sonnet-4-5'] }],
+        all_models: ['gpt-4o', 'claude-sonnet-4-5'],
+      }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     await waitFor(() => {
@@ -32,7 +35,7 @@ describe('AgentForm - model selector', () => {
       expect(screen.getByRole('option', { name: 'claude-sonnet-4-5' })).toBeInTheDocument()
     })
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/llm/providers'),
+      expect.stringContaining('/api/llm/providers/available'),
       expect.anything()
     )
   })
@@ -58,7 +61,7 @@ describe('AgentForm - model selector', () => {
   it('cannot submit with empty model', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     const onSubmit = vi.fn()
     render(<AgentForm onSubmit={onSubmit} />)
@@ -75,7 +78,7 @@ describe('AgentForm - model selector', () => {
   it('submits with selected model value', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o', 'gpt-4o-mini'] }),
+      json: async () => ({ all_models: ['gpt-4o', 'gpt-4o-mini'] }),
     })
     const onSubmit = vi.fn()
     render(<AgentForm onSubmit={onSubmit} />)
@@ -95,7 +98,7 @@ describe('AgentForm - model selector', () => {
   it('falls back to hardcoded list when fetch returns empty array', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: [] }),
+      json: async () => ({ all_models: [] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     await waitFor(() => {
@@ -108,7 +111,7 @@ describe('AgentForm - model selector', () => {
   it('shows placeholder option that prevents empty submit', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     await waitFor(() => screen.getByTestId('model-select'))
@@ -122,7 +125,7 @@ describe('AgentForm - BUG-026: SystemPromptEditor integration', () => {
   it('renders SystemPromptEditor textarea in the form', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     await waitFor(() => screen.getByTestId('model-select'))
@@ -132,7 +135,7 @@ describe('AgentForm - BUG-026: SystemPromptEditor integration', () => {
   it('submits form with system_prompt value', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     const onSubmit = vi.fn()
     render(<AgentForm onSubmit={onSubmit} />)
@@ -155,7 +158,7 @@ describe('AgentForm - BUG-026: SystemPromptEditor integration', () => {
   it('submits system_prompt as empty string when not filled', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     const onSubmit = vi.fn()
     render(<AgentForm onSubmit={onSubmit} />)
@@ -173,7 +176,7 @@ describe('AgentForm - BUG-026: SystemPromptEditor integration', () => {
   it('populates system_prompt from initialValues', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ models: ['gpt-4o'] }),
+      json: async () => ({ all_models: ['gpt-4o'] }),
     })
     render(
       <AgentForm
