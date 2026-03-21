@@ -37,6 +37,13 @@ dev = [
 postgres = [
     "psycopg2-binary>=2.9",
 ]
+# Async SQLAlchemy + asyncpg driver (ALEX-POST-010).
+# Install with: pip install "agentco[async]" or uv add "agentco[async]"
+# Required for async FastAPI endpoints with PostgreSQL.
+async = [
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+]
 # Redis pub/sub for multi-worker EventBus (ALEX-POST-002).
 # Install with: pip install "agentco[redis]" or uv add "agentco[redis]"
 # Required when REDIS_URL env var is set.
