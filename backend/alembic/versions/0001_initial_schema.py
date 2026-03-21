@@ -14,8 +14,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Enable WAL mode for SQLite
-    op.execute("PRAGMA journal_mode=WAL;")
+    # Enable WAL mode for SQLite only — PRAGMA is not supported on Postgres
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        op.execute("PRAGMA journal_mode=WAL;")
 
     op.create_table(
         "companies",
