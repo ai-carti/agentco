@@ -127,10 +127,11 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
 
   setAgents: (agents) => set({ agents }),
 
+  // SIRI-UX-125: do NOT add fixed cost per message — cost comes exclusively
+  // from llm_token WS events via addCost(data.cost). Double-counting removed.
   addMessage: (msg) =>
     set((state) => ({
       messages: [...state.messages, msg],
-      cost: state.cost + 0.0031,
     })),
 
   updateAgentStatus: (agentId, status) =>
