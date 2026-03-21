@@ -29,11 +29,21 @@ logger = logging.getLogger(__name__)
 # ─── Cost rates (USD per 1K tokens by model prefix) ─────────────────────────
 
 _COST_PER_1K_TOKENS: dict[str, float] = {
+    # OpenAI
+    "gpt-4o-mini": 0.00015,    # $0.15/1M input tokens
     "gpt-4o": 0.005,
+    "gpt-4-turbo": 0.01,
     "gpt-4": 0.03,
     "gpt-3.5": 0.002,
+    "o3": 0.01,                # o3-mini range
+    "o1": 0.015,
+    # Anthropic
+    "claude-4": 0.015,
+    "claude-3-7": 0.003,
     "claude-3-5": 0.003,
     "claude-3": 0.003,
+    # Google
+    "gemini": 0.00125,         # Gemini 1.5 Pro
     "default": 0.002,
 }
 

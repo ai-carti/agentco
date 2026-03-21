@@ -26,4 +26,4 @@ class AgentRepository(BaseRepository[AgentORM, Agent]):
         )
 
     def list_by_company(self, company_id: str, limit: int | None = None, offset: int | None = None) -> list[Agent]:
-        return self.list(limit=limit, offset=offset, company_id=company_id)
+        return self.list(limit=limit, offset=offset, order_by=AgentORM.created_at.asc(), company_id=company_id)
