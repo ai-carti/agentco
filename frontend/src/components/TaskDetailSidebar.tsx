@@ -318,8 +318,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               ) : logs.length === 0 ? (
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (
-                logs.map((entry, i) => (
-                  <div key={`${entry.timestamp}-${i}`} style={{ marginBottom: '0.25rem' }}>
+                logs.map((entry) => (
+                  <div key={`${entry.timestamp}-${entry.message}`} style={{ marginBottom: '0.25rem' }}>
                     <span style={{ color: '#64748b', marginRight: '0.5rem' }}>
                       [{formatTimestamp(entry.timestamp)}]
                     </span>
@@ -339,11 +339,11 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               <span style={{ fontSize: '0.8rem', color: '#475569' }}>No status changes yet</span>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem', borderLeft: '2px solid #1e293b' }}>
-                {statusHistory.map((entry, i) => {
+                {statusHistory.map((entry) => {
                   const sc = STATUS_COLORS[entry.status] ?? STATUS_COLORS.todo
                   return (
                     <div
-                      key={`${entry.status}-${entry.changed_at}-${i}`}
+                      key={`${entry.status}-${entry.changed_at}`}
                       data-testid={`status-history-${entry.status}`}
                       style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >

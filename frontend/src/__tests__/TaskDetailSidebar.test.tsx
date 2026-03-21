@@ -244,3 +244,69 @@ describe('TaskDetailSidebar — BUG-025 toast on run', () => {
     expect(errorToast!.textContent).toContain('Something went wrong')
   })
 })
+
+// ─── BUG-061: Stable React keys in logs and status history ───────────────────
+
+describe('BUG-061: stable keys in logs and status history', () => {
+  it('renders logs with same timestamp (duplicate key test) without React key warnings', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    // Two entries with the SAME timestamp — with `-${i}` keys they'd be unique,
+    // but after removing index they'd collide. The fix should use timestamp+message.
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        logs: [
+          { timestamp: '2026-03-16T10:00:00Z', message: 'First event' },
+          { timestamp: '2026-03-16T10:00:00Z', message: 'Second event at same time' },
+          { timestamp: '2026-03-16T10:00:00Z', message: 'Third event at same time' },
+        ],
+        status_history: [],
+      }),
+    })
+
+    render(<TaskDetailSidebar {...defaultProps} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('First event')).toBeInTheDocument()
+      expect(screen.getByText('Second event at same time')).toBeInTheDocument()
+    })
+
+    // No React key duplicate warnings
+    const keyWarnings = consoleError.mock.calls.filter((args) =>
+      typeof args[0] === 'string' && args[0].toLowerCase().includes('key')
+    )
+    expect(keyWarnings).toHaveLength(0)
+
+    consoleError.mockRestore()
+  })
+
+  it('renders status history without React key warnings', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        logs: [],
+        status_history: [
+          { status: 'todo', changed_at: '2026-03-16T10:00:00Z' },
+          { status: 'in_progress', changed_at: '2026-03-16T10:01:00Z' },
+          { status: 'done', changed_at: '2026-03-16T10:02:00Z' },
+        ],
+      }),
+    })
+
+    render(<TaskDetailSidebar {...defaultProps} />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status-history-done')).toBeInTheDocument()
+    })
+
+    const keyWarnings = consoleError.mock.calls.filter((args) =>
+      typeof args[0] === 'string' && args[0].toLowerCase().includes('key')
+    )
+    expect(keyWarnings).toHaveLength(0)
+
+    consoleError.mockRestore()
+  })
+})
