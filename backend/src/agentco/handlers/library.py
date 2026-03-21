@@ -1,18 +1,22 @@
 """M3-002: Agent Library + Portfolio endpoints."""
+import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..db.session import get_session
 from ..auth.dependencies import get_current_user
+from ..core.rate_limiting import limiter
 from ..orm.user import UserORM
 from ..orm.agent_library import AgentLibraryORM
 from ..orm.agent import AgentORM
 from ..orm.company import CompanyORM
 
 router = APIRouter(tags=["library"])
+
+_RATE_LIMIT_FORK = os.getenv("RATE_LIMIT_FORK", "20/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -145,7 +149,9 @@ def get_portfolio(
     response_model=AgentOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(_RATE_LIMIT_FORK)
 def fork_agent(
+    request: Request,
     company_id: str,
     body: ForkRequest,
     session: Session = Depends(get_session),

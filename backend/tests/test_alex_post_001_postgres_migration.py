@@ -137,3 +137,30 @@ def test_all_migrations_no_raw_sqlite_pragma():
                 f"{migration_file.name} line {lineno + 1}: PRAGMA not guarded by dialect check.\n"
                 f"Context:\n{context}"
             )
+
+
+def test_migration_0012_exists():
+    """Migration 0012_postgresql_compat.py must exist."""
+    path = Path(__file__).parent.parent / "alembic" / "versions" / "0012_postgresql_compat.py"
+    assert path.exists(), "Migration 0012 not found"
+
+
+def test_migration_0012_revises_0011():
+    """Migration 0012 must revise 0011."""
+    source = _load_migration_source("0012_postgresql_compat.py")
+    assert 'down_revision = "0011"' in source, "0012 should revise 0011"
+    assert 'revision = "0012"' in source, "revision should be 0012"
+
+
+def test_migration_0012_pragma_guarded():
+    """Any PRAGMA in 0012 must be guarded by sqlite dialect check."""
+    source = _load_migration_source("0012_postgresql_compat.py")
+    if "PRAGMA" not in source:
+        return  # no PRAGMA — OK
+    lines = source.splitlines()
+    pragma_lines = [i for i, l in enumerate(lines) if "PRAGMA" in l]
+    for lineno in pragma_lines:
+        context = "\n".join(lines[max(0, lineno - 10):lineno + 1])
+        assert "sqlite" in context.lower() or "dialect" in context.lower(), (
+            f"0012 line {lineno + 1}: PRAGMA not guarded\nContext:\n{context}"
+        )

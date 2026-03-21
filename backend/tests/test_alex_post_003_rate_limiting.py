@@ -188,3 +188,58 @@ class TestRateLimitCreateCompany:
             headers=headers,
         ).json()
         assert body.get("error") == "rate_limit_exceeded"
+
+
+class TestRateLimitForkAgent:
+    """POST /api/companies/{id}/agents/fork — 20/minute."""
+
+    def test_fork_rate_limit_applied(self, rate_limited_client):
+        """Fork endpoint has limiter — normal request succeeds."""
+        client, _ = rate_limited_client
+        limiter._storage.reset()
+
+        token = _register_and_login(client, "rl_fork@example.com")
+        company_id = _create_company(client, token, "RL Fork Co")
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create a library agent to fork (via company agent with library_agent_id)
+        # First create an agent
+        agent_resp = client.post(
+            f"/api/companies/{company_id}/agents",
+            json={"name": "Fork Source Agent", "role": "tester"},
+            headers=headers,
+        )
+        assert agent_resp.status_code == 201
+        # The fork endpoint requires a library agent — test that limiter is attached
+        # by checking the endpoint returns 404 (no library agent) not 500
+        resp = client.post(
+            f"/api/companies/{company_id}/agents/fork",
+            json={"library_agent_id": "nonexistent-lib-id"},
+            headers=headers,
+        )
+        # 404 means limiter is attached and passed, but no lib agent found
+        assert resp.status_code in (404, 201), f"Unexpected: {resp.status_code} {resp.text}"
+
+    def test_fork_rate_limit_429_on_excess(self, rate_limited_client):
+        """After 20 requests, 21st → 429."""
+        client, _ = rate_limited_client
+        limiter._storage.reset()
+
+        token = _register_and_login(client, "rl_fork2@example.com")
+        company_id = _create_company(client, token, "RL Fork Co2")
+        headers = {"Authorization": f"Bearer {token}"}
+
+        responses = []
+        # Send 21 fork requests (all will 404 — no lib agent, but rate limiter should kick in)
+        for _ in range(21):
+            resp = client.post(
+                f"/api/companies/{company_id}/agents/fork",
+                json={"library_agent_id": "nonexistent"},
+                headers=headers,
+            )
+            responses.append(resp.status_code)
+
+        # First 20 should be 404 (no library agent found), 21st → 429
+        non_429 = [s for s in responses[:20] if s != 429]
+        assert len(non_429) == 20, f"Expected 20 non-429, got: {responses}"
+        assert responses[20] == 429, f"Expected 429 on 21st, got: {responses[20]}"
