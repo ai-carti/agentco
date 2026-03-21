@@ -1,7 +1,46 @@
+/**
+ * SIRI-UX-010: SettingsPage LLM Credentials
+ *
+ * Updated for SIRI-UX-117: company-scoped credentials.
+ * SettingsPage first loads /api/companies/, then /api/companies/{id}/credentials.
+ */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import SettingsPage from '../components/SettingsPage'
+import { ToastProvider } from '../context/ToastContext'
+
+const MOCK_COMPANY = { id: 'co-test', name: 'Test Corp' }
+
+const mockCredentials = [
+  { id: '1', provider: 'openai', key_hint: 'sk-...abc1' },
+  { id: '2', provider: 'anthropic', key_hint: 'sk-ant-...xyz2' },
+]
+
+/** Setup fetch: companies first, then credentials, then action responses. */
+function setupFetch(credentials: object[] = [], validateOk = true) {
+  globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+    const method = (init?.method ?? 'GET').toUpperCase()
+
+    if (method === 'GET' && url.match(/\/api\/companies\/?$/)) {
+      return Promise.resolve({ ok: true, json: async () => [MOCK_COMPANY] })
+    }
+    if (method === 'GET' && url.includes('/credentials')) {
+      return Promise.resolve({ ok: true, json: async () => credentials })
+    }
+    if (url.includes('/api/llm/validate-key')) {
+      if (validateOk) return Promise.resolve({ ok: true, json: async () => ({ valid: true }) })
+      return Promise.resolve({ ok: false, status: 401, json: async () => ({ detail: 'Invalid API key' }) })
+    }
+    if (method === 'POST' && url.includes('/credentials')) {
+      return Promise.resolve({ ok: true, json: async () => ({ id: '3', provider: 'openai', key_hint: 'sk-...new1' }) })
+    }
+    if (method === 'DELETE') {
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    }
+    return Promise.resolve({ ok: true, json: async () => [] })
+  })
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -9,45 +48,40 @@ beforeEach(() => {
 
 function renderSettings() {
   return render(
-    <MemoryRouter>
-      <SettingsPage />
-    </MemoryRouter>,
+    <ToastProvider>
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    </ToastProvider>,
   )
 }
 
-const mockCredentials = [
-  { id: '1', provider: 'openai', key_hint: 'sk-...abc1' },
-  { id: '2', provider: 'anthropic', key_hint: 'sk-ant-...xyz2' },
-]
-
 describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
   it('renders LLM Credentials section heading', () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    setupFetch()
     renderSettings()
     expect(screen.getByTestId('llm-credentials-section')).toBeInTheDocument()
   })
 
-  it('shows provider select with openai/anthropic/gemini options', () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+  it('shows provider select with openai/anthropic/gemini options', async () => {
+    setupFetch()
     renderSettings()
+    await waitFor(() => screen.getByTestId('llm-provider-select'))
     const providerSelect = screen.getByTestId('llm-provider-select')
     expect(providerSelect).toBeInTheDocument()
     expect(screen.getByTestId('llm-api-key-input')).toBeInTheDocument()
   })
 
-  it('api key input is type=password', () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+  it('api key input is type=password', async () => {
+    setupFetch()
     renderSettings()
+    await waitFor(() => screen.getByTestId('llm-api-key-input'))
     const keyInput = screen.getByTestId('llm-api-key-input')
     expect(keyInput).toHaveAttribute('type', 'password')
   })
 
-  it('submits validate then POST /api/credentials on form submit', async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET /api/credentials
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // POST /api/llm/validate-key
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '3', provider: 'openai', key_hint: 'sk-...new1' }) }) // POST /api/credentials
-
+  it('submits validate then POST /api/companies/{id}/credentials on form submit', async () => {
+    setupFetch()
     renderSettings()
 
     await waitFor(() => screen.getByTestId('llm-provider-select'))
@@ -57,16 +91,20 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))
 
     await waitFor(() => {
-      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
-      const validateCall = calls.find((c: unknown[]) => (c[0] as string).includes('/api/llm/validate-key'))
+      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as [string, RequestInit?][]
+      const validateCall = calls.find((c) => c[0].includes('/api/llm/validate-key'))
       expect(validateCall).toBeDefined()
-      const postCall = calls.find((c: unknown[]) => (c[1] as RequestInit)?.method === 'POST' && (c[0] as string).includes('/api/credentials') && !(c[0] as string).includes('validate'))
+      const postCall = calls.find(
+        (c) => (c[1]?.method ?? 'GET') === 'POST' && c[0].includes('/credentials') && !c[0].includes('validate'),
+      )
       expect(postCall).toBeDefined()
+      // URL must be company-scoped
+      expect(postCall![0]).toMatch(/\/api\/companies\/[^/]+\/credentials/)
     })
   })
 
   it('shows saved credentials list with hint and delete button', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => mockCredentials })
+    setupFetch(mockCredentials)
     renderSettings()
 
     await waitFor(() => {
@@ -78,10 +116,7 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
   })
 
   it('sends DELETE on credential delete click', async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => mockCredentials }) // GET
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // DELETE
-
+    setupFetch(mockCredentials)
     renderSettings()
 
     await waitFor(() => {
@@ -91,18 +126,16 @@ describe('SIRI-UX-010: SettingsPage LLM Credentials', () => {
     fireEvent.click(screen.getAllByTestId('llm-credential-delete')[0])
 
     await waitFor(() => {
-      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls
-      const deleteCall = calls.find((c: unknown[]) => (c[1] as RequestInit)?.method === 'DELETE')
+      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as [string, RequestInit?][]
+      const deleteCall = calls.find((c) => (c[1]?.method ?? 'GET') === 'DELETE')
       expect(deleteCall).toBeDefined()
-      expect(deleteCall![0]).toContain('/api/credentials/1')
+      // Company-scoped URL
+      expect(deleteCall![0]).toMatch(/\/api\/companies\/[^/]+\/credentials\/1/)
     })
   })
 
   it('shows error toast when validation fails', async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET
-      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ detail: 'Invalid API key' }) }) // validate fail
-
+    setupFetch([], false)
     renderSettings()
 
     await waitFor(() => screen.getByTestId('llm-provider-select'))

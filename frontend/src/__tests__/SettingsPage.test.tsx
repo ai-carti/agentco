@@ -1,7 +1,8 @@
 /**
  * FE-002 — SettingsPage: Real LLM key management
  *
- * Verifies validate-then-save flow, provider options, key masking, and delete.
+ * Updated for SIRI-UX-117: credentials are company-scoped.
+ * SettingsPage first fetches /api/companies/, then /api/companies/{id}/credentials.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -9,9 +10,64 @@ import { MemoryRouter } from 'react-router-dom'
 import SettingsPage from '../components/SettingsPage'
 import { ToastProvider } from '../context/ToastContext'
 
+const MOCK_COMPANY = { id: 'co-1', name: 'Test Corp' }
+
+/**
+ * Setup fetch mock that handles the new company-scoped flow:
+ * 1. GET /api/companies/ → companies
+ * 2. GET /api/companies/{id}/credentials → credentials
+ * 3. POST /api/llm/validate-key → validate
+ * 4. POST /api/companies/{id}/credentials → save
+ * 5. DELETE /api/companies/{id}/credentials/{credId} → delete
+ */
+function setupFetch(opts?: {
+  companies?: object[]
+  credentials?: object[]
+  validateOk?: boolean
+  validateDetail?: string
+  savedCred?: object
+}) {
+  const companies = opts?.companies ?? [MOCK_COMPANY]
+  const credentials = opts?.credentials ?? []
+  const validateOk = opts?.validateOk ?? true
+  const savedCred = opts?.savedCred ?? { id: 'cred-new', provider: 'openai', key_hint: 'sk-...wxyz' }
+
+  globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+    const method = (init?.method ?? 'GET').toUpperCase()
+
+    // GET companies list: /api/companies/ or /api/companies (trailing slash optional)
+    if (method === 'GET' && url.match(/\/api\/companies\/?$/) ) {
+      return Promise.resolve({ ok: true, json: async () => companies })
+    }
+    // GET credentials: /api/companies/{id}/credentials
+    if (method === 'GET' && url.includes('/credentials')) {
+      return Promise.resolve({ ok: true, json: async () => credentials })
+    }
+    // POST validate-key
+    if (url.includes('/api/llm/validate-key')) {
+      if (validateOk) {
+        return Promise.resolve({ ok: true, json: async () => ({ valid: true }) })
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: async () => ({ detail: opts?.validateDetail ?? 'Invalid API key' }),
+      })
+    }
+    // POST save credentials
+    if (method === 'POST' && url.includes('/credentials')) {
+      return Promise.resolve({ ok: true, json: async () => savedCred })
+    }
+    // DELETE credentials
+    if (method === 'DELETE' && url.includes('/credentials')) {
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    }
+    return Promise.resolve({ ok: true, json: async () => [] })
+  })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
-  globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
 })
 
 function renderSettings() {
@@ -24,11 +80,18 @@ function renderSettings() {
   )
 }
 
+// Helper: wait for the form to appear (needs company loaded first)
+async function waitForForm() {
+  await waitFor(() => screen.getByTestId('llm-provider-select'))
+}
+
 // ─── Provider options ─────────────────────────────────────────────────────────
 
 describe('FE-002: SettingsPage provider select', () => {
-  it('has openai, anthropic, gemini options', () => {
+  it('has openai, anthropic, gemini options', async () => {
+    setupFetch()
     renderSettings()
+    await waitForForm()
     const select = screen.getByTestId('llm-provider-select') as HTMLSelectElement
     const values = Array.from(select.options).map((o) => o.value)
     expect(values).toContain('openai')
@@ -36,20 +99,26 @@ describe('FE-002: SettingsPage provider select', () => {
     expect(values).toContain('gemini')
   })
 
-  it('does not have a generic "google" option', () => {
+  it('does not have a generic "google" option', async () => {
+    setupFetch()
     renderSettings()
+    await waitForForm()
     const select = screen.getByTestId('llm-provider-select') as HTMLSelectElement
     const values = Array.from(select.options).map((o) => o.value)
     expect(values).not.toContain('google')
   })
 
-  it('api_key input is type="password"', () => {
+  it('api_key input is type="password"', async () => {
+    setupFetch()
     renderSettings()
+    await waitForForm()
     expect(screen.getByTestId('llm-api-key-input')).toHaveAttribute('type', 'password')
   })
 
-  it('submit button is labelled "Validate & Save"', () => {
+  it('submit button is labelled "Validate & Save"', async () => {
+    setupFetch()
     renderSettings()
+    await waitForForm()
     expect(screen.getByTestId('llm-credentials-submit')).toHaveTextContent('Validate & Save')
   })
 })
@@ -57,25 +126,21 @@ describe('FE-002: SettingsPage provider select', () => {
 // ─── Validate & Save flow ─────────────────────────────────────────────────────
 
 describe('FE-002: Validate & Save flow', () => {
-  it('calls POST /api/llm/validate-key before POST /api/credentials', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] }) // GET /api/credentials
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // POST validate-key
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '99', provider: 'openai', key_hint: 'sk-...1234' }) }) // POST credentials
-
-    globalThis.fetch = fetchMock
+  it('calls POST /api/llm/validate-key before POST /api/companies/{id}/credentials', async () => {
+    setupFetch()
     renderSettings()
-
-    await waitFor(() => screen.getByTestId('llm-provider-select'))
+    await waitForForm()
 
     fireEvent.change(screen.getByTestId('llm-provider-select'), { target: { value: 'openai' } })
     fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: 'sk-test-validkey' } })
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))
 
     await waitFor(() => {
-      const calls = fetchMock.mock.calls as Array<[string, RequestInit?]>
+      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as [string, RequestInit?][]
       const validateIdx = calls.findIndex((c) => c[0].includes('/api/llm/validate-key'))
-      const saveIdx = calls.findIndex((c) => c[0].includes('/api/credentials') && !c[0].includes('validate') && c[1]?.method === 'POST')
+      const saveIdx = calls.findIndex(
+        (c) => c[0].match(/\/api\/companies\/[^/]+\/credentials/) && (c[1]?.method ?? 'GET') === 'POST',
+      )
       expect(validateIdx).toBeGreaterThanOrEqual(0)
       expect(saveIdx).toBeGreaterThanOrEqual(0)
       // Validate must come before save
@@ -84,13 +149,9 @@ describe('FE-002: Validate & Save flow', () => {
   })
 
   it('shows toast.success("API key saved") after successful save', async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '1', provider: 'openai', key_hint: 'sk-...wxyz' }) })
-
+    setupFetch()
     renderSettings()
-    await waitFor(() => screen.getByTestId('llm-provider-select'))
+    await waitForForm()
 
     fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: 'sk-success-key' } })
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))
@@ -100,14 +161,10 @@ describe('FE-002: Validate & Save flow', () => {
     })
   })
 
-  it('shows error and does NOT call /api/credentials when validation fails', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ detail: 'Invalid API key' }) })
-
-    globalThis.fetch = fetchMock
+  it('shows error and does NOT save when validation fails', async () => {
+    setupFetch({ validateOk: false })
     renderSettings()
-    await waitFor(() => screen.getByTestId('llm-provider-select'))
+    await waitForForm()
 
     fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: 'sk-bad-key' } })
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))
@@ -116,25 +173,23 @@ describe('FE-002: Validate & Save flow', () => {
       expect(screen.getByTestId('llm-credentials-error')).toBeInTheDocument()
     })
 
-    // /api/credentials (save) should NOT have been called
-    const calls = fetchMock.mock.calls as Array<[string, RequestInit?]>
-    const saveCall = calls.find((c) => c[0].includes('/api/credentials') && !c[0].includes('validate') && c[1]?.method === 'POST')
+    // POST /api/companies/{id}/credentials (save) should NOT have been called
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as [string, RequestInit?][]
+    const saveCall = calls.find(
+      (c) => c[0].match(/\/api\/companies\/[^/]+\/credentials/) && (c[1]?.method ?? 'GET') === 'POST',
+    )
     expect(saveCall).toBeUndefined()
   })
 
   it('shows toast.error on validation failure', async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ detail: 'Invalid API key' }) })
-
+    setupFetch({ validateOk: false })
     renderSettings()
-    await waitFor(() => screen.getByTestId('llm-provider-select'))
+    await waitForForm()
 
     fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: 'sk-invalid' } })
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))
 
     await waitFor(() => {
-      // Error shown in form or toast
       expect(screen.getByTestId('llm-credentials-error')).toBeInTheDocument()
     })
   })
@@ -143,12 +198,12 @@ describe('FE-002: Validate & Save flow', () => {
 // ─── Credentials list ─────────────────────────────────────────────────────────
 
 describe('FE-002: Credentials list', () => {
-  it('loads and shows existing credentials from GET /api/credentials', async () => {
+  it('loads and shows existing credentials from GET /api/companies/{id}/credentials', async () => {
     const credentials = [
       { id: '1', provider: 'openai', key_hint: 'sk-...abcd' },
       { id: '2', provider: 'anthropic', key_hint: 'sk-...efgh' },
     ]
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => credentials })
+    setupFetch({ credentials })
 
     renderSettings()
 
@@ -161,9 +216,8 @@ describe('FE-002: Credentials list', () => {
   })
 
   it('shows provider badge on each credential', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [{ id: '1', provider: 'gemini', key_hint: 'sk-...zzzz' }],
+    setupFetch({
+      credentials: [{ id: '1', provider: 'gemini', key_hint: 'sk-...zzzz' }],
     })
     renderSettings()
 
@@ -172,16 +226,12 @@ describe('FE-002: Credentials list', () => {
     })
   })
 
-  it('DELETE /api/credentials/{id} on delete click, removes from list', async () => {
+  it('DELETEs /api/companies/{id}/credentials/{credId} on delete click, removes from list', async () => {
     const credentials = [
       { id: 'cred-1', provider: 'openai', key_hint: 'sk-...aaaa' },
       { id: 'cred-2', provider: 'anthropic', key_hint: 'sk-...bbbb' },
     ]
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => credentials }) // GET
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // DELETE
-
-    globalThis.fetch = fetchMock
+    setupFetch({ credentials })
     renderSettings()
 
     await waitFor(() => {
@@ -191,10 +241,10 @@ describe('FE-002: Credentials list', () => {
     fireEvent.click(screen.getAllByTestId('llm-credential-delete')[0])
 
     await waitFor(() => {
-      const calls = fetchMock.mock.calls as Array<[string, RequestInit?]>
-      const deleteCall = calls.find((c) => c[1]?.method === 'DELETE')
+      const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls as [string, RequestInit?][]
+      const deleteCall = calls.find((c) => (c[1]?.method ?? 'GET') === 'DELETE')
       expect(deleteCall).toBeDefined()
-      expect(deleteCall![0]).toContain('/api/credentials/cred-1')
+      expect(deleteCall![0]).toMatch(/\/api\/companies\/[^/]+\/credentials\/cred-1/)
     })
 
     // Item should be removed from the list
@@ -208,9 +258,8 @@ describe('FE-002: Credentials list', () => {
 
 describe('FE-002: Key masking (sk-...xxxx format)', () => {
   it('displays key_hint from backend as-is', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [{ id: '1', provider: 'openai', key_hint: 'sk-...1234' }],
+    setupFetch({
+      credentials: [{ id: '1', provider: 'openai', key_hint: 'sk-...1234' }],
     })
     renderSettings()
 
@@ -220,14 +269,11 @@ describe('FE-002: Key masking (sk-...xxxx format)', () => {
   })
 
   it('generates key_hint (last 4 chars) when backend omits it', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // validate
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: '5', provider: 'openai' }) }) // POST — no key_hint
-
-    globalThis.fetch = fetchMock
+    setupFetch({
+      savedCred: { id: '5', provider: 'openai' }, // no key_hint
+    })
     renderSettings()
-    await waitFor(() => screen.getByTestId('llm-provider-select'))
+    await waitForForm()
 
     fireEvent.change(screen.getByTestId('llm-api-key-input'), { target: { value: 'sk-abcdefghij1234' } })
     fireEvent.click(screen.getByTestId('llm-credentials-submit'))

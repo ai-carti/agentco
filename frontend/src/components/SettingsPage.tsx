@@ -1,3 +1,17 @@
+/**
+ * SettingsPage — LLM Credentials management.
+ *
+ * FE-002 / SIRI-UX-117 fix:
+ * Credentials are company-scoped on the backend:
+ *   GET  /api/companies/{id}/credentials
+ *   POST /api/companies/{id}/credentials
+ *   DEL  /api/companies/{id}/credentials/{credId}
+ *
+ * Flow:
+ *  1. Fetch user's companies (GET /api/companies/)
+ *  2. Use the first company (or let user pick via selector if >1)
+ *  3. Load/save/delete credentials scoped to that company
+ */
 import { useState, useEffect, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
@@ -5,6 +19,11 @@ import { useToast } from '../context/ToastContext'
 import Button from './Button'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
+interface Company {
+  id: string
+  name: string
+}
 
 interface LLMCredential {
   id: string
@@ -58,6 +77,13 @@ function authHeaders(): Record<string, string> {
 
 export default function SettingsPage() {
   const toast = useToast()
+
+  // ── Companies state ──────────────────────────────────────────────────────
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [companiesLoaded, setCompaniesLoaded] = useState(false)
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
+
+  // ── Credentials state ────────────────────────────────────────────────────
   const [provider, setProvider] = useState('openai')
   const [apiKey, setApiKey] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -65,19 +91,37 @@ export default function SettingsPage() {
   const [credentials, setCredentials] = useState<LLMCredential[]>([])
   const [credentialsLoaded, setCredentialsLoaded] = useState(false)
 
+  // ── Step 1: load companies ───────────────────────────────────────────────
   useEffect(() => {
-    globalThis.fetch(`${BASE_URL}/api/credentials`, { headers: authHeaders() })
+    globalThis.fetch(`${BASE_URL}/api/companies/`, { headers: authHeaders() })
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
+      .then((data: Company[]) => {
+        const list = Array.isArray(data) ? data : []
+        setCompanies(list)
+        if (list.length > 0) setSelectedCompanyId(list[0].id)
+        setCompaniesLoaded(true)
+      })
+      .catch(() => setCompaniesLoaded(true))
+  }, [])
+
+  // ── Step 2: load credentials when company is selected ───────────────────
+  useEffect(() => {
+    if (!selectedCompanyId) return
+    setCredentialsLoaded(false)
+    globalThis.fetch(`${BASE_URL}/api/companies/${selectedCompanyId}/credentials`, {
+      headers: authHeaders(),
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: LLMCredential[]) => {
         setCredentials(Array.isArray(data) ? data : [])
         setCredentialsLoaded(true)
       })
       .catch(() => setCredentialsLoaded(true))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [selectedCompanyId])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (!selectedCompanyId) return
     setSubmitError('')
     setSubmitting(true)
 
@@ -100,12 +144,15 @@ export default function SettingsPage() {
         return
       }
 
-      // Step 2: Save credential
-      const saveRes = await globalThis.fetch(`${BASE_URL}/api/credentials`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ provider, api_key: apiKey }),
-      })
+      // Step 2: Save credential (company-scoped)
+      const saveRes = await globalThis.fetch(
+        `${BASE_URL}/api/companies/${selectedCompanyId}/credentials`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ provider, api_key: apiKey }),
+        },
+      )
 
       if (!saveRes.ok) {
         const msg = `Failed to save credential (${saveRes.status})`
@@ -132,11 +179,15 @@ export default function SettingsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    if (!selectedCompanyId) return
     try {
-      const res = await globalThis.fetch(`${BASE_URL}/api/credentials/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      })
+      const res = await globalThis.fetch(
+        `${BASE_URL}/api/companies/${selectedCompanyId}/credentials/${id}`,
+        {
+          method: 'DELETE',
+          headers: authHeaders(),
+        },
+      )
       if (!res.ok) {
         toast.error(`Failed to delete credential (${res.status})`)
         return
@@ -160,105 +211,151 @@ export default function SettingsPage() {
           LLM Credentials
         </h2>
 
-        {/* Add new credential form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <div>
-            <label style={labelStyle}>Provider</label>
+        {/* No companies state */}
+        {companiesLoaded && companies.length === 0 && (
+          <div
+            data-testid="settings-no-company"
+            style={{
+              padding: '1rem',
+              background: '#1f2937',
+              border: '1px solid #374151',
+              borderRadius: 6,
+              color: '#9ca3af',
+              fontSize: '0.875rem',
+            }}
+          >
+            Create a company first to manage LLM credentials.{' '}
+            <Link to="/" style={{ color: '#6c47ff', textDecoration: 'none' }}>
+              Go to Companies →
+            </Link>
+          </div>
+        )}
+
+        {/* Company selector (show only if multiple companies) */}
+        {companiesLoaded && companies.length > 1 && (
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={labelStyle}>Company</label>
             <select
-              data-testid="llm-provider-select"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
+              data-testid="settings-company-select"
+              value={selectedCompanyId ?? ''}
+              onChange={(e) => setSelectedCompanyId(e.target.value)}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
               style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
-              required
             >
-              {PROVIDERS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
+        )}
 
-          <div>
-            <label style={labelStyle}>API Key</label>
-            <input
-              data-testid="llm-api-key-input"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              placeholder="sk-..."
-              style={inputStyle}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-
-          {submitError && (
-            <p
-              data-testid="llm-credentials-error"
-              style={{ color: '#f87171', fontSize: '0.8rem', margin: 0 }}
+        {/* Add new credential form — only show when company is selected */}
+        {companiesLoaded && companies.length > 0 && (
+          <>
+            <form
+              onSubmit={handleSubmit}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}
             >
-              {submitError}
-            </p>
-          )}
-
-          <Button
-            data-testid="llm-credentials-submit"
-            type="submit"
-            variant="primary"
-            disabled={submitting}
-            style={{ alignSelf: 'flex-start' }}
-          >
-            {submitting ? 'Validating…' : 'Validate & Save'}
-          </Button>
-        </form>
-
-        {/* Saved credentials list */}
-        {credentialsLoaded && credentials.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '0 0 0.5rem' }}>
-              Saved credentials
-            </p>
-            {credentials.map((cred) => (
-              <div
-                key={cred.id}
-                data-testid="llm-credential-item"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.5rem 0.75rem',
-                  background: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: 6,
-                  fontSize: '0.875rem',
-                  gap: '0.75rem',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
-                  <span
-                    data-testid="llm-credential-provider"
-                    style={{ color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', flexShrink: 0 }}
-                  >
-                    {cred.provider}
-                  </span>
-                  <span style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {cred.key_hint}
-                  </span>
-                </div>
-                <Button
-                  data-testid="llm-credential-delete"
-                  variant="secondary"
-                  onClick={() => handleDelete(cred.id)}
-                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', flexShrink: 0 }}
+              <div>
+                <label style={labelStyle}>Provider</label>
+                <select
+                  data-testid="llm-provider-select"
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+                  required
                 >
-                  Delete
-                </Button>
+                  {PROVIDERS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
               </div>
-            ))}
-          </div>
+
+              <div>
+                <label style={labelStyle}>API Key</label>
+                <input
+                  data-testid="llm-api-key-input"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  placeholder="sk-..."
+                  style={inputStyle}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+
+              {submitError && (
+                <p
+                  data-testid="llm-credentials-error"
+                  style={{ color: '#f87171', fontSize: '0.8rem', margin: 0 }}
+                >
+                  {submitError}
+                </p>
+              )}
+
+              <Button
+                data-testid="llm-credentials-submit"
+                type="submit"
+                variant="primary"
+                disabled={submitting}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {submitting ? 'Validating…' : 'Validate & Save'}
+              </Button>
+            </form>
+
+            {/* Saved credentials list */}
+            {credentialsLoaded && credentials.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '0 0 0.5rem' }}>
+                  Saved credentials
+                </p>
+                {credentials.map((cred) => (
+                  <div
+                    key={cred.id}
+                    data-testid="llm-credential-item"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.5rem 0.75rem',
+                      background: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: 6,
+                      fontSize: '0.875rem',
+                      gap: '0.75rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                      <span
+                        data-testid="llm-credential-provider"
+                        style={{ color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', flexShrink: 0 }}
+                      >
+                        {cred.provider}
+                      </span>
+                      <span style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {cred.key_hint}
+                      </span>
+                    </div>
+                    <Button
+                      data-testid="llm-credential-delete"
+                      variant="secondary"
+                      onClick={() => handleDelete(cred.id)}
+                      style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', flexShrink: 0 }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
