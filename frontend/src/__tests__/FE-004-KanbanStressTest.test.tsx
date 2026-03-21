@@ -172,7 +172,7 @@ describe('FE-004: KanbanBoard drag & drop stress test', () => {
 
     const errors: Error[] = []
     const origOnError = window.onerror
-    window.onerror = (msg, src, line, col, err) => {
+    window.onerror = (_msg, _src, _line, _col, err) => {
       if (err) errors.push(err)
       return false
     }
