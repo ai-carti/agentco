@@ -199,6 +199,15 @@ export default function GlobalSearch() {
             }}
           />
 
+          {debouncedQuery.length >= 2 && results.length === 0 && (
+            <p
+              data-testid="global-search-empty"
+              style={{ textAlign: 'center', color: '#6b7280', padding: '1rem 0' }}
+            >
+              {`No results for "${debouncedQuery}"`}
+            </p>
+          )}
+
           {results.length > 0 && (
             <div data-testid="search-results" style={{ maxHeight: 360, overflowY: 'auto', padding: '0.5rem 0' }}>
               {(['company', 'agent', 'task'] as const).map((type) => {

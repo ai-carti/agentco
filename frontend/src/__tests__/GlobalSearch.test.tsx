@@ -151,3 +151,41 @@ describe('GlobalSearch — UX-017', () => {
     expect(mockNavigate).toHaveBeenCalled()
   })
 })
+
+describe('GlobalSearch — BUG-059: empty state', () => {
+  it('shows empty state message when query >= 2 chars and no results', () => {
+    renderSearch()
+    fireEvent.click(screen.getByTestId('global-search-trigger'))
+    const input = screen.getByTestId('global-search-input')
+
+    fireEvent.change(input, { target: { value: 'zzznomatch' } })
+    act(() => { vi.advanceTimersByTime(200) })
+
+    const empty = screen.getByTestId('global-search-empty')
+    expect(empty).toBeInTheDocument()
+    expect(empty).toHaveTextContent('No results for "zzznomatch"')
+  })
+
+  it('does NOT show empty state when query < 2 chars', () => {
+    renderSearch()
+    fireEvent.click(screen.getByTestId('global-search-trigger'))
+    const input = screen.getByTestId('global-search-input')
+
+    fireEvent.change(input, { target: { value: 'z' } })
+    act(() => { vi.advanceTimersByTime(200) })
+
+    expect(screen.queryByTestId('global-search-empty')).not.toBeInTheDocument()
+  })
+
+  it('does NOT show empty state when results are found', () => {
+    renderSearch()
+    fireEvent.click(screen.getByTestId('global-search-trigger'))
+    const input = screen.getByTestId('global-search-input')
+
+    fireEvent.change(input, { target: { value: 'Ali' } })
+    act(() => { vi.advanceTimersByTime(200) })
+
+    expect(screen.queryByTestId('global-search-empty')).not.toBeInTheDocument()
+    expect(screen.getByTestId('search-results')).toBeInTheDocument()
+  })
+})
