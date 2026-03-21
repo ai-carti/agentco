@@ -23,6 +23,10 @@ _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
 # ALEX-TD-003 fix: graceful shutdown — cancel all running background tasks on SIGTERM
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Auto-create tables on startup (fallback if Alembic migrations not run)
+    from .orm import Base
+    from .db.session import engine
+    Base.metadata.create_all(bind=engine)
     yield
     # Shutdown: cancel any still-running agent background tasks
     from .services.run import RunService
