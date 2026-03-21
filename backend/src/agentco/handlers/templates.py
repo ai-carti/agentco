@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..db.session import get_session
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..orm.company import CompanyORM
 from ..orm.agent import AgentORM
 from ..templates import TEMPLATES, get_template
@@ -67,7 +67,7 @@ class CompanyFromTemplateOut(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/api/templates", response_model=list[TemplateOut])
-def list_templates(current_user: User = Depends(get_current_user)):
+def list_templates(current_user: UserORM = Depends(get_current_user)):
     """Return all available company templates."""
     return [
         TemplateOut(
@@ -88,7 +88,7 @@ def list_templates(current_user: User = Depends(get_current_user)):
 def create_from_template(
     body: CreateFromTemplateRequest,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Create a company with preset agents from a template — one transaction."""
     template = get_template(body.template_id)

@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 from .base import Base
 
 
-class User(Base):
+class UserORM(Base):
     __tablename__ = "users"
 
     id = Column(Text, primary_key=True)

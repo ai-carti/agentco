@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from ..db.session import get_session
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..orm.mcp_server import MCPServerORM
 from ..repositories.base import NotFoundError
 from ..repositories.agent import AgentRepository
@@ -77,7 +77,7 @@ def create_mcp_server(
     agent_id: str,
     body: MCPServerCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     _resolve_agent(session, company_id, agent_id, current_user.id)
 
@@ -110,7 +110,7 @@ def list_mcp_servers(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     _resolve_agent(session, company_id, agent_id, current_user.id)
     servers = session.scalars(
@@ -128,7 +128,7 @@ def delete_mcp_server(
     agent_id: str,
     server_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     _resolve_agent(session, company_id, agent_id, current_user.id)
     mcp = session.get(MCPServerORM, server_id)

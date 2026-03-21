@@ -105,7 +105,7 @@ def _make_session_with_run(status: str):
     import agentco.orm.agent_library
     import agentco.orm.mcp_server
     from agentco.orm.company import CompanyORM
-    from agentco.orm.user import User
+    from agentco.orm.user import UserORM
     from agentco.orm.run import RunORM
     import uuid
     from datetime import datetime, timezone
@@ -123,7 +123,7 @@ def _make_session_with_run(status: str):
     company_id = str(uuid.uuid4())
     run_id = str(uuid.uuid4())
 
-    user = User(id=user_id, email="test@example.com", hashed_password="x")
+    user = UserORM(id=user_id, email="test@example.com", hashed_password="x")
     company = CompanyORM(id=company_id, name="TestCo", owner_id=user_id)
     run = RunORM(
         id=run_id,

@@ -6,7 +6,7 @@ from .agent_library import AgentLibraryORM
 from .task import TaskORM
 from .run import RunORM, RunEventORM
 from .credential import CredentialORM
-from .mcp_server import McpServerORM
+from .mcp_server import MCPServerORM as McpServerORM
 
 __all__ = [
     "Base",

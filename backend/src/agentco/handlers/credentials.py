@@ -7,7 +7,7 @@ from ..db.session import get_session
 from ..services.credential import CredentialService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 import os
 
@@ -85,7 +85,7 @@ def create_credential(
     company_id: str,
     body: CredentialCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return CredentialService(session).create(
@@ -105,7 +105,7 @@ def create_credential(
 def list_credentials(
     company_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return CredentialService(session).list_by_company(
@@ -124,7 +124,7 @@ def delete_credential(
     company_id: str,
     credential_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         CredentialService(session).delete(
@@ -141,14 +141,14 @@ def delete_credential(
 @router.get("/api/llm/providers", response_model=list[str])
 def list_llm_providers(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     return CredentialService(session).list_providers_for_user(owner_id=current_user.id)
 
 
 @router.get("/api/llm/providers/available")
 def list_available_providers(
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Return all supported providers with their model lists (no key required)."""
     return {
@@ -175,7 +175,7 @@ class ValidateKeyResponse(BaseModel):
 async def validate_llm_key(
     request: Request,
     body: ValidateKeyRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Validate an LLM API key by making a minimal test request."""
     import os

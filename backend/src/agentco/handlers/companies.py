@@ -7,7 +7,7 @@ from ..db.session import get_session
 from ..services.company import CompanyService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 
 _RATE_LIMIT_COMPANIES = os.getenv("RATE_LIMIT_COMPANIES", "5/hour")
@@ -54,7 +54,7 @@ def _to_out(company) -> CompanyOut:
 @router.get("/", response_model=list[CompanyOut])
 def list_companies(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     return [_to_out(c) for c in CompanyService(session).list_all(owner_id=current_user.id)]
 
@@ -65,7 +65,7 @@ def create_company(
     request: Request,
     body: CompanyCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return _to_out(CompanyService(session).create(body.name, owner_id=current_user.id))
@@ -77,7 +77,7 @@ def create_company(
 def get_company(
     company_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-057: ownership check consolidated in service.get_owned()
     try:
@@ -92,7 +92,7 @@ def update_company(
     company_id: str,
     body: CompanyUpdate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-054: single DB hit — ownership check + update merged in service
     try:
@@ -107,7 +107,7 @@ def update_company(
 def delete_company(
     company_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-054: single DB hit — ownership check + delete merged in service
     try:

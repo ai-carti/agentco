@@ -5,7 +5,7 @@ from ..db.session import get_session
 from ..services.task import TaskService, InvalidTransitionError
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/tasks",
@@ -66,7 +66,7 @@ def create_task(
     agent_id: str,
     body: TaskCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).create(
@@ -86,7 +86,7 @@ def list_tasks(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).list_by_agent(
@@ -106,7 +106,7 @@ def get_task(
     agent_id: str,
     task_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).get(
@@ -126,7 +126,7 @@ def update_task(
     task_id: str,
     body: TaskUpdate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).update(
@@ -147,7 +147,7 @@ def update_task_status(
     task_id: str,
     body: TaskStatusUpdate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).update_status(
@@ -169,7 +169,7 @@ def delete_task(
     agent_id: str,
     task_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         TaskService(session).delete(

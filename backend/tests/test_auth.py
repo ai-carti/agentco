@@ -158,7 +158,7 @@ def test_protected_endpoint_without_token_returns_401(auth_client):
 def test_password_is_hashed_not_plaintext(auth_client):
     """Пароль в БД — bcrypt hash, не plaintext."""
     client, engine = auth_client
-    from agentco.orm.user import User as UserORM
+    from agentco.orm.user import UserORM
     from sqlalchemy import select
 
     plain_password = "plaintext_check"

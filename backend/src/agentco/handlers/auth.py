@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..auth.security import hash_password, verify_password, create_access_token
 from ..auth.dependencies import get_current_user
 from ..core.rate_limiting import limiter
@@ -63,11 +63,11 @@ class MeResponse(BaseModel):
 def register(request: Request, body: RegisterRequest, session: Session = Depends(get_session)):
     """Register a new user. Returns user id."""
     # ALEX-TD-005 fix: modern select() API
-    existing = session.scalars(select(User).where(User.email == body.email)).first()
+    existing = session.scalars(select(UserORM).where(UserORM.email == body.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    user = User(
+    user = UserORM(
         id=str(uuid.uuid4()),
         email=body.email,
         hashed_password=hash_password(body.password),
@@ -82,7 +82,7 @@ def register(request: Request, body: RegisterRequest, session: Session = Depends
 def login(request: Request, body: LoginRequest, session: Session = Depends(get_session)):
     """Authenticate user and return JWT access token."""
     # ALEX-TD-005 fix: modern select() API
-    user = session.scalars(select(User).where(User.email == body.email)).first()
+    user = session.scalars(select(UserORM).where(UserORM.email == body.email)).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -93,7 +93,7 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
 
 
 @router.get("/me", response_model=MeResponse)
-def me(current_user: User = Depends(get_current_user)):
+def me(current_user: UserORM = Depends(get_current_user)):
     """Protected endpoint: returns current user info."""
     return MeResponse(
         id=current_user.id,

@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from ..db.session import get_session
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..orm.agent_library import AgentLibraryORM
 from ..orm.agent import AgentORM
 from ..orm.company import CompanyORM
@@ -68,7 +68,7 @@ class PortfolioOut(BaseModel):
 def save_to_library(
     body: LibrarySaveRequest,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     # Find the agent
     agent = session.get(AgentORM, body.agent_id)
@@ -101,7 +101,7 @@ def list_library(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),  # just requires auth
+    current_user: UserORM = Depends(get_current_user),  # just requires auth
 ):
     """ALEX-TD-040: pagination added (default limit=50, max=500) to prevent OOM.
     ALEX-TD-062: ORDER BY created_at DESC for deterministic pagination cursor.
@@ -121,7 +121,7 @@ def list_library(
 def get_portfolio(
     library_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     lib_entry = session.get(AgentLibraryORM, library_id)
     if lib_entry is None:
@@ -149,7 +149,7 @@ def fork_agent(
     company_id: str,
     body: ForkRequest,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     # Check company ownership
     company = session.get(CompanyORM, company_id)

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db.session import get_session
-from ..orm.user import User
+from ..orm.user import UserORM
 from .security import decode_access_token
 
 bearer_scheme = HTTPBearer()
@@ -14,7 +14,7 @@ bearer_scheme = HTTPBearer()
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     session: Session = Depends(get_session),
-) -> User:
+) -> UserORM:
     """Validate Bearer token and return the authenticated user."""
     try:
         user_id = decode_access_token(credentials.credentials)
@@ -26,7 +26,7 @@ def get_current_user(
         )
 
     # ALEX-TD-005 fix: use modern select() instead of legacy session.query()
-    user = session.scalars(select(User).where(User.id == user_id)).first()
+    user = session.scalars(select(UserORM).where(UserORM.id == user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

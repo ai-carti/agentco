@@ -8,7 +8,7 @@ from ..db.session import get_session
 from ..services.agent import AgentService
 from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 
 _RATE_LIMIT_AGENTS = os.getenv("RATE_LIMIT_AGENTS", "20/hour")
@@ -73,7 +73,7 @@ def create_agent(
     company_id: str,
     body: AgentCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).create(
@@ -92,7 +92,7 @@ def create_agent(
 def get_agents_tree(
     company_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """
     POST-006: Returns agents as a nested tree.
@@ -113,7 +113,7 @@ def list_agents(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).list_by_company(
@@ -131,7 +131,7 @@ def get_agent(
     company_id: str,
     agent_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).get(
@@ -149,7 +149,7 @@ def update_agent(
     agent_id: str,
     body: AgentUpdate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).update(
@@ -167,7 +167,7 @@ def delete_agent(
     company_id: str,
     agent_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     try:
         AgentService(session).delete(

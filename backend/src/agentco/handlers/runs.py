@@ -21,7 +21,7 @@ from ..db.session import get_session, SessionLocal
 from ..services.run import RunService
 from ..repositories.base import NotFoundError, ConflictError
 from ..auth.dependencies import get_current_user
-from ..orm.user import User
+from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 
 # Rate limit config from env (ALEX-POST-003 AC: RATE_LIMIT_RUN env var)
@@ -114,7 +114,7 @@ async def create_run(
     company_id: str,
     body: RunCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Create a run with a goal."""
     try:
@@ -140,7 +140,7 @@ async def list_runs(
     offset: int = Query(default=0, ge=0),
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running"""
     if status_filter is not None and status_filter not in VALID_RUN_STATUSES:
@@ -166,7 +166,7 @@ async def get_run(
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Run details with events count."""
     try:
@@ -178,7 +178,7 @@ async def get_run(
     return RunDetailOut(**detail)
 
 
-async def _do_stop_run(company_id: str, run_id: str, session: Session, current_user: User) -> RunOut:
+async def _do_stop_run(company_id: str, run_id: str, session: Session, current_user: UserORM) -> RunOut:
     """Shared stop logic for both POST and PATCH."""
     try:
         run = RunService(session).stop(
@@ -194,7 +194,7 @@ async def patch_stop_run(
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Stop a running run (PATCH — per M2-004 spec)."""
     return await _do_stop_run(company_id, run_id, session, current_user)
@@ -205,7 +205,7 @@ async def stop_run(
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Stop a running run (POST — backward compat)."""
     return await _do_stop_run(company_id, run_id, session, current_user)
@@ -218,7 +218,7 @@ async def list_run_events(
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """List events for a run with pagination (default limit=100, max=1000)."""
     try:
@@ -242,7 +242,7 @@ async def run_task(
     company_id: str,
     task_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Создаёт Run для задачи и запускает агента в background."""
     try:
@@ -266,7 +266,7 @@ async def list_task_runs(
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Список ранов задачи с пагинацией (ALEX-TD-043: default limit=50, max=500)."""
     try:
@@ -288,7 +288,7 @@ async def get_task_run(
     task_id: str,
     run_id: str,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: UserORM = Depends(get_current_user),
 ):
     """Детали рана задачи."""
     try:
