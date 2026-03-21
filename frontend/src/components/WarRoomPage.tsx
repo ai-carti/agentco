@@ -33,12 +33,20 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
   done: 'Done',
 }
 
+// SIRI-UX-129: debounce resize handler to avoid hundreds of setState calls per resize event
 function useIsMobile(): boolean {
   const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
   useEffect(() => {
-    const handler = () => setMobile(window.innerWidth < 640)
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const handler = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => setMobile(window.innerWidth < 640), 120)
+    }
     window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    return () => {
+      window.removeEventListener('resize', handler)
+      if (timer) clearTimeout(timer)
+    }
   }, [])
   return mobile
 }
