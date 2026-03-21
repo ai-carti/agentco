@@ -16,21 +16,8 @@ app = typer.Typer(
 
 @app.command()
 def _run_migrations():
-    """Apply all pending Alembic migrations (best-effort — skips if config not found)."""
-    import os
-    try:
-        from alembic.config import Config
-        from alembic import command
-        ini_path = os.path.join(os.path.dirname(__file__), "..", "..", "alembic.ini")
-        ini_path = os.path.abspath(ini_path)
-        if not os.path.exists(ini_path):
-            print(f"[deploy] alembic.ini not found at {ini_path}, skipping migrations")
-            return
-        alembic_cfg = Config(ini_path)
-        command.upgrade(alembic_cfg, "head")
-        print("[deploy] Alembic migrations applied")
-    except Exception as e:
-        print(f"[deploy] Migration warning (non-fatal): {e}")
+    """Schema is created via Base.metadata.create_all in app lifespan."""
+    pass
 
 
 @app.command()
