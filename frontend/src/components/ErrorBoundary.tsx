@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { reportError } from '../utils/errorReporter'
 
 interface Props {
   children: ReactNode
@@ -20,7 +21,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
-    console.error('[ErrorBoundary] caught:', error, info.componentStack)
+    reportError(error, info)
   }
 
   handleReload = () => {
