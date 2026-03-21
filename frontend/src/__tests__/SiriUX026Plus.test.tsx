@@ -105,14 +105,26 @@ describe('SIRI-UX-029: Button component - disabled state is visually distinct', 
 
 // ─── SIRI-UX-030: SettingsPage API key input focus ring ─────────────────────
 describe('SIRI-UX-030: SettingsPage - API key input has visible focus ring', () => {
-  it('api key input has onFocus/onBlur handlers for focus ring', () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+  // SIRI-UX-117 fix: SettingsPage now loads companies first, then shows form.
+  // Tests must await company load before querying the input.
+  function setupCompanyFetch() {
+    globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      const method = (init?.method ?? 'GET').toUpperCase()
+      if (method === 'GET' && url.match(/\/api\/companies\/?$/)) {
+        return Promise.resolve({ ok: true, json: async () => [{ id: 'co-1', name: 'Acme' }] })
+      }
+      return Promise.resolve({ ok: true, json: async () => [] })
+    })
+  }
+
+  it('api key input has onFocus/onBlur handlers for focus ring', async () => {
+    setupCompanyFetch()
     render(
       <MemoryRouter>
         <SettingsPage />
       </MemoryRouter>
     )
-    const apiKeyInput = screen.getByTestId('llm-api-key-input')
+    const apiKeyInput = await screen.findByTestId('llm-api-key-input')
     // Store initial border color before focus
     const initialBorderColor = apiKeyInput.style.borderColor
     fireEvent.focus(apiKeyInput)
@@ -126,14 +138,14 @@ describe('SIRI-UX-030: SettingsPage - API key input has visible focus ring', () 
     expect(blurredBorderColor).toBe(initialBorderColor)
   })
 
-  it('api key input has outline:none (no default browser outline)', () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+  it('api key input has outline:none (no default browser outline)', async () => {
+    setupCompanyFetch()
     render(
       <MemoryRouter>
         <SettingsPage />
       </MemoryRouter>
     )
-    const apiKeyInput = screen.getByTestId('llm-api-key-input')
+    const apiKeyInput = await screen.findByTestId('llm-api-key-input')
     expect(apiKeyInput.style.outline).toBe('none')
   })
 })
