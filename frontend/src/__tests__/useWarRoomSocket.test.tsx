@@ -255,4 +255,56 @@ describe('useWarRoomSocket', () => {
     const costAfter = useWarRoomStore.getState().cost
     expect(costAfter).toBeCloseTo(costBefore + 0.0012, 6)
   })
+
+  it('SIRI-UX-126: ignores message event with missing id', () => {
+    useWarRoomStore.getState().reset()
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+    act(() => {
+      MockWebSocket.instances[0].triggerMessage({
+        type: 'message',
+        // no id field
+        content: 'Hello',
+        senderId: 'agent-1',
+        senderName: 'Alex',
+      })
+    })
+    expect(useWarRoomStore.getState().messages).toHaveLength(0)
+  })
+
+  it('SIRI-UX-126: ignores message event with non-string content', () => {
+    useWarRoomStore.getState().reset()
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+    act(() => {
+      MockWebSocket.instances[0].triggerMessage({
+        type: 'message',
+        id: 'msg-bad',
+        content: 42, // not a string
+        senderId: 'agent-1',
+        senderName: 'Alex',
+      })
+    })
+    expect(useWarRoomStore.getState().messages).toHaveLength(0)
+  })
+
+  it('SIRI-UX-126: accepts valid message event with id and string content', () => {
+    useWarRoomStore.getState().reset()
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+    act(() => {
+      MockWebSocket.instances[0].triggerMessage({
+        type: 'message',
+        id: 'msg-valid',
+        content: 'Valid message',
+        senderId: 'agent-1',
+        senderName: 'Alex',
+        targetId: 'agent-2',
+        targetName: 'Bob',
+        timestamp: new Date().toISOString(),
+      })
+    })
+    expect(useWarRoomStore.getState().messages).toHaveLength(1)
+    expect(useWarRoomStore.getState().messages[0].id).toBe('msg-valid')
+  })
 })

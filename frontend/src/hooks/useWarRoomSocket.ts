@@ -72,7 +72,12 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
             addCost(data.cost)
           }
         } else if (data.type === 'message') {
-          addMessage(data as unknown as FeedMessage)
+          // SIRI-UX-126: validate payload shape before addMessage to avoid undefined fields in Activity Feed
+          if (!data.id || typeof data.content !== 'string') {
+            // silently skip malformed message event
+          } else {
+            addMessage(data as unknown as FeedMessage)
+          }
         } else if (data.type === 'run.completed') {
           // SIRI-UX-079: handle run lifecycle events
           setRunStatus('done')

@@ -120,6 +120,7 @@ export default function CompanyPage() {
   const currentCompany = useAgentStore((s) => s.currentCompany)
   const [tasksLoaded, setTasksLoaded] = useState(false)
   const [agentsLoaded, setAgentsLoaded] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [taskOffset, setTaskOffset] = useState(0)
   const [hasMoreTasks, setHasMoreTasks] = useState(false)
   const TASK_LIMIT = 50
@@ -152,17 +153,28 @@ export default function CompanyPage() {
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
     fetch(`${BASE_URL}/api/companies/${id}`, { headers, signal })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         if (data) setCurrentCompany({ id: data.id, name: data.name })
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+        setLoadError('Failed to load company. Please try again.')
+        toast.error('Failed to load company. Please try again.')
+      })
 
+    setLoadError(null)
     setTasksLoaded(false)
     setTaskOffset(0)
     setHasMoreTasks(false)
     fetch(`${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=0`, { headers, signal })
-      .then((res) => (res.ok ? res.json() : []))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         const items = Array.isArray(data) ? data : []
         setTasks(items)
@@ -170,18 +182,29 @@ export default function CompanyPage() {
         setTaskOffset(items.length)
         setTasksLoaded(true)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name !== 'AbortError') {
+          setLoadError('Failed to load tasks. Please try again.')
+          toast.error('Failed to load tasks. Please try again.')
+        }
         setTasksLoaded(true)
       })
 
     setAgentsLoaded(false)
     fetch(`${BASE_URL}/api/companies/${id}/agents`, { headers, signal })
-      .then((res) => (res.ok ? res.json() : []))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
         setAgentsLoaded(true)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name !== 'AbortError') {
+          setLoadError('Failed to load agents. Please try again.')
+          toast.error('Failed to load agents. Please try again.')
+        }
         setAgentsLoaded(true)
       })
 
@@ -191,6 +214,7 @@ export default function CompanyPage() {
       setTasks([])
       setAgents([])
       setAgentsLoaded(false)
+      setLoadError(null)
       setActiveCompanyTab(null)
     }
   }, [id, setCurrentCompany, setTasks, setAgents, setActiveCompanyTab])
@@ -243,6 +267,24 @@ export default function CompanyPage() {
 
   return (
     <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* SIRI-UX-127: error state — shown instead of silent empty page on fetch failures */}
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            margin: '1rem',
+            padding: '0.875rem 1rem',
+            background: 'rgba(127, 29, 29, 0.85)',
+            border: '1px solid #b91c1c',
+            borderRadius: '0.5rem',
+            color: '#fee2e2',
+            fontSize: '0.875rem',
+          }}
+        >
+          {loadError}
+        </div>
+      )}
+
       {/* Company header breadcrumb */}
       {currentCompany && (
         <CompanyHeader

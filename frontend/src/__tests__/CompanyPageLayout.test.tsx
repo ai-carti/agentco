@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import React from 'react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import CompanyPage from '../components/CompanyPage'
 
@@ -52,7 +53,18 @@ vi.mock('../api/client', () => ({
   getStoredToken: vi.fn(() => null),
 }))
 
-// Mock fetch
+// SIRI-UX-127: mock ToastContext to capture toast.error calls
+const mockToastError = vi.fn()
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => ({
+    success: vi.fn(),
+    error: mockToastError,
+    info: vi.fn(),
+  }),
+  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+// Mock fetch — default: success with empty data
 globalThis.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
@@ -73,6 +85,12 @@ function renderCompanyPage() {
 describe('CompanyPage Layout (UX-POLISH-003)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockToastError.mockClear()
+    // Restore default fetch mock
+    ;(globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    })
   })
 
   it('renders tab navigation with War Room and Board tabs', () => {
@@ -118,5 +136,40 @@ describe('CompanyPage Layout (UX-POLISH-003)', () => {
   it('tab panel has correct aria attributes', () => {
     renderCompanyPage()
     expect(screen.getByRole('tablist')).toBeInTheDocument()
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SIRI-UX-127: CompanyPage calls toast.error on fetch failures (not silent fail)
+// ──────────────────────────────────────────────────────────────────────────────
+describe('SIRI-UX-127: CompanyPage calls toast.error on fetch failure', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockToastError.mockClear()
+  })
+
+  it('calls toast.error when fetches fail with network error', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+    renderCompanyPage()
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalled()
+    })
+
+    expect(mockToastError.mock.calls[0][0]).toMatch(/failed|error/i)
+  })
+
+  it('calls toast.error when fetch returns non-ok response (401)', async () => {
+    globalThis.fetch = vi.fn()
+      .mockResolvedValue({ ok: false, status: 401, json: async () => ({}) } as Response)
+
+    renderCompanyPage()
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalled()
+    })
+
+    expect(mockToastError.mock.calls[0][0]).toMatch(/failed|error/i)
   })
 })
