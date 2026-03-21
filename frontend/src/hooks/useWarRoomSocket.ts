@@ -35,6 +35,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const addMessage = useWarRoomStore((s) => s.addMessage)
   const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
+  const addCost = useWarRoomStore((s) => s.addCost)
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return
@@ -65,7 +66,12 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         })
 
         // Update warRoomStore based on event type
-        if (data.type === 'message') {
+        if (data.type === 'llm_token') {
+          // SIRI-POST-004: aggregate real cost from WS events
+          if (typeof data.cost === 'number') {
+            addCost(data.cost)
+          }
+        } else if (data.type === 'message') {
           addMessage(data as unknown as FeedMessage)
         } else if (data.type === 'run.completed') {
           // SIRI-UX-079: handle run lifecycle events
@@ -124,7 +130,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         }
       }, delay)
     }
-  }, [companyId, addMessage, updateAgentStatus, setRunStatus])
+  }, [companyId, addMessage, updateAgentStatus, setRunStatus, addCost])
 
   useEffect(() => {
     unmountedRef.current = false

@@ -238,4 +238,21 @@ describe('useWarRoomSocket', () => {
       })
     }).not.toThrow()
   })
+
+  it('SIRI-POST-004: llm_token event with cost updates cost counter in store', () => {
+    useWarRoomStore.getState().reset()
+    renderHook(() => useWarRoomSocket('run-1'))
+    act(() => { MockWebSocket.instances[0].open() })
+
+    const costBefore = useWarRoomStore.getState().cost
+    act(() => {
+      MockWebSocket.instances[0].triggerMessage({
+        type: 'llm_token',
+        id: 'tok-1',
+        cost: 0.0012,
+      })
+    })
+    const costAfter = useWarRoomStore.getState().cost
+    expect(costAfter).toBeCloseTo(costBefore + 0.0012, 6)
+  })
 })
