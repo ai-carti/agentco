@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAgentStore } from '../store/agentStore'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const EXPANDED_WIDTH = 240
 const COLLAPSED_WIDTH = 48
 const STORAGE_KEY = 'sidebar:collapsed'
 const TABLET_BREAKPOINT = 1024
-const MOBILE_BREAKPOINT = 640
 
 function getInitialCollapsed(): boolean {
   if (typeof window === 'undefined') return false
@@ -15,13 +15,9 @@ function getInitialCollapsed(): boolean {
   return window.innerWidth < TABLET_BREAKPOINT
 }
 
-function isMobile(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT
-}
-
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
-  const [mobile, setMobile] = useState(isMobile)
+  const mobile = useIsMobile()
   const currentCompany = useAgentStore((s) => s.currentCompany)
 
   const warRoomTo = currentCompany ? `/companies/${currentCompany.id}` : '/'
@@ -32,14 +28,6 @@ export default function Sidebar() {
     { to: '/library', label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library' },
     { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
   ]
-
-  useEffect(() => {
-    const handleResize = () => {
-      setMobile(isMobile())
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
