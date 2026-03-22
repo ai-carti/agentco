@@ -15,7 +15,7 @@ from typing import Any
 
 import litellm
 
-from agentco.memory.store import MemoryStore
+from agentco.memory.vector_store import VectorStore, SqliteVecStore
 
 _EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 # Use AGENTCO_MEMORY_DB if set, else fall back to AGENTCO_DB_PATH, else default
@@ -26,11 +26,19 @@ class MemoryService:
     """
     Async сервис памяти агентов.
 
-    Использует LiteLLM для получения embeddings и MemoryStore для хранения.
+    Использует LiteLLM для получения embeddings и VectorStore для хранения.
+
+    ALEX-TD-077: принимает VectorStore-совместимый объект в конструкторе.
+    Для обратной совместимости строка db_path по-прежнему создаёт SqliteVecStore.
     """
 
-    def __init__(self, db_path: str = _DEFAULT_DB) -> None:
-        self._store = MemoryStore(db_path)
+    def __init__(self, store_or_db_path: "VectorStore | str" = _DEFAULT_DB) -> None:
+        if isinstance(store_or_db_path, str):
+            # backward-compat: db_path string → create SqliteVecStore
+            self._store: VectorStore = SqliteVecStore(db_path=store_or_db_path)
+        else:
+            # ALEX-TD-077: accept any VectorStore-compatible object
+            self._store = store_or_db_path
 
     def close(self) -> None:
         self._store.close()
