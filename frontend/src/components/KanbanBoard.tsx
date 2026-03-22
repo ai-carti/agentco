@@ -629,7 +629,7 @@ function FilterBar({
                 <button
                   key={agent.id}
                   data-testid={`filter-agent-option-${agent.id}`}
-                  role="menuitem"
+                  role="menuitemcheckbox"
                   aria-checked={selectedAgents.includes(agent.id)}
                   onClick={() => onToggleAgent(agent.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleAgent(agent.id) } }}
@@ -675,7 +675,7 @@ function FilterBar({
                 <button
                   key={p}
                   data-testid={`filter-priority-option-${p}`}
-                  role="menuitem"
+                  role="menuitemcheckbox"
                   aria-checked={selectedPriorities.includes(p)}
                   onClick={() => onTogglePriority(p)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTogglePriority(p) } }}

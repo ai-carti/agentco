@@ -211,8 +211,8 @@ describe('KanbanBoard', () => {
   // --- SIRI-UX-130: filter buttons must use role="menuitemcheckbox" for aria-checked ---
   it('SIRI-UX-130: agent filter options have role=menuitemcheckbox', () => {
     useAgentStore.setState({
-      agents: [{ id: 'a1', name: 'Alice', role: 'dev', status: 'idle', tasks: [] }],
-      tasks: [],
+      agents: [{ id: 'a1', name: 'Alice', role: 'dev', status: 'idle' }],
+      tasks: [{ id: 't1', title: 'Task', status: 'todo' }],
     })
     renderWithToast(<KanbanBoard companyId="c1" />)
 

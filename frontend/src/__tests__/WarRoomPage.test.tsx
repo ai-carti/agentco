@@ -303,25 +303,12 @@ describe('WarRoomPage', () => {
 
   // --- SIRI-UX-128: expandedMessages resets on companyId change (in-place navigation) ---
   it('SIRI-UX-128: clears expandedMessages when companyId changes via navigation', () => {
-    // Use a navigator component inside MemoryRouter so companyId changes in-place
-    // (same component instance stays mounted, only param changes)
-    function NavTrigger() {
-      const navigate = (window as any).__testNavigate
-      return (
-        <button
-          data-testid="navigate-btn"
-          onClick={() => navigate?.('/companies/comp-B/warroom')}
-        >
-          Go B
-        </button>
-      )
-    }
-
     let navigateFn: ((path: string) => void) | null = null
 
     function RouterInspector() {
-      const nav = require('react-router-dom').useNavigate()
-      navigateFn = nav
+      // Capture the navigate function from inside the router
+      const { useNavigate } = require('react-router-dom')
+      navigateFn = useNavigate()
       return null
     }
 
@@ -336,7 +323,7 @@ describe('WarRoomPage', () => {
 
     act(() => { vi.advanceTimersByTime(100) })
 
-    // Add a long message and expand it in comp-A
+    // Expand a long message in comp-A
     act(() => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-expand-128',
@@ -352,17 +339,15 @@ describe('WarRoomPage', () => {
     const outerMsgs = screen.getAllByTestId('feed-message')
     const longMsgOuter = outerMsgs[outerMsgs.length - 1]
     fireEvent.click(longMsgOuter)
-    // Message should now be expanded
     expect(longMsgOuter).toHaveAttribute('aria-expanded', 'true')
 
-    // Navigate to comp-B in-place (same component instance, companyId changes)
-    act(() => {
-      navigateFn!('/companies/comp-B/warroom')
-    })
+    // Navigate to comp-B in-place (same WarRoomPage instance, companyId param changes)
+    act(() => { navigateFn!('/companies/comp-B/warroom') })
     act(() => { vi.advanceTimersByTime(100) })
 
-    // Add a message with the SAME id in comp-B
+    // Manually inject agents and the same message id to make the feed visible
     act(() => {
+      useWarRoomStore.getState().loadMockData()
       useWarRoomStore.getState().addMessage({
         id: 'msg-expand-128',
         senderId: 'a1',
@@ -374,7 +359,7 @@ describe('WarRoomPage', () => {
       })
     })
 
-    // expandedMessages should have been cleared when companyId changed
+    // After companyId change, expandedMessages should be empty — message is NOT expanded
     const newOuterMsgs = screen.getAllByTestId('feed-message')
     const newLongMsgOuter = newOuterMsgs[newOuterMsgs.length - 1]
     expect(newLongMsgOuter).toHaveAttribute('aria-expanded', 'false')

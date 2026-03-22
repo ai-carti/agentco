@@ -116,6 +116,8 @@ export default function WarRoomPage() {
     }
     if (prevCompanyIdRef.current !== undefined && prevCompanyIdRef.current !== companyId) {
       safeReset()
+      // SIRI-UX-128: clear stale expanded message IDs when switching companies
+      setExpandedMessages(new Set())
     }
     prevCompanyIdRef.current = companyId
     return () => {
