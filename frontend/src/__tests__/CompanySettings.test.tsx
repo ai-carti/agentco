@@ -163,3 +163,51 @@ describe('UX-018: Company Settings page', () => {
     })
   })
 })
+
+// SIRI-UX-165: AbortController on unmount
+describe('SIRI-UX-165: CompanySettingsPage AbortController', () => {
+  it('passes signal to initial fetch', async () => {
+    const mockSignal = { aborted: false }
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: mockSignal,
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'c1', name: 'Acme Corp', description: '', owner_id: 'u1' }),
+    })
+    globalThis.fetch = fetchMock
+
+    renderSettings()
+
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls
+      const companyFetch = calls.find((c) => String(c[0]).includes('/companies/c1'))
+      expect(companyFetch).toBeDefined()
+      expect(companyFetch![1]).toMatchObject({ signal: mockSignal })
+    })
+
+    globalThis.AbortController = origAC
+  })
+
+  it('aborts fetch on unmount', async () => {
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: { aborted: false },
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
+    const { unmount } = renderSettings()
+    unmount()
+
+    expect(abortSpy).toHaveBeenCalled()
+
+    globalThis.AbortController = origAC
+  })
+})

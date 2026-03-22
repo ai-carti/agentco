@@ -350,3 +350,81 @@ describe('AgentPage Save to Library', () => {
     })
   })
 })
+
+// SIRI-UX-166: AbortController in LibraryPage main component + ForkModal
+describe('SIRI-UX-166: LibraryPage AbortController', () => {
+  it('passes signal to library agents fetch', async () => {
+    const mockSignal = { aborted: false }
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: mockSignal,
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] })
+    globalThis.fetch = fetchMock
+
+    renderLibrary()
+
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls
+      const libraryFetch = calls.find((c) => String(c[0]).includes('/api/library'))
+      expect(libraryFetch).toBeDefined()
+      expect(libraryFetch![1]).toMatchObject({ signal: mockSignal })
+    })
+
+    globalThis.AbortController = origAC
+  })
+
+  it('aborts library fetch on unmount', async () => {
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: { aborted: false },
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
+    const { unmount } = renderLibrary()
+    unmount()
+
+    expect(abortSpy).toHaveBeenCalled()
+
+    globalThis.AbortController = origAC
+  })
+
+  it('ForkModal passes signal to companies fetch', async () => {
+    const agents = [{ id: 'la1', name: 'Lib Agent', role: 'Designer', avatar: '🎨' }]
+
+    const mockSignal = { aborted: false }
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    let callCount = 0
+    globalThis.AbortController = vi.fn().mockImplementation(() => {
+      callCount++
+      return { signal: mockSignal, abort: abortSpy }
+    }) as unknown as typeof AbortController
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => agents }) // library agents
+      .mockResolvedValue({ ok: true, json: async () => [] }) // companies
+
+    globalThis.fetch = fetchMock
+
+    renderLibrary()
+
+    await waitFor(() => screen.getByTestId('fork-btn-la1'))
+    fireEvent.click(screen.getByTestId('fork-btn-la1'))
+
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls
+      const companiesFetch = calls.find((c) => String(c[0]).includes('/api/companies'))
+      expect(companiesFetch).toBeDefined()
+      expect(companiesFetch![1]).toMatchObject({ signal: mockSignal })
+    })
+
+    globalThis.AbortController = origAC
+  })
+})

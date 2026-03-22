@@ -31,9 +31,11 @@ export default function CompanySettingsPage() {
 
   useEffect(() => {
     if (!companyId) return
+    const controller = new AbortController()
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/companies/${companyId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -43,7 +45,10 @@ export default function CompanySettingsPage() {
           setDescription(data.description ?? '')
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+      })
+    return () => controller.abort()
   }, [companyId])
 
   const handleSave = async () => {

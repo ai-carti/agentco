@@ -46,16 +46,22 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   }, [onClose])
 
   useEffect(() => {
+    const controller = new AbortController()
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/companies`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         setCompanies(Array.isArray(data) ? data : [])
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+        setLoading(false)
+      })
+    return () => controller.abort()
   }, [])
 
   const handleFork = async (companyId: string) => {
@@ -182,19 +188,21 @@ export default function LibraryPage() {
   const [loadError, setLoadError] = useState(false)
   const [forkTarget, setForkTarget] = useState<string | null>(null)
 
-  const loadAgents = () => {
+  const loadAgents = (signal?: AbortSignal) => {
     setLoadError(false)
     const token = getStoredToken()
     // SIRI-UX-069: use limit param now that backend supports pagination (ALEX-TD-040)
     fetch(`${BASE_URL}/api/library?limit=50`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      ...(signal ? { signal } : {}),
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
         setLoading(false)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
         // SIRI-UX-152: surface network/API errors — don't show silent empty state
         setLoadError(true)
         setLoading(false)
@@ -202,7 +210,9 @@ export default function LibraryPage() {
   }
 
   useEffect(() => {
-    loadAgents()
+    const controller = new AbortController()
+    loadAgents(controller.signal)
+    return () => controller.abort()
   }, [])
 
   return (

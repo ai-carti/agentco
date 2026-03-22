@@ -119,6 +119,11 @@ describe('SIRI-UX-162: history item cursor/role', () => {
 // ── SIRI-UX-163 ───────────────────────────────────────────────────────────────
 
 describe('SIRI-UX-163: WarRoom initial fetch uses AbortController', () => {
+  // BUG-070: reset module cache so AbortController mock applies to a fresh WarRoom import
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
   it('passes signal to the initial REST fetch', async () => {
     // Spy on AbortController
     const abortSpy = vi.fn()

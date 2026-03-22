@@ -211,3 +211,48 @@ describe('AgentEditPage — POST-003', () => {
     expect(screen.queryByTestId('agent-name-input')).not.toBeInTheDocument()
   })
 })
+
+// SIRI-UX-164: AbortController on unmount
+describe('SIRI-UX-164: AgentEditPage AbortController', () => {
+  it('passes signal to initial fetch', async () => {
+    const mockSignal = { aborted: false }
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: mockSignal,
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => mockAgentData })
+    globalThis.fetch = fetchMock
+
+    renderAgentEditPage()
+
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls
+      const agentFetch = calls.find((c) => String(c[0]).includes('/agents/a1'))
+      expect(agentFetch).toBeDefined()
+      expect(agentFetch![1]).toMatchObject({ signal: mockSignal })
+    })
+
+    globalThis.AbortController = origAC
+  })
+
+  it('aborts fetch on unmount', async () => {
+    const abortSpy = vi.fn()
+    const origAC = globalThis.AbortController
+    globalThis.AbortController = vi.fn().mockImplementation(() => ({
+      signal: { aborted: false },
+      abort: abortSpy,
+    })) as unknown as typeof AbortController
+
+    globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
+    const { unmount } = renderAgentEditPage()
+    unmount()
+
+    expect(abortSpy).toHaveBeenCalled()
+
+    globalThis.AbortController = origAC
+  })
+})

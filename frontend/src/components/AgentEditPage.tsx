@@ -27,16 +27,22 @@ export default function AgentEditPage() {
 
   useEffect(() => {
     if (!companyId || !agentId) return
+    const controller = new AbortController()
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setAgent(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+        setLoading(false)
+      })
+    return () => controller.abort()
   }, [companyId, agentId])
 
   const handleSubmit = async (data: AgentFormData) => {
