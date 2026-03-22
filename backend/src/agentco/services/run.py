@@ -182,6 +182,12 @@ class RunService:
                 result = await self.execute_run(run_id, session_factory=session_factory)
                 return result
             except Exception as exc:
+                # ALEX-TD-092: asyncio.TimeoutError must never be retried.
+                # wait_for() raises TimeoutError when MAX_RUN_TIMEOUT_SEC is exceeded.
+                # str(asyncio.TimeoutError()) == '' → matches nothing in _NO_RETRY_ERRORS
+                # → without this guard, a timed-out run would be retried 3× = up to 30 min.
+                if isinstance(exc, asyncio.TimeoutError):
+                    raise
                 error_code = getattr(exc, "error_code", None) or str(exc)
                 # Don't retry permanent/intentional errors
                 if any(no_retry in error_code for no_retry in _NO_RETRY_ERRORS):
@@ -396,6 +402,9 @@ class RunService:
                     run_orm.total_tokens = final_state.get("total_tokens", 0)
                     run_orm.total_cost_usd = final_state.get("total_cost_usd", 0.0)
                     update_session.commit()
+                else:
+                    # BUG-068: run was deleted while graph was running — metrics are lost
+                    logger.warning("execute_run: run_orm not found for run_id=%s, metrics lost", run_id)
             finally:
                 if session_factory is not None:
                     update_session.close()

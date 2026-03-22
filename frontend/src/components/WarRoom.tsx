@@ -51,10 +51,13 @@ export default function WarRoom() {
   const navigate = useNavigate()
 
   // BUG-043: initial REST fetch to populate runs on mount / page refresh
+  // SIRI-UX-163: use AbortController to prevent setState on unmounted component
   useEffect(() => {
     if (!token || !companyId) return
+    const controller = new AbortController()
     fetch(`${BASE_URL}/api/companies/${companyId}/runs`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
     })
       .then((res) => {
         if (!res.ok) return
@@ -65,9 +68,11 @@ export default function WarRoom() {
           setRuns(data)
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
         // silently ignore fetch errors — WS will populate state anyway
       })
+    return () => controller.abort()
   }, [token, companyId])
 
   const connect = useCallback(() => {

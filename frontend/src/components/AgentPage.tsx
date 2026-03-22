@@ -335,28 +335,30 @@ export default function AgentPage() {
               return (
                 <div
                   key={item.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={expandedId === item.id}
-                  aria-controls={item.description ? expandedContentId : undefined}
-                  onClick={() => {
-                    if (!item.description) return
-                    setExpandedId(expandedId === item.id ? null : item.id)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      if (!item.description) return
-                      setExpandedId(expandedId === item.id ? null : item.id)
-                    }
-                  }}
+                  // SIRI-UX-162: only add button semantics when item has description to expand
+                  {...(item.description
+                    ? {
+                        role: 'button' as const,
+                        tabIndex: 0,
+                        'aria-expanded': expandedId === item.id,
+                        'aria-controls': expandedContentId,
+                        onClick: () => setExpandedId(expandedId === item.id ? null : item.id),
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setExpandedId(expandedId === item.id ? null : item.id)
+                          }
+                        },
+                      }
+                    : {})}
                   style={{
                     padding: '0.625rem 0.875rem',
                     background: '#1f2937',
                     border: '1px solid #374151',
                     borderRadius: 6,
                     fontSize: '0.875rem',
-                    cursor: 'pointer',
+                    // SIRI-UX-162: only show pointer when item is expandable
+                    cursor: item.description ? 'pointer' : 'default',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

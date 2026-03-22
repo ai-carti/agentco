@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -45,7 +45,9 @@ PROVIDER_TEST_MODEL: dict[str, str] = {
 
 class CredentialCreate(BaseModel):
     provider: str
-    api_key: str
+    # ALEX-TD-093: max_length=512 prevents multi-MB payloads.
+    # Real API keys (OpenAI sk-..., Anthropic sk-ant-..., Gemini AIza...) are ≤ 200 chars.
+    api_key: str = Field(max_length=512)
 
     @field_validator("provider")
     @classmethod

@@ -130,10 +130,20 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
 
 
 def _extract_tokens(chunk) -> int:
-    """Извлекает total_tokens из chunk.usage (если есть)."""
+    """Извлекает total_tokens из chunk.usage (если есть).
+
+    ALEX-TD-094: Some providers (Gemini, Anthropic) omit usage from intermediate
+    streaming chunks — only the final chunk contains usage data. When usage is
+    absent, returns 0. The caller accumulates the last non-zero value.
+    If a run shows total_tokens=0, enable DEBUG logging to see whether the
+    provider is omitting usage from all chunks (provider issue vs. parsing bug).
+    """
     try:
         if chunk.usage and chunk.usage.total_tokens:
             return chunk.usage.total_tokens
+        # NOTE: Some streaming providers don't include usage in every chunk.
+        # This is expected; cost estimate will use 0 tokens for those chunks.
+        logger.debug("_extract_tokens: chunk.usage missing or zero (provider may omit mid-stream)")
     except (AttributeError, TypeError):
         pass
     return 0

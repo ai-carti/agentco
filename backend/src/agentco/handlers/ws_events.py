@@ -106,8 +106,9 @@ async def ws_company_events(
         async for event in bus.subscribe(company_id):
             try:
                 await websocket.send_json(event)
-            except (WebSocketDisconnect, RuntimeError):
+            except (WebSocketDisconnect, RuntimeError, OSError):
                 # Client disconnected mid-stream — stop forwarding
+                # OSError covers ConnectionResetError from anyio transport layer
                 break
 
     async def _watch_disconnect() -> None:
