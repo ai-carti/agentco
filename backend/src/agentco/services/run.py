@@ -192,14 +192,14 @@ class RunService:
                     # ALEX-TD-061: full jitter to avoid thundering herd
                     delay = delay + random.uniform(0, 0.1) * delay
                     logger.warning(
-                        "run_retry run_id=%s attempt=%d/%d delay=%.2fs error=%s",
-                        run_id, attempt, _MAX_RETRIES, delay, exc,
+                        "run_retry run_id=%s company_id=%s attempt=%d/%d delay=%.2fs error=%s",
+                        run_id, company_id, attempt, _MAX_RETRIES, delay, exc,
                     )
                     await asyncio.sleep(delay)
                 else:
                     logger.error(
-                        "run_dead_letter run_id=%s exhausted after %d attempts error=%s",
-                        run_id, _MAX_RETRIES, exc,
+                        "run_dead_letter run_id=%s company_id=%s exhausted after %d attempts error=%s",
+                        run_id, company_id, _MAX_RETRIES, exc,
                     )
         raise last_exc  # type: ignore[misc]
 
