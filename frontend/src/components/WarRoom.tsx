@@ -39,6 +39,8 @@ const badgeStyle: Record<Run['status'], string> = {
 export default function WarRoom() {
   const token = useAuthStore((s) => s.token)
   const companyId = useAgentStore((s) => s.currentCompany?.id)
+  // SIRI-UX-146: cap runs to prevent unbounded memory growth in long sessions
+  const MAX_RUNS = 100
   const [runs, setRuns] = useState<Run[]>([])
   const [isConnecting, setIsConnecting] = useState(true)
   // SIRI-UX-110: tick state forces re-render every 30s so timeAgo stays fresh
@@ -68,7 +70,11 @@ export default function WarRoom() {
   }, [token, companyId])
 
   const connect = useCallback(() => {
-    if (!token || !companyId) return
+    if (!token || !companyId) {
+      // SIRI-UX-145: no token/company → not connecting, show empty state immediately
+      setIsConnecting(false)
+      return
+    }
     const BASE_WS_URL = BASE_URL.replace(/^http/, 'ws')
     const ws = new WebSocket(
       `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
@@ -83,16 +89,20 @@ export default function WarRoom() {
       const event = JSON.parse(e.data)
       const type: string = event.type
       if (type === 'run.started') {
-        setRuns((prev) => [
-          ...prev,
-          {
-            run_id: event.run_id,
-            agent_name: event.agent_name,
-            task_title: event.task_title,
-            status: 'running',
-            started_at: event.started_at,
-          },
-        ])
+        setRuns((prev) => {
+          const next = [
+            ...prev,
+            {
+              run_id: event.run_id,
+              agent_name: event.agent_name,
+              task_title: event.task_title,
+              status: 'running' as Run['status'],
+              started_at: event.started_at,
+            },
+          ]
+          // SIRI-UX-146: cap at MAX_RUNS to prevent unbounded memory growth
+          return next.length > MAX_RUNS ? next.slice(next.length - MAX_RUNS) : next
+        })
       } else if (
         type === 'run.done' ||
         type === 'run.failed' ||
@@ -107,7 +117,9 @@ export default function WarRoom() {
       }
     }
 
-    ws.onclose = () => {
+    ws.onclose = (event?: CloseEvent) => {
+      // SIRI-UX-147: do NOT reconnect on auth/permission errors — would loop forever
+      if (event?.code === 4001 || event?.code === 4003) return
       reconnectTimer.current = setTimeout(() => {
         connect()
       }, 3000)

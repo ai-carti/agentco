@@ -167,6 +167,25 @@ export default function WarRoomPage() {
     }
   }, [messages.length])
 
+  // SIRI-UX-149: prune expandedMessages Set when messages are evicted by the 300-cap
+  // Prevents unbounded growth of stale message IDs in long sessions
+  useEffect(() => {
+    if (expandedMessages.size === 0) return
+    const currentIds = new Set(messages.map((m) => m.id))
+    setExpandedMessages((prev) => {
+      let changed = false
+      const next = new Set<string>()
+      for (const id of prev) {
+        if (currentIds.has(id)) {
+          next.add(id)
+        } else {
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [messages]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Clear flash after animation
   useEffect(() => {
     if (flashingAgents.size === 0) return

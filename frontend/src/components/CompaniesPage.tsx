@@ -19,6 +19,7 @@ export default function CompaniesPage() {
   const toast = useToast()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showNewModal, setShowNewModal] = useState(false)
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
@@ -27,6 +28,7 @@ export default function CompaniesPage() {
 
   const load = async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies`, {
@@ -35,9 +37,13 @@ export default function CompaniesPage() {
       if (res.ok) {
         const data = await res.json()
         setCompanies(Array.isArray(data) ? data : [])
+      } else {
+        // SIRI-UX-148: surface API errors to user
+        setLoadError('Failed to load companies. Please try again.')
       }
     } catch {
-      // ignore
+      // SIRI-UX-148: surface network errors to user
+      setLoadError('Failed to load companies. Please try again.')
     } finally {
       setLoading(false)
       setHasLoadedOnce(true)
@@ -74,8 +80,8 @@ export default function CompaniesPage() {
     }
   }
 
-  // M3-003: First visit with no companies → show onboarding
-  if (hasLoadedOnce && !loading && companies.length === 0) {
+  // M3-003: First visit with no companies → show onboarding (but not when there's a fetch error)
+  if (hasLoadedOnce && !loading && companies.length === 0 && !loadError) {
     return (
       <div data-testid="companies-page">
         <OnboardingPage onCompanyCreated={(id) => navigate(`/companies/${id}`)} />
@@ -85,6 +91,23 @@ export default function CompaniesPage() {
 
   return (
     <div data-testid="companies-page" style={{ padding: '1.5rem', maxWidth: 640 }}>
+      {/* SIRI-UX-148: error state — shown when fetch fails */}
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '1rem',
+            padding: '0.875rem 1rem',
+            background: 'rgba(127, 29, 29, 0.85)',
+            border: '1px solid #b91c1c',
+            borderRadius: '0.5rem',
+            color: '#fee2e2',
+            fontSize: '0.875rem',
+          }}
+        >
+          {loadError}
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Companies</h1>
         <button
