@@ -297,15 +297,34 @@ export default function CompanyPage() {
           flexShrink: 0,
         }}
       >
-        {TAB_LABELS.map((tab) => {
+        {TAB_LABELS.map((tab, index) => {
           const isActive = activeTab === tab.id
+          const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+              e.preventDefault()
+              const nextIndex = e.key === 'ArrowRight'
+                ? (index + 1) % TAB_LABELS.length
+                : (index - 1 + TAB_LABELS.length) % TAB_LABELS.length
+              const nextTab = TAB_LABELS[nextIndex]
+              setActiveTab(nextTab.id)
+              setActiveCompanyTab(nextTab.id)
+              // Move focus to the newly activated tab
+              const tablist = e.currentTarget.closest('[role="tablist"]')
+              if (tablist) {
+                const buttons = tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                buttons[nextIndex]?.focus()
+              }
+            }
+          }
           return (
             <button
               key={tab.id}
               role="tab"
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
+              onKeyDown={handleKeyDown}
               onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#94a3b8' }}
               onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#64748b' }}
               style={{

@@ -23,6 +23,7 @@ export default function CompanySettingsPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
   // SIRI-POST-006: focus trap
@@ -71,6 +72,7 @@ export default function CompanySettingsPage() {
   }
 
   const handleDelete = async () => {
+    setIsDeleting(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
@@ -82,9 +84,11 @@ export default function CompanySettingsPage() {
         navigate('/')
       } else {
         toast.error('Failed to delete company')
+        setIsDeleting(false)
       }
     } catch {
       toast.error('Network error')
+      setIsDeleting(false)
     }
   }
 
@@ -215,10 +219,10 @@ export default function CompanySettingsPage() {
                 data-testid="confirm-delete-company-btn"
                 variant="danger"
                 onClick={handleDelete}
-                disabled={deleteConfirm !== company?.name}
+                disabled={deleteConfirm !== company?.name || isDeleting}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
-                Delete permanently
+                {isDeleting ? 'Deleting…' : 'Delete permanently'}
               </Button>
             </div>
           </div>
