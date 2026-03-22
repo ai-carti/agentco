@@ -17,16 +17,21 @@ router = APIRouter(prefix="/api/companies", tags=["companies"])
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+def _validate_company_name(v: str) -> str:
+    """ALEX-TD-076: shared validator — strip and reject whitespace-only names."""
+    stripped = v.strip()
+    if not stripped:
+        raise ValueError("name must not be empty or whitespace-only")
+    return stripped
+
+
 class CompanyCreate(BaseModel):
     name: str = Field(..., min_length=1)
 
     @field_validator("name")
     @classmethod
     def name_must_not_be_whitespace(cls, v: str) -> str:
-        stripped = v.strip()
-        if not stripped:
-            raise ValueError("name must not be empty or whitespace-only")
-        return stripped
+        return _validate_company_name(v)
 
 
 class CompanyUpdate(BaseModel):
@@ -35,10 +40,7 @@ class CompanyUpdate(BaseModel):
     @field_validator("name")
     @classmethod
     def name_must_not_be_whitespace(cls, v: str) -> str:
-        stripped = v.strip()
-        if not stripped:
-            raise ValueError("name must not be empty or whitespace-only")
-        return stripped
+        return _validate_company_name(v)
 
 class CompanyOut(BaseModel):
     id: str

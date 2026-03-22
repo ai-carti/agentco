@@ -24,6 +24,11 @@ from datetime import datetime, timezone
 
 from typing import Callable, Optional
 
+# ALEX-TD-075: max timeout for a single LangGraph ainvoke() call (seconds).
+# Prevents zombie background tasks on LLM hang / deadlock.
+# Configurable via MAX_RUN_TIMEOUT_SEC env var (default 600 = 10 minutes).
+_MAX_RUN_TIMEOUT_SEC: int = int(os.getenv("MAX_RUN_TIMEOUT_SEC", "600"))
+
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..models.run import Run, RunEvent
@@ -366,7 +371,13 @@ class RunService:
             async with create_checkpointer() as checkpointer:
                 compiled = compile_graph(checkpointer=checkpointer)
                 config = {"configurable": {"thread_id": run_id}}
-                final_state = await compiled.ainvoke(initial_state, config=config)
+                # ALEX-TD-075: wrap ainvoke in wait_for to prevent zombie tasks.
+                # If LLM/network hangs indefinitely, asyncio.TimeoutError propagates
+                # into the except block below → run.status = 'failed'.
+                final_state = await asyncio.wait_for(
+                    compiled.ainvoke(initial_state, config=config),
+                    timeout=float(_MAX_RUN_TIMEOUT_SEC),
+                )
 
             result = final_state.get("final_result", "")
             final_status = final_state.get("status", "done")
