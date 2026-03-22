@@ -124,6 +124,8 @@ async def ws_company_events(
             except (asyncio.CancelledError, Exception):
                 pass
     except Exception:
+        # ALEX-TD-082: must await cancelled tasks to prevent "Task exception was never retrieved"
         logger.debug("WebSocket closed for company %s", company_id)
         forward_task.cancel()
         watch_task.cancel()
+        await asyncio.gather(forward_task, watch_task, return_exceptions=True)

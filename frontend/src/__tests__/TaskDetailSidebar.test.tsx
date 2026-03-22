@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import TaskDetailSidebar from '../components/TaskDetailSidebar'
 import { type Task } from '../store/agentStore'
 import { ToastProvider } from '../context/ToastContext'
@@ -33,6 +33,12 @@ beforeEach(() => {
     ok: true,
     json: async () => ({ logs: [], status_history: [] }),
   })
+})
+
+// Flush pending microtasks (async fetch state updates) after each test
+// to prevent "act(...)" warnings in synchronous tests
+afterEach(async () => {
+  await act(async () => {})
 })
 
 describe('TaskDetailSidebar — UX-010', () => {
