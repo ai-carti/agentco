@@ -165,11 +165,12 @@ class EventBus:
 
     @classmethod
     def reset(cls) -> None:
-        """
-        ALEX-TD-092: Reset the singleton instance.
+        """Reset the singleton instance.
 
         Allows tests (and config-reload scenarios) to clear the cached instance so
         the next EventBus.get() call will re-evaluate REDIS_URL and create a fresh bus.
+
+        ALEX-TD-090: removed stale ALEX-TD-092 ticket reference (ticket never existed).
 
         Usage in tests:
             EventBus.reset()

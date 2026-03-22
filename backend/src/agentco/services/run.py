@@ -383,6 +383,8 @@ class RunService:
             final_status = final_state.get("status", "done")
 
             # ALEX-TD-024: use fresh session for final update (checkpointer context is closed)
+            # ALEX-TD-088: also persist total_tokens and total_cost_usd from final_state.
+            # Previously these were never written to DB — GET /runs/{id} always returned 0.
             update_session = _get_session_for_update()
             try:
                 run_orm = update_session.get(self._repo.orm_model, run_id)
@@ -390,6 +392,9 @@ class RunService:
                     run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
                     run_orm.result = result
                     run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    # ALEX-TD-088: persist accumulated token/cost metrics from LangGraph state
+                    run_orm.total_tokens = final_state.get("total_tokens", 0)
+                    run_orm.total_cost_usd = final_state.get("total_cost_usd", 0.0)
                     update_session.commit()
             finally:
                 if session_factory is not None:

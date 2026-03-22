@@ -96,9 +96,19 @@ async def ws_company_events(
     # When either task finishes, we cancel the other.
 
     async def _forward_events() -> None:
-        """Forward bus events to WebSocket."""
+        """Forward bus events to WebSocket.
+
+        ALEX-TD-089: catch send_json errors (WebSocketDisconnect, RuntimeError on
+        already-closed socket) and break out of the event loop cleanly instead of
+        raising an unhandled exception that shows as "Task exception was never retrieved"
+        in Python stderr.
+        """
         async for event in bus.subscribe(company_id):
-            await websocket.send_json(event)
+            try:
+                await websocket.send_json(event)
+            except (WebSocketDisconnect, RuntimeError):
+                # Client disconnected mid-stream — stop forwarding
+                break
 
     async def _watch_disconnect() -> None:
         """Block until client disconnects (receives close frame or error)."""
