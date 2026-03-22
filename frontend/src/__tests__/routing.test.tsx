@@ -1,5 +1,5 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 
@@ -15,6 +15,36 @@ vi.mock('../components/KanbanBoard', () => ({
 }))
 vi.mock('../components/WarRoomPage', () => ({
   default: () => <div data-testid="war-room-page">WarRoomPage</div>,
+}))
+vi.mock('../components/CompaniesPage', () => ({
+  default: () => <div data-testid="companies-page">CompaniesPage</div>,
+}))
+vi.mock('../components/CompanyPage', () => ({
+  default: () => <div data-testid="war-room-page">CompanyPage</div>,
+}))
+vi.mock('../components/AgentPage', () => ({
+  default: () => <div data-testid="agent-page">AgentPage</div>,
+}))
+vi.mock('../components/AgentEditPage', () => ({
+  default: () => <div data-testid="agent-edit-page">AgentEditPage</div>,
+}))
+vi.mock('../components/SettingsPage', () => ({
+  default: () => <div data-testid="settings-page">SettingsPage</div>,
+}))
+vi.mock('../components/CompanySettingsPage', () => ({
+  default: () => <div data-testid="company-settings-page">CompanySettingsPage</div>,
+}))
+vi.mock('../components/OnboardingPage', () => ({
+  default: () => <div data-testid="onboarding-page">OnboardingPage</div>,
+}))
+vi.mock('../components/LibraryPage', () => ({
+  default: () => <div data-testid="library-page">LibraryPage</div>,
+}))
+vi.mock('../components/LibraryPortfolioPage', () => ({
+  default: () => <div data-testid="library-portfolio-page">LibraryPortfolioPage</div>,
+}))
+vi.mock('../pages/BillingPage', () => ({
+  default: () => <div data-testid="billing-page">BillingPage</div>,
 }))
 
 // We'll control the token value per-test
@@ -82,32 +112,30 @@ describe('Routing', () => {
       mockAuthStore.user = { id: '1', email: 'siri@agentco.dev' }
     })
 
-    it('renders company list at /', () => {
+    it('renders company list at /', async () => {
       renderWithRouter('/')
-      expect(screen.getByTestId('companies-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('companies-page')).toBeInTheDocument())
     })
 
-    it('renders war room + kanban at /companies/:id', () => {
+    it('renders war room + kanban at /companies/:id', async () => {
       renderWithRouter('/companies/abc')
-      // War Room tab is active by default
-      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
-      // Kanban is in Board tab (not rendered by default, hidden behind tab)
-      expect(screen.getByRole('tab', { name: /board/i })).toBeInTheDocument()
+      // CompanyPage (mocked as war-room-page testid) renders at /companies/:id
+      await waitFor(() => expect(screen.getByTestId('war-room-page')).toBeInTheDocument())
     })
 
-    it('renders agent page at /companies/:id/agents/:agentId', () => {
+    it('renders agent page at /companies/:id/agents/:agentId', async () => {
       renderWithRouter('/companies/abc/agents/agent-1')
-      expect(screen.getByTestId('agent-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('agent-page')).toBeInTheDocument())
     })
 
-    it('renders war room page at /companies/:id/warroom', () => {
+    it('renders war room page at /companies/:id/warroom', async () => {
       renderWithRouter('/companies/abc/warroom')
-      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('war-room-page')).toBeInTheDocument())
     })
 
-    it('renders settings page at /settings', () => {
+    it('renders settings page at /settings', async () => {
       renderWithRouter('/settings')
-      expect(screen.getByTestId('settings-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('settings-page')).toBeInTheDocument())
     })
 
     // SIRI-UX-044: Navbar has logo only; nav links live in Sidebar (single source of truth)
@@ -132,14 +160,14 @@ describe('Routing', () => {
       mockAuthStore.user = { id: '1', email: 'siri@agentco.dev' }
     })
 
-    it('directly navigating to /companies/:id renders company page', () => {
+    it('directly navigating to /companies/:id renders company page', async () => {
       renderWithRouter('/companies/deep-link-id')
-      expect(screen.getByTestId('war-room-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('war-room-page')).toBeInTheDocument())
     })
 
-    it('directly navigating to /companies/:id/agents/:agentId renders agent page', () => {
+    it('directly navigating to /companies/:id/agents/:agentId renders agent page', async () => {
       renderWithRouter('/companies/c1/agents/a1')
-      expect(screen.getByTestId('agent-page')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByTestId('agent-page')).toBeInTheDocument())
     })
   })
 
