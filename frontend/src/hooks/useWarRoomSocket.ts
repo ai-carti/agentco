@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useWarRoomStore, type FeedMessage, type WarRoomAgentStatus } from '../store/warRoomStore'
+import { useWarRoomStore, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { getStoredToken } from '../api/client'
 
 const BASE_WS_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
@@ -76,7 +76,16 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
           if (!data.id || typeof data.content !== 'string') {
             // silently skip malformed message event
           } else {
-            addMessage(data as unknown as FeedMessage)
+            // SIRI-UX-135: FeedMessage now has optional senderId/targetId — no cast needed
+            addMessage({
+              id: data.id as string,
+              senderName: (data.senderName ?? data.sender_name ?? '') as string,
+              targetName: (data.targetName ?? data.target_name ?? '') as string,
+              content: data.content as string,
+              timestamp: (data.timestamp ?? new Date().toISOString()) as string,
+              senderId: (data.senderId ?? data.sender_id) as string | undefined,
+              targetId: (data.targetId ?? data.target_id) as string | undefined,
+            })
           }
         } else if (data.type === 'run.completed') {
           // SIRI-UX-079: handle run lifecycle events

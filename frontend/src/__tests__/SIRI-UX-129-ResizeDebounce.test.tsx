@@ -70,8 +70,7 @@ describe('SIRI-UX-129: useIsMobile debounce', () => {
   })
 
   it('coalesces rapid events — only 1 setState call after debounce', () => {
-    const setStateSpy = vi.fn()
-    // Patch useState to spy on calls
+    // Verify that even with 20 rapid resize events, state settles correctly after debounce
     const { result } = renderHook(() => useIsMobile())
 
     Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 300 })

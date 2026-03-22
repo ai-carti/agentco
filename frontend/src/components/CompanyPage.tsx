@@ -13,18 +13,8 @@ import { useToast } from '../context/ToastContext'
 import { Bot } from 'lucide-react'
 // SIRI-UX-107: import shared utilities to eliminate local duplicates of AVATAR_COLORS + hashCode
 import { getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
-
-const MOBILE_BREAKPOINT = 640
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT)
-  useEffect(() => {
-    const handler = () => setMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-  return mobile
-}
+// SIRI-UX-132: use shared debounced useIsMobile to avoid excessive re-renders on resize
+import { useIsMobile } from '../hooks/useIsMobile'
 
 function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
   // SIRI-UX-107: use shared getAvatarColor + getInitials from taskUtils

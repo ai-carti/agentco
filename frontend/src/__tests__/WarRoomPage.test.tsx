@@ -1,6 +1,6 @@
 import { render, screen, act, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import WarRoomPage from '../components/WarRoomPage'
 import { useWarRoomStore } from '../store/warRoomStore'
 
@@ -307,7 +307,6 @@ describe('WarRoomPage', () => {
 
     function RouterInspector() {
       // Capture the navigate function from inside the router
-      const { useNavigate } = require('react-router-dom')
       navigateFn = useNavigate()
       return null
     }

@@ -33,23 +33,8 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
   done: 'Done',
 }
 
-// SIRI-UX-129: debounce resize handler to avoid hundreds of setState calls per resize event
-function useIsMobile(): boolean {
-  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null
-    const handler = () => {
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(() => setMobile(window.innerWidth < 640), 120)
-    }
-    window.addEventListener('resize', handler)
-    return () => {
-      window.removeEventListener('resize', handler)
-      if (timer) clearTimeout(timer)
-    }
-  }, [])
-  return mobile
-}
+// SIRI-UX-132: use shared debounced useIsMobile hook (was inline here, now extracted)
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function WarRoomPage() {
   const agents = useWarRoomStore((s) => s.agents)
@@ -639,6 +624,7 @@ export default function WarRoomPage() {
                   data-testid="feed-message"
                   role={isLong ? 'button' : undefined}
                   tabIndex={isLong ? 0 : undefined}
+                  aria-label={isLong ? `${isExpanded ? 'Collapse' : 'Expand'} message from ${msg.senderName}` : undefined}
                   aria-expanded={isLong ? isExpanded : undefined}
                   onClick={() => {
                     if (!isLong) return

@@ -2,10 +2,9 @@
  * SIRI-UX-128: expandedMessages Set not reset on companyId change
  * SIRI-UX-130: FilterBar buttons should use role="menuitemcheckbox" not role="menuitem"
  */
-import React, { useState } from 'react'
 import { render, screen, act, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import WarRoomPage from '../components/WarRoomPage'
 import { useWarRoomStore } from '../store/warRoomStore'
 import KanbanBoard from '../components/KanbanBoard'
@@ -65,11 +64,12 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     act(() => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-long-1',
+        senderId: 'agent-1',
         senderName: 'CEO',
+        targetId: 'agent-2',
         targetName: 'CTO',
         content: LONG_CONTENT,
         timestamp: new Date().toISOString(),
-        type: 'task',
       })
     })
 
@@ -98,11 +98,12 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     act(() => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-long-1',
+        senderId: 'agent-1',
         senderName: 'CEO',
+        targetId: 'agent-2',
         targetName: 'CTO',
         content: LONG_CONTENT,
         timestamp: new Date().toISOString(),
-        type: 'task',
       })
     })
 
@@ -116,7 +117,7 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     const navigateRef = { current: null as ((path: string) => void) | null }
 
     function NavCapture() {
-      const nav = require('react-router-dom').useNavigate()
+      const nav = useNavigate()
       navigateRef.current = nav
       return null
     }
@@ -134,11 +135,12 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     act(() => {
       useWarRoomStore.getState().addMessage({
         id: 'msg-long-2',
+        senderId: 'agent-1',
         senderName: 'CEO',
+        targetId: 'agent-2',
         targetName: 'CTO',
         content: LONG_CONTENT,
         timestamp: new Date().toISOString(),
-        type: 'task',
       })
     })
 
@@ -154,15 +156,16 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     // then add same message id in comp-B context
     act(() => {
       useWarRoomStore.getState().setAgents([
-        { id: 'agent-b1', name: 'CEO', role: 'CEO', status: 'running' },
+        { id: 'agent-b1', name: 'CEO', role: 'CEO', status: 'running', avatar: '👔', level: 0 },
       ])
       useWarRoomStore.getState().addMessage({
         id: 'msg-long-2',
+        senderId: 'agent-b1',
         senderName: 'CEO',
+        targetId: 'agent-b2',
         targetName: 'CTO',
         content: LONG_CONTENT,
         timestamp: new Date().toISOString(),
-        type: 'task',
       })
     })
 

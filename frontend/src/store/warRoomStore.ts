@@ -13,9 +13,10 @@ export interface WarRoomAgent {
 
 export interface FeedMessage {
   id: string
-  senderId: string
+  // SIRI-UX-135: senderId/targetId optional — backend may send them; used for future routing
+  senderId?: string
   senderName: string
-  targetId: string
+  targetId?: string
   targetName: string
   content: string
   timestamp: string
