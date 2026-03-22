@@ -111,21 +111,20 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     expect(expandable2.getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('expandedMessages resets when companyId param changes via in-router navigation', () => {
-    // Use a NavTrigger inside the router to trigger real navigation
-    let navigateFn: ((path: string) => void) | null = null
+  it('expandedMessages resets when companyId param changes via in-router navigation', async () => {
+    // Capture navigate from inside the Router tree via a ref
+    const navigateRef = { current: null as ((path: string) => void) | null }
 
     function NavCapture() {
-      const { useNavigate } = require('react-router-dom')
-      navigateFn = useNavigate()
+      const nav = require('react-router-dom').useNavigate()
+      navigateRef.current = nav
       return null
     }
 
     render(
       <MemoryRouter initialEntries={['/companies/comp-A/warroom']}>
-        <NavCapture />
         <Routes>
-          <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
+          <Route path="/companies/:id/warroom" element={<><NavCapture /><WarRoomPage /></>} />
         </Routes>
       </MemoryRouter>,
     )
@@ -147,14 +146,16 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
     fireEvent.click(expandable)
     expect(expandable.getAttribute('aria-expanded')).toBe('true')
 
-    // Navigate to comp-B via router — same WarRoomPage instance, companyId param changes
-    act(() => { navigateFn!('/companies/comp-B/warroom') })
+    // Navigate to comp-B — WarRoomPage stays mounted, companyId param changes → useEffect fires
+    act(() => { navigateRef.current!('/companies/comp-B/warroom') })
     act(() => { vi.advanceTimersByTime(100) })
 
-    // After reset, manually inject agents (simulates loadMockData running after navigation)
-    // and add same message id in comp-B context
+    // After navigation, add agents first (feed only renders when agents.length > 0)
+    // then add same message id in comp-B context
     act(() => {
-      useWarRoomStore.getState().loadMockData()
+      useWarRoomStore.getState().setAgents([
+        { id: 'agent-b1', name: 'CEO', role: 'CEO', status: 'running' },
+      ])
       useWarRoomStore.getState().addMessage({
         id: 'msg-long-2',
         senderName: 'CEO',
