@@ -1,4 +1,12 @@
 """
+ALEX-TD-083: DEAD CODE — этот файл не используется нигде в production коде.
+Активный сервис памяти: agentco.memory.service.MemoryService
+Активный store: agentco.memory.vector_store.SqliteVecStore
+
+Этот файл — legacy реализация M3-001 (низкоуровневый sqlite3 API).
+Заменён на agentco/memory/ пакет (ALEX-TD-077/078).
+Оставлен для истории; можно удалить после подтверждения отсутствия внешних зависимостей.
+
 M3-001: Persistent Memory Service (RAG via sqlite-vec).
 
 Stores agent memories as embeddings in sqlite-vec virtual table.

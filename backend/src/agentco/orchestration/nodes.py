@@ -181,8 +181,23 @@ async def subagent_node(state: AgentState) -> dict:
     task_depth = task.get("depth", 1)
     max_depth = state.get("max_depth", 2)
 
-    # POST-006: loop detection on deep hierarchy — check iteration limits
+    # POST-006: loop detection on deep hierarchy — check iteration AND cost limits
+    # ALEX-TD-086: subagent_node previously only checked MAX_ITERATIONS (not MAX_COST_USD).
+    # CEO node checks both. Subagent should mirror CEO's loop detection to prevent
+    # cost overruns on subagent steps that are expensive but few in iteration count.
     max_iter = _get_max_iterations()
+    max_cost = _get_max_cost_usd()
+
+    if state["total_cost_usd"] >= max_cost:
+        return {
+            "status": "failed",
+            "error": "cost_limit_exceeded",
+            "error_detail": (
+                f"Cost limit ${max_cost:.4f} exceeded at subagent depth {task_depth} "
+                f"(spent ${state['total_cost_usd']:.4f})"
+            ),
+        }
+
     if state["iteration_count"] >= max_iter:
         return {
             "status": "failed",

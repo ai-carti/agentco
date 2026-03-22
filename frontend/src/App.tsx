@@ -31,7 +31,17 @@ function AppLayout() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <Breadcrumb />
           <ErrorBoundary>
-            <Suspense fallback={null}>
+            {/* SIRI-UX-140: show inline spinner instead of null so slow-network users see feedback */}
+            <Suspense fallback={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  border: '3px solid #1e293b',
+                  borderTopColor: '#3b82f6',
+                  animation: 'spin 0.8s linear infinite',
+                }} />
+              </div>
+            }>
               <Routes>
                 <Route path="/" element={<CompaniesPage />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />

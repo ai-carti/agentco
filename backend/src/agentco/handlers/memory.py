@@ -59,11 +59,15 @@ def get_agent_memory(
     if agent.company_id != company_id:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    # Получаем воспоминания с пагинацией
-    memory_service = MemoryService(_MEMORY_DB)
+    # Получаем воспоминания с пагинацией.
+    # ALEX-TD-085: MemoryService создаётся внутри try/finally чтобы close() всегда вызывался
+    # даже если конструктор или get_all бросит исключение.
+    memory_service = None
     try:
+        memory_service = MemoryService(_MEMORY_DB)
         memories = memory_service.get_all(agent_id=agent_id, limit=limit, offset=offset)
     finally:
-        memory_service.close()
+        if memory_service is not None:
+            memory_service.close()
 
     return memories

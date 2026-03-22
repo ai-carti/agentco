@@ -5,8 +5,10 @@ import GlobalSearch from './GlobalSearch'
 export default function Navbar() {
   const { user, logout } = useAuthStore()
 
+  // SIRI-UX-141: aria-label distinguishes this nav from Sidebar nav for screen readers
   return (
     <nav
+      aria-label="Main navigation"
       data-testid="navbar"
       style={{
         display: 'flex',

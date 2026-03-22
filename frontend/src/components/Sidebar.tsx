@@ -86,7 +86,8 @@ export default function Sidebar() {
         </button>
 
         {/* Nav items */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem' }}>
+        {/* SIRI-UX-141: aria-label distinguishes sidebar nav from Navbar nav for screen readers */}
+        <nav aria-label="Sidebar navigation" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem' }}>
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.testId}

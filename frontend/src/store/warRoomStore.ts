@@ -25,6 +25,9 @@ export interface FeedMessage {
 // SIRI-UX-121: 'idle' = no run started yet (Stop button disabled on initial load)
 export type RunStatus = 'idle' | 'active' | 'stopped' | 'done' | 'failed'
 
+// SIRI-UX-139: cap messages to prevent unbounded growth in long sessions
+const MAX_MESSAGES = 300
+
 interface WarRoomState {
   agents: WarRoomAgent[]
   messages: FeedMessage[]
@@ -130,10 +133,12 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
 
   // SIRI-UX-125: do NOT add fixed cost per message — cost comes exclusively
   // from llm_token WS events via addCost(data.cost). Double-counting removed.
+  // SIRI-UX-139: cap at MAX_MESSAGES to prevent unbounded growth in long sessions
   addMessage: (msg) =>
-    set((state) => ({
-      messages: [...state.messages, msg],
-    })),
+    set((state) => {
+      const next = [...state.messages, msg]
+      return { messages: next.length > MAX_MESSAGES ? next.slice(next.length - MAX_MESSAGES) : next }
+    }),
 
   updateAgentStatus: (agentId, status) =>
     set((state) => {

@@ -183,10 +183,16 @@ export default function GlobalSearch() {
           border: '1px solid #374151', overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}>
+          {/* SIRI-UX-142: combobox pattern — input controls the listbox below */}
           <input
             ref={inputRef}
             data-testid="global-search-input"
+            role="combobox"
             aria-label="Search companies, agents, tasks"
+            aria-expanded={results.length > 0}
+            aria-controls="global-search-listbox"
+            aria-autocomplete="list"
+            aria-activedescendant={activeIndex >= 0 ? `search-option-${activeIndex}` : undefined}
             type="text"
             placeholder="Search companies, agents, tasks..."
             value={query}
@@ -208,8 +214,15 @@ export default function GlobalSearch() {
             </p>
           )}
 
+          {/* SIRI-UX-142: role="listbox" + role="option" for proper screen reader announcement */}
           {results.length > 0 && (
-            <div data-testid="search-results" style={{ maxHeight: 360, overflowY: 'auto', padding: '0.5rem 0' }}>
+            <div
+              id="global-search-listbox"
+              data-testid="search-results"
+              role="listbox"
+              aria-label="Search results"
+              style={{ maxHeight: 360, overflowY: 'auto', padding: '0.5rem 0' }}
+            >
               {(['company', 'agent', 'task'] as const).map((type) => {
                 const group = grouped[type]
                 if (!group || group.length === 0) return null
@@ -224,6 +237,9 @@ export default function GlobalSearch() {
                       return (
                         <div
                           key={result.id}
+                          id={`search-option-${flatIdx}`}
+                          role="option"
+                          aria-selected={isActive}
                           data-testid={isActive ? 'search-result-active' : undefined}
                           onClick={() => handleSelect(result)}
                           style={{

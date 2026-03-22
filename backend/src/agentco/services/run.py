@@ -395,12 +395,23 @@ class RunService:
                 if session_factory is not None:
                     update_session.close()
 
-            await bus.publish({
-                "type": "run.completed",
-                "company_id": company_id,
-                "run_id": run_id,
-                "payload": {"status": final_status, "result": result},
-            })
+            # ALEX-TD-084: publish run.failed when graph returns status=failed/error.
+            # Previously run.completed was published regardless of final_status,
+            # causing frontend to show "Run completed" for loop_detected/cost_limit_exceeded cases.
+            if final_status in ("failed", "error"):
+                await bus.publish({
+                    "type": "run.failed",
+                    "company_id": company_id,
+                    "run_id": run_id,
+                    "payload": {"status": final_status, "error": final_state.get("error")},
+                })
+            else:
+                await bus.publish({
+                    "type": "run.completed",
+                    "company_id": company_id,
+                    "run_id": run_id,
+                    "payload": {"status": final_status, "result": result},
+                })
 
             return result
 
