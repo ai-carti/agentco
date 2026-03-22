@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
@@ -33,14 +33,24 @@ export default function LibraryPortfolioPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // SIRI-UX-095: extracted to useCallback — reused by both mount effect and retry button
+  // Holds the current AbortController so Retry can cancel a previous in-flight request
+  const abortRef = useRef<AbortController | null>(null)
+
+  // SIRI-UX-095 / SIRI-UX-169: useCallback reused by mount effect and Retry button.
+  // AbortController is created inside and stored in ref so cleanup can abort it.
   const fetchPortfolio = useCallback(() => {
     if (!id) return
+    // Abort any previous in-flight request
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setError('')
     setLoading(true)
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/library/${id}/portfolio`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
     })
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`)
@@ -51,6 +61,7 @@ export default function LibraryPortfolioPage() {
         setLoading(false)
       })
       .catch((err: Error) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err.message)
         setLoading(false)
       })
@@ -58,6 +69,7 @@ export default function LibraryPortfolioPage() {
 
   useEffect(() => {
     fetchPortfolio()
+    return () => abortRef.current?.abort()
   }, [fetchPortfolio])
 
   return (

@@ -94,7 +94,8 @@ export default function SettingsPage() {
 
   // ── Step 1: load companies ───────────────────────────────────────────────
   useEffect(() => {
-    globalThis.fetch(`${BASE_URL}/api/companies/`, { headers: authHeaders() })
+    const controller = new AbortController()
+    globalThis.fetch(`${BASE_URL}/api/companies/`, { headers: authHeaders(), signal: controller.signal })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Company[]) => {
         const list = Array.isArray(data) ? data : []
@@ -102,16 +103,22 @@ export default function SettingsPage() {
         if (list.length > 0) setSelectedCompanyId(list[0].id)
         setCompaniesLoaded(true)
       })
-      .catch(() => setCompaniesLoaded(true))
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setCompaniesLoaded(true)
+      })
+    return () => controller.abort()
   }, [])
 
   // ── Step 2: load credentials when company is selected ───────────────────
   useEffect(() => {
     if (!selectedCompanyId) return
+    const controller = new AbortController()
     setCredentialsLoaded(false)
     setCredentialsError(null)
     globalThis.fetch(`${BASE_URL}/api/companies/${selectedCompanyId}/credentials`, {
       headers: authHeaders(),
+      signal: controller.signal,
     })
       .then((res) => {
         if (!res.ok) {
@@ -127,10 +134,12 @@ export default function SettingsPage() {
           setCredentialsLoaded(true)
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         setCredentialsError('Network error — could not load credentials')
         setCredentialsLoaded(true)
       })
+    return () => controller.abort()
   }, [selectedCompanyId])
 
   const handleSubmit = async (e: FormEvent) => {

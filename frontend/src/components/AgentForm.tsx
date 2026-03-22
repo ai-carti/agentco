@@ -29,24 +29,28 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const controller = new AbortController()
     const loadModels = async () => {
       try {
         const token = getStoredToken()
         const res = await fetch(`${BASE_URL}/api/llm/providers/available`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: controller.signal,
         })
         if (!res.ok) throw new Error('Failed to load models')
         const data = await res.json()
         const list: string[] = data.all_models ?? FALLBACK_MODELS
         const resolved = Array.isArray(list) && list.length > 0 ? list : FALLBACK_MODELS
         setModels(resolved)
-      } catch {
+        setLoadingModels(false)
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         setModels(FALLBACK_MODELS)
-      } finally {
         setLoadingModels(false)
       }
     }
     loadModels()
+    return () => controller.abort()
   }, [])
 
   const handleSubmit = (e: FormEvent) => {
