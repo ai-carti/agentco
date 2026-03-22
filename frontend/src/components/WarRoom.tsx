@@ -118,6 +118,9 @@ export default function WarRoom() {
     }
 
     ws.onclose = (event?: CloseEvent) => {
+      // SIRI-UX-153: if onopen never fired, isConnecting may still be true — clear it
+      // so we don't show a blank screen during reconnect cycles
+      setIsConnecting(false)
       // SIRI-UX-147: do NOT reconnect on auth/permission errors — would loop forever
       if (event?.code === 4001 || event?.code === 4003) return
       reconnectTimer.current = setTimeout(() => {

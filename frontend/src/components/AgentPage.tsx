@@ -67,6 +67,8 @@ export default function AgentPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [memories, setMemories] = useState<MemoryEntry[]>([])
   const [memoriesLoaded, setMemoriesLoaded] = useState(false)
+  const [memoriesError, setMemoriesError] = useState(false)
+  const [historyError, setHistoryError] = useState(false)
 
   useEffect(() => {
     if (!companyId || !agentId) return
@@ -89,22 +91,30 @@ export default function AgentPage() {
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
       headers: authHeaders,
     })
-      .then((res) => (res.ok ? res.json() : []))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setHistory(Array.isArray(data) ? data : [])
         setHistoryLoaded(true)
       })
-      .catch(() => setHistoryLoaded(true))
+      .catch(() => {
+        // SIRI-UX-154: surface error instead of showing misleading empty state
+        setHistoryError(true)
+        setHistoryLoaded(true)
+      })
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/memory`, {
       headers: authHeaders,
     })
-      .then((res) => (res.ok ? res.json() : []))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setMemories(Array.isArray(data) ? data : [])
         setMemoriesLoaded(true)
       })
-      .catch(() => setMemoriesLoaded(true))
+      .catch(() => {
+        // SIRI-UX-154: surface error instead of showing misleading empty state
+        setMemoriesError(true)
+        setMemoriesLoaded(true)
+      })
   }, [companyId, agentId])
 
   const handleSaveToLibrary = async () => {
@@ -249,6 +259,10 @@ export default function AgentPage() {
 
         {!memoriesLoaded ? (
           <SkeletonCard variant="task" count={2} />
+        ) : memoriesError ? (
+          <p data-testid="memory-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+            ⚠ Failed to load memories
+          </p>
         ) : memories.length === 0 ? (
           <EmptyState
             icon={<Brain className="w-12 h-12 text-gray-400" />}
@@ -289,6 +303,10 @@ export default function AgentPage() {
 
         {!historyLoaded ? (
           <SkeletonCard variant="task" count={3} />
+        ) : historyError ? (
+          <p data-testid="history-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+            ⚠ Failed to load task history
+          </p>
         ) : history.length === 0 ? (
           <EmptyState
             icon={<ScrollText className="w-12 h-12 text-gray-400" />}

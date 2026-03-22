@@ -15,6 +15,8 @@ import { Bot } from 'lucide-react'
 import { getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
 // SIRI-UX-132: use shared debounced useIsMobile to avoid excessive re-renders on resize
 import { useIsMobile } from '../hooks/useIsMobile'
+// SIRI-UX-155: focus trap for agent creation modal
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
   // SIRI-UX-107: use shared getAvatarColor + getInitials from taskUtils
@@ -116,6 +118,8 @@ export default function CompanyPage() {
   const TASK_LIMIT = 50
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
+  // SIRI-UX-155: focus trap for agent creation modal
+  const agentModalTrapRef = useFocusTrap(isAgentFormOpen)
 
   // SIRI-UX-091: close modal on Escape key
   const handleModalEscape = useCallback((e: KeyboardEvent) => {
@@ -457,6 +461,8 @@ export default function CompanyPage() {
           }}
         >
           <div
+            ref={agentModalTrapRef}
+            data-testid="agent-form-modal-content"
             style={{
               background: '#1e293b',
               borderRadius: 8,
