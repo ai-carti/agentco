@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import sqlite3
 import struct
+import threading
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -84,6 +85,11 @@ class SqliteVecStore(VectorStore):
 
     def __init__(self, db_path: str = ":memory:") -> None:
         self._db_path = db_path
+        # ALEX-TD-080: explicit lock for thread safety.
+        # check_same_thread=False disables SQLite's own check, but does NOT provide
+        # thread safety. Concurrent run_in_executor calls from multiple asyncio tasks
+        # can hit OperationalError: database is locked without this lock.
+        self._lock = threading.Lock()
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._setup()
@@ -119,20 +125,22 @@ class SqliteVecStore(VectorStore):
         created_at = datetime.now(timezone.utc).isoformat()
         packed = self._pack(embedding)
 
-        cursor = self._conn.execute(
-            "INSERT INTO agent_memories_vec(embedding) VALUES (?)",
-            [packed],
-        )
-        vec_rowid = cursor.lastrowid
+        # ALEX-TD-080: acquire lock before any DB operation
+        with self._lock:
+            cursor = self._conn.execute(
+                "INSERT INTO agent_memories_vec(embedding) VALUES (?)",
+                [packed],
+            )
+            vec_rowid = cursor.lastrowid
 
-        self._conn.execute(
-            """
-            INSERT INTO agent_memory_meta(id, rowid_id, agent_id, task_id, content, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            [memory_id, vec_rowid, agent_id, task_id, content, created_at],
-        )
-        self._conn.commit()
+            self._conn.execute(
+                """
+                INSERT INTO agent_memory_meta(id, rowid_id, agent_id, task_id, content, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [memory_id, vec_rowid, agent_id, task_id, content, created_at],
+            )
+            self._conn.commit()
         return memory_id
 
     def search(
@@ -144,61 +152,69 @@ class SqliteVecStore(VectorStore):
         packed = self._pack(query_embedding)
         candidate_limit = top_k * 5
 
-        rows = self._conn.execute(
-            """
-            SELECT m.id, m.agent_id, m.task_id, m.content, m.created_at, v.distance
-            FROM agent_memories_vec v
-            JOIN agent_memory_meta m ON m.rowid_id = v.rowid
-            WHERE v.embedding MATCH ? AND v.k = ?
-              AND m.agent_id = ?
-            ORDER BY v.distance
-            LIMIT ?
-            """,
-            [packed, candidate_limit, agent_id, top_k],
-        ).fetchall()
+        # ALEX-TD-080: acquire lock for read (sqlite3 is not safe for concurrent reads
+        # when writes are in progress via the same connection object)
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT m.id, m.agent_id, m.task_id, m.content, m.created_at, v.distance
+                FROM agent_memories_vec v
+                JOIN agent_memory_meta m ON m.rowid_id = v.rowid
+                WHERE v.embedding MATCH ? AND v.k = ?
+                  AND m.agent_id = ?
+                ORDER BY v.distance
+                LIMIT ?
+                """,
+                [packed, candidate_limit, agent_id, top_k],
+            ).fetchall()
 
         return [dict(row) for row in rows]
 
     def delete_by_agent(self, agent_id: str) -> None:
         """Delete all memories for agent_id from both meta and vec tables."""
-        # Fetch rowid_ids to delete from vec table
-        rows = self._conn.execute(
-            "SELECT rowid_id FROM agent_memory_meta WHERE agent_id = ?",
-            [agent_id],
-        ).fetchall()
+        # ALEX-TD-080: acquire lock
+        with self._lock:
+            # Fetch rowid_ids to delete from vec table
+            rows = self._conn.execute(
+                "SELECT rowid_id FROM agent_memory_meta WHERE agent_id = ?",
+                [agent_id],
+            ).fetchall()
 
-        rowid_ids = [row[0] for row in rows]
+            rowid_ids = [row[0] for row in rows]
 
-        # Delete from vec table
-        for rid in rowid_ids:
+            # Delete from vec table
+            for rid in rowid_ids:
+                self._conn.execute(
+                    "DELETE FROM agent_memories_vec WHERE rowid = ?",
+                    [rid],
+                )
+
+            # Delete from meta table
             self._conn.execute(
-                "DELETE FROM agent_memories_vec WHERE rowid = ?",
-                [rid],
+                "DELETE FROM agent_memory_meta WHERE agent_id = ?",
+                [agent_id],
             )
-
-        # Delete from meta table
-        self._conn.execute(
-            "DELETE FROM agent_memory_meta WHERE agent_id = ?",
-            [agent_id],
-        )
-        self._conn.commit()
+            self._conn.commit()
 
     def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
         """Get all memories for agent with pagination."""
-        rows = self._conn.execute(
-            """
-            SELECT id, agent_id, task_id, content, created_at
-            FROM agent_memory_meta
-            WHERE agent_id = ?
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-            """,
-            [agent_id, limit, offset],
-        ).fetchall()
+        # ALEX-TD-080: acquire lock
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT id, agent_id, task_id, content, created_at
+                FROM agent_memory_meta
+                WHERE agent_id = ?
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+                """,
+                [agent_id, limit, offset],
+            ).fetchall()
         return [dict(row) for row in rows]
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
 
     @staticmethod
     def _pack(embedding: list[float]) -> bytes:

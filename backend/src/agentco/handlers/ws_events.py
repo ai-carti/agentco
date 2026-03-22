@@ -19,6 +19,7 @@ and TD-055 (proper WebSocket close handshake — proxies like Nginx/HAProxy log
 close-before-accept as a connection error). Use custom codes 4001/4003 instead
 of 1008 — better browser compatibility.
 """
+import asyncio
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
@@ -84,10 +85,45 @@ async def ws_company_events(
         return
 
     bus = EventBus.get()
-    try:
+    # ALEX-TD-081: detect silent client disconnect (TCP close without WS close frame).
+    #
+    # Root problem: bus.subscribe() async generator awaits queue.get() which blocks
+    # indefinitely if no events arrive. A silent TCP disconnect is never detected →
+    # subscriber leaks in InProcessEventBus._subscribers list → memory leak over time.
+    #
+    # Fix: run a concurrent "disconnect monitor" task that awaits websocket.receive().
+    # Any disconnect (WS close frame or TCP RST) raises WebSocketDisconnect there.
+    # When either task finishes, we cancel the other.
+
+    async def _forward_events() -> None:
+        """Forward bus events to WebSocket."""
         async for event in bus.subscribe(company_id):
             await websocket.send_json(event)
-    except WebSocketDisconnect:
-        pass
+
+    async def _watch_disconnect() -> None:
+        """Block until client disconnects (receives close frame or error)."""
+        try:
+            while True:
+                await websocket.receive()  # blocks; raises WebSocketDisconnect on close
+        except WebSocketDisconnect:
+            pass
+
+    forward_task = asyncio.ensure_future(_forward_events())
+    watch_task = asyncio.ensure_future(_watch_disconnect())
+
+    try:
+        # Wait for either task to complete (disconnect detected or connection error)
+        done, pending = await asyncio.wait(
+            [forward_task, watch_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
     except Exception:
         logger.debug("WebSocket closed for company %s", company_id)
+        forward_task.cancel()
+        watch_task.cancel()
