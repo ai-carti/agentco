@@ -4,7 +4,7 @@
  * Navigating away while fetches are in flight previously caused setState on
  * unmounted component. Fix: single AbortController per effect, abort in cleanup.
  */
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AgentPage from '../components/AgentPage'

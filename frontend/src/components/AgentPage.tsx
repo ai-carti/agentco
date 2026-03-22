@@ -339,10 +339,14 @@ export default function AgentPage() {
                   tabIndex={0}
                   aria-expanded={expandedId === item.id}
                   aria-controls={item.description ? expandedContentId : undefined}
-                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                  onClick={() => {
+                    if (!item.description) return
+                    setExpandedId(expandedId === item.id ? null : item.id)
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
+                      if (!item.description) return
                       setExpandedId(expandedId === item.id ? null : item.id)
                     }
                   }}
