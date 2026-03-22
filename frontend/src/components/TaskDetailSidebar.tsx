@@ -5,6 +5,8 @@ import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
 import { STATUS_COLORS, getAvatarColor, getInitials } from '../utils/taskUtils'
+// SIRI-UX-150: focus trap for accessibility
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -55,6 +57,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const [running, setRunning] = useState(false)
   const toast = useToast()
   const setTasks = useAgentStore((s) => s.setTasks)
+  // SIRI-UX-150: focus trap — keep focus within sidebar while open
+  const trapRef = useFocusTrap(true)
 
   // Fetch logs
   useEffect(() => {
@@ -159,8 +163,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
       />
 
       {/* Sidebar panel */}
+      {/* SIRI-UX-150: role="dialog" + aria-modal + focus trap for accessibility */}
       <div
+        ref={trapRef}
         data-testid="task-detail-sidebar"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Task details"
         style={{
           position: 'fixed',
           top: 0,

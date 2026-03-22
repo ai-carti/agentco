@@ -179,20 +179,26 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
 export default function LibraryPage() {
   const [agents, setAgents] = useState<LibraryAgent[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [forkTarget, setForkTarget] = useState<string | null>(null)
 
   const loadAgents = () => {
+    setLoadError(false)
     const token = getStoredToken()
     // SIRI-UX-069: use limit param now that backend supports pagination (ALEX-TD-040)
     fetch(`${BASE_URL}/api/library?limit=50`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then((res) => (res.ok ? res.json() : []))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setAgents(Array.isArray(data) ? data : [])
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        // SIRI-UX-152: surface network/API errors — don't show silent empty state
+        setLoadError(true)
+        setLoading(false)
+      })
   }
 
   useEffect(() => {
@@ -208,9 +214,27 @@ export default function LibraryPage() {
         Agent Library
       </h1>
 
+      {/* SIRI-UX-152: error state — shown when fetch fails */}
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '1rem',
+            padding: '0.875rem 1rem',
+            background: 'rgba(127, 29, 29, 0.85)',
+            border: '1px solid #b91c1c',
+            borderRadius: '0.5rem',
+            color: '#fee2e2',
+            fontSize: '0.875rem',
+          }}
+        >
+          Failed to load agent library. Please try again.
+        </div>
+      )}
+
       {loading ? (
         <SkeletonCard variant="task" count={3} />
-      ) : agents.length === 0 ? (
+      ) : agents.length === 0 && !loadError ? (
         <div
           data-testid="library-empty"
           style={{

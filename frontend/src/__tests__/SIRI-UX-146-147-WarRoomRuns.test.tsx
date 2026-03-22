@@ -24,13 +24,15 @@ globalThis.fetch = vi.fn().mockResolvedValue({
 })
 
 // Capture WS instances
-type WsEventMap = {
-  open?: () => void
-  message?: (e: { data: string }) => void
-  close?: (e: { code: number; wasClean: boolean }) => void
-  error?: () => void
+type MockWsInstance = {
+  onopen?: (() => void) | null
+  onmessage?: ((e: { data: string }) => void) | null
+  onclose?: ((e: { code: number; wasClean: boolean }) => void) | null
+  onerror?: (() => void) | null
+  close: () => void
+  _closed: boolean
 }
-let wsInstances: (WsEventMap & { close: () => void; _closed: boolean })[] = []
+let wsInstances: MockWsInstance[] = []
 
 class MockWebSocket {
   onopen: (() => void) | null = null
@@ -40,7 +42,7 @@ class MockWebSocket {
   _closed = false
 
   constructor() {
-    wsInstances.push(this as unknown as WsEventMap & { close: () => void; _closed: boolean })
+    wsInstances.push(this as unknown as MockWsInstance)
   }
 
   close() {

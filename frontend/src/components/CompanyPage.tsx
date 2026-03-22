@@ -225,9 +225,13 @@ export default function CompanyPage() {
         setTasks([...currentTasks, ...items])
         setTaskOffset(taskOffset + items.length)
         setHasMoreTasks(items.length === TASK_LIMIT)
+      } else {
+        // SIRI-UX-151: surface load-more errors so user knows what happened
+        toast.error(`Failed to load more tasks (${res.status})`)
       }
     } catch {
-      // silently ignore
+      // SIRI-UX-151: surface network errors
+      toast.error('Failed to load more tasks')
     }
   }
 

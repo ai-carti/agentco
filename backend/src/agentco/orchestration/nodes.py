@@ -183,10 +183,12 @@ async def subagent_node(state: AgentState) -> dict:
 
     # POST-006: loop detection on deep hierarchy — check iteration AND cost limits
     # ALEX-TD-086: subagent_node previously only checked MAX_ITERATIONS (not MAX_COST_USD).
-    # CEO node checks both. Subagent should mirror CEO's loop detection to prevent
-    # cost overruns on subagent steps that are expensive but few in iteration count.
+    # ALEX-TD-086 fix: also add MAX_TOKENS check — missing vs ceo_node/hierarchical_node.
+    # CEO node checks all three limits. Subagent must mirror CEO to prevent token overruns
+    # via subagent path (many short iterations, each token-heavy).
     max_iter = _get_max_iterations()
     max_cost = _get_max_cost_usd()
+    max_tokens = _get_max_tokens()
 
     if state["total_cost_usd"] >= max_cost:
         return {
@@ -195,6 +197,16 @@ async def subagent_node(state: AgentState) -> dict:
             "error_detail": (
                 f"Cost limit ${max_cost:.4f} exceeded at subagent depth {task_depth} "
                 f"(spent ${state['total_cost_usd']:.4f})"
+            ),
+        }
+
+    if state["total_tokens"] >= max_tokens:
+        return {
+            "status": "failed",
+            "error": "token_limit_exceeded",
+            "error_detail": (
+                f"Token limit {max_tokens} exceeded at subagent depth {task_depth} "
+                f"(used {state['total_tokens']} tokens)"
             ),
         }
 
