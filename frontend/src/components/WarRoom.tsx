@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useAgentStore } from '../store/agentStore'
 import EmptyState from './EmptyState'
+import SkeletonCard from './SkeletonCard'
 import { Moon } from 'lucide-react'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -149,7 +150,10 @@ export default function WarRoom() {
     <div data-testid="war-room" className="p-4">
       <h1 className="text-xl font-bold mb-4">War Room</h1>
 
-      {runs.length === 0 && !isConnecting ? (
+      {/* SIRI-UX-158: show skeleton while connecting so user gets feedback instead of blank area */}
+      {isConnecting && runs.length === 0 ? (
+        <SkeletonCard variant="task" count={3} />
+      ) : runs.length === 0 ? (
         <EmptyState
           icon={<Moon className="w-12 h-12 text-gray-400" />}
           title="All quiet here"

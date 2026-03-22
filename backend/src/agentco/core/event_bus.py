@@ -162,3 +162,17 @@ class EventBus:
             else:
                 cls._instance = InProcessEventBus()
         return cls._instance
+
+    @classmethod
+    def reset(cls) -> None:
+        """
+        ALEX-TD-092: Reset the singleton instance.
+
+        Allows tests (and config-reload scenarios) to clear the cached instance so
+        the next EventBus.get() call will re-evaluate REDIS_URL and create a fresh bus.
+
+        Usage in tests:
+            EventBus.reset()
+            # Now EventBus.get() creates a new InProcessEventBus (or RedisEventBus if REDIS_URL set)
+        """
+        cls._instance = None

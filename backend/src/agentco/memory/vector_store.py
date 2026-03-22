@@ -174,7 +174,8 @@ class SqliteVecStore(VectorStore):
         """Delete all memories for agent_id from both meta and vec tables."""
         # ALEX-TD-080: acquire lock
         with self._lock:
-            # Fetch rowid_ids to delete from vec table
+            # ALEX-TD-090: batch DELETE using IN clause instead of N individual DELETEs.
+            # Old O(N) pattern looped over each rowid separately — O(1) IN clause replaces it.
             rows = self._conn.execute(
                 "SELECT rowid_id FROM agent_memory_meta WHERE agent_id = ?",
                 [agent_id],
@@ -182,14 +183,15 @@ class SqliteVecStore(VectorStore):
 
             rowid_ids = [row[0] for row in rows]
 
-            # Delete from vec table
-            for rid in rowid_ids:
+            if rowid_ids:
+                # Build IN clause: DELETE ... WHERE rowid IN (?, ?, ...)
+                placeholders = ",".join("?" * len(rowid_ids))
                 self._conn.execute(
-                    "DELETE FROM agent_memories_vec WHERE rowid = ?",
-                    [rid],
+                    f"DELETE FROM agent_memories_vec WHERE rowid IN ({placeholders})",
+                    rowid_ids,
                 )
 
-            # Delete from meta table
+            # Delete from meta table (single DELETE regardless of count)
             self._conn.execute(
                 "DELETE FROM agent_memory_meta WHERE agent_id = ?",
                 [agent_id],
@@ -249,6 +251,11 @@ class PgVectorStore(VectorStore):
                 "Install with: pip install \"agentco[postgres,postgres-vector]\""
             ) from e
 
+        # ALEX-TD-088: threading.Lock for psycopg2 connection safety.
+        # psycopg2 connections are NOT thread-safe (PEP 249 says each thread should
+        # use its own connection, but our async run_in_executor callers share this instance).
+        # Mirrors SqliteVecStore._lock pattern to prevent concurrent-access errors.
+        self._lock = threading.Lock()
         self._conn = psycopg2.connect(database_url)
         register_vector(self._conn)
         self._setup()
@@ -286,15 +293,17 @@ class PgVectorStore(VectorStore):
         created_at = datetime.now(timezone.utc).isoformat()
         vec = np.array(embedding)
 
-        with self._conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO agent_memory_meta(id, agent_id, task_id, content, embedding, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                """,
-                [memory_id, agent_id, task_id, content, vec, created_at],
-            )
-        self._conn.commit()
+        # ALEX-TD-088: acquire lock before DB operation
+        with self._lock:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO agent_memory_meta(id, agent_id, task_id, content, embedding, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    [memory_id, agent_id, task_id, content, vec, created_at],
+                )
+            self._conn.commit()
         return memory_id
 
     def search(
@@ -306,49 +315,56 @@ class PgVectorStore(VectorStore):
         import numpy as np
 
         vec = np.array(query_embedding)
-        with self._conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, agent_id, task_id, content, created_at,
-                       embedding <=> %s AS distance
-                FROM agent_memory_meta
-                WHERE agent_id = %s
-                ORDER BY embedding <=> %s
-                LIMIT %s
-                """,
-                [vec, agent_id, vec, top_k],
-            )
-            rows = cur.fetchall()
-            cols = [desc[0] for desc in cur.description]
+        # ALEX-TD-088: acquire lock before DB operation
+        with self._lock:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, agent_id, task_id, content, created_at,
+                           embedding <=> %s AS distance
+                    FROM agent_memory_meta
+                    WHERE agent_id = %s
+                    ORDER BY embedding <=> %s
+                    LIMIT %s
+                    """,
+                    [vec, agent_id, vec, top_k],
+                )
+                rows = cur.fetchall()
+                cols = [desc[0] for desc in cur.description]
 
         return [dict(zip(cols, row)) for row in rows]
 
     def delete_by_agent(self, agent_id: str) -> None:
-        with self._conn.cursor() as cur:
-            cur.execute(
-                "DELETE FROM agent_memory_meta WHERE agent_id = %s",
-                [agent_id],
-            )
-        self._conn.commit()
+        # ALEX-TD-088: acquire lock before DB operation
+        with self._lock:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM agent_memory_meta WHERE agent_id = %s",
+                    [agent_id],
+                )
+            self._conn.commit()
 
     def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
-        with self._conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, agent_id, task_id, content, created_at
-                FROM agent_memory_meta
-                WHERE agent_id = %s
-                ORDER BY created_at DESC
-                LIMIT %s OFFSET %s
-                """,
-                [agent_id, limit, offset],
-            )
-            rows = cur.fetchall()
-            cols = [desc[0] for desc in cur.description]
+        # ALEX-TD-088: acquire lock before DB operation
+        with self._lock:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, agent_id, task_id, content, created_at
+                    FROM agent_memory_meta
+                    WHERE agent_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s OFFSET %s
+                    """,
+                    [agent_id, limit, offset],
+                )
+                rows = cur.fetchall()
+                cols = [desc[0] for desc in cur.description]
         return [dict(zip(cols, row)) for row in rows]
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
 
 
 # ---------------------------------------------------------------------------

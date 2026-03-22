@@ -4,7 +4,7 @@
  * The Add Agent modal has aria-modal and Escape key handling, but Tab focus
  * can escape to the background. The fix: apply useFocusTrap to the modal content div.
  */
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import CompanyPage from '../components/CompanyPage'

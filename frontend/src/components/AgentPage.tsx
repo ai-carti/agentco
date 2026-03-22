@@ -72,11 +72,15 @@ export default function AgentPage() {
 
   useEffect(() => {
     if (!companyId || !agentId) return
+    // SIRI-UX-157: single AbortController for all 3 fetches — prevents setState on unmounted component
+    const controller = new AbortController()
+    const { signal } = controller
     const token = getStoredToken()
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}`, {
       headers: authHeaders,
+      signal,
     })
       .then((res) => {
         if (!res.ok) { setAgentLoadError(true); setAgentLoading(false); return null }
@@ -86,17 +90,23 @@ export default function AgentPage() {
         if (data) setAgentData(data)
         setAgentLoading(false)
       })
-      .catch(() => { setAgentLoadError(true); setAgentLoading(false) })
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
+        setAgentLoadError(true)
+        setAgentLoading(false)
+      })
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/tasks?status=done`, {
       headers: authHeaders,
+      signal,
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setHistory(Array.isArray(data) ? data : [])
         setHistoryLoaded(true)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
         // SIRI-UX-154: surface error instead of showing misleading empty state
         setHistoryError(true)
         setHistoryLoaded(true)
@@ -104,17 +114,21 @@ export default function AgentPage() {
 
     fetch(`${BASE_URL}/api/companies/${companyId}/agents/${agentId}/memory`, {
       headers: authHeaders,
+      signal,
     })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((data) => {
         setMemories(Array.isArray(data) ? data : [])
         setMemoriesLoaded(true)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err?.name === 'AbortError') return
         // SIRI-UX-154: surface error instead of showing misleading empty state
         setMemoriesError(true)
         setMemoriesLoaded(true)
       })
+
+    return () => controller.abort()
   }, [companyId, agentId])
 
   const handleSaveToLibrary = async () => {
@@ -315,43 +329,51 @@ export default function AgentPage() {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {visibleHistory.map((item) => (
-              <div
-                key={item.id}
-                role="button"
-                tabIndex={0}
-                aria-expanded={expandedId === item.id}
-                onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setExpandedId(expandedId === item.id ? null : item.id)
-                  }
-                }}
-                style={{
-                  padding: '0.625rem 0.875rem',
-                  background: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: 6,
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 500 }}>{item.title}</span>
-                  {item.created_at && (
-                    <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </span>
+            {visibleHistory.map((item) => {
+              // SIRI-UX-159: stable id for aria-controls so screen readers can navigate to expanded content
+              const expandedContentId = `history-desc-${item.id}`
+              return (
+                <div
+                  key={item.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedId === item.id}
+                  aria-controls={item.description ? expandedContentId : undefined}
+                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setExpandedId(expandedId === item.id ? null : item.id)
+                    }
+                  }}
+                  style={{
+                    padding: '0.625rem 0.875rem',
+                    background: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: 6,
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 500 }}>{item.title}</span>
+                    {item.created_at && (
+                      <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  {expandedId === item.id && item.description && (
+                    <div
+                      id={expandedContentId}
+                      style={{ marginTop: '0.5rem', color: '#9ca3af', fontSize: '0.8rem' }}
+                    >
+                      {item.description}
+                    </div>
                   )}
                 </div>
-                {expandedId === item.id && item.description && (
-                  <div style={{ marginTop: '0.5rem', color: '#9ca3af', fontSize: '0.8rem' }}>
-                    {item.description}
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
             {hasMore && (
               <Button
                 variant="secondary"

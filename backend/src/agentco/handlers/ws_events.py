@@ -117,6 +117,15 @@ async def ws_company_events(
             [forward_task, watch_task],
             return_when=asyncio.FIRST_COMPLETED,
         )
+        # ALEX-TD-089: retrieve exceptions from done tasks to prevent
+        # "Task exception was never retrieved" Python warnings.
+        # A task in 'done' may have raised an exception (e.g. send_json on closed WS).
+        for task in done:
+            try:
+                task.result()
+            except (asyncio.CancelledError, WebSocketDisconnect, Exception) as exc:
+                logger.debug("WebSocket task finished with: %s", exc)
+
         for task in pending:
             task.cancel()
             try:
