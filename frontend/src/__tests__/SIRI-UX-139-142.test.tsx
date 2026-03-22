@@ -101,7 +101,7 @@ describe('SIRI-UX-142: GlobalSearch ARIA roles', () => {
   beforeEach(() => {
     useAgentStore.setState({
       currentCompany: { id: 'c1', name: 'Acme Corp' },
-      agents: [{ id: 'a1', name: 'CEO Agent', role: 'Executive', status: 'idle', companyId: 'c1' }],
+      agents: [{ id: 'a1', name: 'CEO Agent', role: 'Executive', status: 'idle' }],
       tasks: [],
     })
   })

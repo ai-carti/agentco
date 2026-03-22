@@ -66,12 +66,12 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
 
     # Create a minimal Run ORM mock
     import uuid
-    run_id = str(uuid.uuid4())
-    company_id = "company-test-084"
+    _run_id = str(uuid.uuid4())
+    _company_id = "company-test-084"
 
     class _FakeRunORM:
-        id = run_id
-        company_id = company_id
+        id = _run_id
+        company_id = _company_id
         goal = "test goal"
         task_id = None
         status = "pending"
@@ -82,7 +82,7 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
     # Session factory mock
     class _FakeSession:
         def get(self, model, rid):
-            if rid == run_id:
+            if rid == _run_id:
                 return _FakeRunORM()
             return None
 
@@ -98,7 +98,7 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
     svc = RunService(_FakeSession())
 
     try:
-        await svc.execute_run(run_id, session_factory=_session_factory)
+        await svc.execute_run(_run_id, session_factory=_session_factory)
     except Exception:
         pass  # expected — re-raise from failed status
 
@@ -157,12 +157,12 @@ async def test_execute_run_publishes_run_completed_on_graph_completed_status(mon
 
     import uuid
     from agentco.services.run import RunService
-    run_id = str(uuid.uuid4())
-    company_id = "company-test-084b"
+    _run_id = str(uuid.uuid4())
+    _company_id = "company-test-084b"
 
     class _FakeRunORM:
-        id = run_id
-        company_id = company_id
+        id = _run_id
+        company_id = _company_id
         goal = "test goal"
         task_id = None
         status = "pending"
@@ -172,7 +172,7 @@ async def test_execute_run_publishes_run_completed_on_graph_completed_status(mon
 
     class _FakeSession:
         def get(self, model, rid):
-            if rid == run_id:
+            if rid == _run_id:
                 return _FakeRunORM()
             return None
 
@@ -186,7 +186,7 @@ async def test_execute_run_publishes_run_completed_on_graph_completed_status(mon
         return _FakeSession()
 
     svc = RunService(_FakeSession())
-    await svc.execute_run(run_id, session_factory=_session_factory)
+    await svc.execute_run(_run_id, session_factory=_session_factory)
 
     event_types = [e["type"] for e in published_events]
 
