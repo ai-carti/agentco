@@ -475,7 +475,8 @@ class RunService:
             raise NotFoundError(f"Run {run_id!r} not found")
 
         # ALEX-TD-033: если ран уже в terminal state — не меняем статус
-        _terminal = {"completed", "failed", "stopped", "done"}
+        # ALEX-TD-099: "error" is also terminal — graph completed with status=error (loop/cost limit)
+        _terminal = {"completed", "failed", "stopped", "done", "error"}
         if run_orm.status in _terminal:
             return self._repo._to_domain(run_orm)
 

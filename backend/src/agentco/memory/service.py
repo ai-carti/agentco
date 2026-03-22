@@ -134,9 +134,15 @@ class MemoryService:
         return "\n".join(lines)
 
     async def _get_embedding(self, text: str) -> list[float]:
-        """Получить embedding через LiteLLM."""
+        """Получить embedding через LiteLLM.
+
+        ALEX-TD-100: timeout=30.0 prevents indefinite hang when LLM API is unavailable.
+        Without a timeout, save_memory()/get_relevant_memories() would block the event loop
+        (via run_in_executor caller) indefinitely on LLM downtime.
+        """
         response = await litellm.aembedding(
             model=_EMBEDDING_MODEL,
             input=text,
+            timeout=30.0,
         )
         return response.data[0].embedding

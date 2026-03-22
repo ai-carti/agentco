@@ -12,6 +12,8 @@ from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 
 _RATE_LIMIT_AGENTS = os.getenv("RATE_LIMIT_AGENTS", "20/hour")
+# ALEX-TD-102: separate rate limit for tree endpoint — recursive tree build is O(N agents)
+_RATE_LIMIT_AGENTS_TREE = os.getenv("RATE_LIMIT_AGENTS_TREE", "30/minute")
 
 router = APIRouter(prefix="/api/companies/{company_id}/agents", tags=["agents"])
 
@@ -91,7 +93,9 @@ def create_agent(
 
 
 @router.get("/tree", response_model=list[Any])
+@limiter.limit(_RATE_LIMIT_AGENTS_TREE)
 def get_agents_tree(
+    request: Request,
     company_id: str,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
