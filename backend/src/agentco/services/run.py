@@ -445,6 +445,10 @@ class RunService:
                 if session_factory is not None:
                     update_session.close()
 
+            if run_orm is None:
+                # BUG-071: run was deleted while graph was failing — log the loss
+                logger.warning("execute_run: run_orm not found for run_id=%s in error branch, status update lost", run_id)
+
             await bus.publish({
                 "type": "run.failed",
                 "company_id": company_id,

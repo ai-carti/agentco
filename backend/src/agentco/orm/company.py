@@ -11,7 +11,8 @@ class CompanyORM(Base):
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    owner_id: Mapped[str | None] = mapped_column(Text, ForeignKey("users.id"), nullable=True)
+    # ALEX-TD-095: index on owner_id — every auth'd API call filters by owner_id
+    owner_id: Mapped[str | None] = mapped_column(Text, ForeignKey("users.id"), nullable=True, index=True)
 
     agents: Mapped[list["AgentORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821
     tasks: Mapped[list["TaskORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821

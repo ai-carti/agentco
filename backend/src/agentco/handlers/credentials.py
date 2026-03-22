@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -106,13 +106,18 @@ def create_credential(
 )
 def list_credentials(
     company_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    # ALEX-TD-098: pagination to prevent unbounded result sets
     try:
         return CredentialService(session).list_by_company(
             company_id=company_id,
             owner_id=current_user.id,
+            limit=limit,
+            offset=offset,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -30,9 +30,10 @@ class CredentialService:
         self._session.commit()
         return result
 
-    def list_by_company(self, company_id: str, owner_id: str) -> list[Credential]:
+    def list_by_company(self, company_id: str, owner_id: str, limit: int | None = None, offset: int | None = None) -> list[Credential]:
+        # ALEX-TD-098: propagate pagination params to repository
         self._check_company_owner(company_id, owner_id)
-        return self._repo.list_by_company(company_id)
+        return self._repo.list_by_company(company_id, limit=limit, offset=offset)
 
     def delete(self, company_id: str, credential_id: str, owner_id: str) -> None:
         self._check_company_owner(company_id, owner_id)

@@ -132,8 +132,11 @@ def get_portfolio(
         raise HTTPException(status_code=404, detail="Library agent not found")
 
     # Find all agents forked from this library entry
+    # ALEX-TD-097: ORDER BY created_at for deterministic results
     forks = session.execute(
-        select(AgentORM).where(AgentORM.library_agent_id == library_id)
+        select(AgentORM)
+        .where(AgentORM.library_agent_id == library_id)
+        .order_by(AgentORM.created_at.asc())
     ).scalars().all()
 
     return PortfolioOut(

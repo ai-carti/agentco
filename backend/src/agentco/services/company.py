@@ -34,9 +34,12 @@ class CompanyService:
         return company
 
     def list_all(self, owner_id: str | None = None) -> list[Company]:
+        from ..orm.company import CompanyORM
+        # ALEX-TD-096: ORDER BY created_at for deterministic pagination
+        order = CompanyORM.created_at.asc()
         if owner_id is not None:
-            return self._repo.list(owner_id=owner_id)
-        return self._repo.list()
+            return self._repo.list(order_by=order, owner_id=owner_id)
+        return self._repo.list(order_by=order)
 
     def update(self, company_id: str, name: str, owner_id: str | None = None) -> Company:
         """Update company name. If owner_id provided, validates ownership in one DB hit.

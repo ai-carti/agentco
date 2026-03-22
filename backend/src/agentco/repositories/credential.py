@@ -23,5 +23,7 @@ class CredentialRepository(BaseRepository[CredentialORM, Credential]):
             encrypted_api_key=domain.encrypted_api_key,
         )
 
-    def list_by_company(self, company_id: str) -> list[Credential]:
-        return self.list(company_id=company_id)
+    def list_by_company(self, company_id: str, limit: int | None = None, offset: int | None = None) -> list[Credential]:
+        # ALEX-TD-096: ORDER BY created_at for deterministic results
+        # ALEX-TD-098: support pagination parameters
+        return self.list(company_id=company_id, order_by=CredentialORM.created_at.asc(), limit=limit, offset=offset)
