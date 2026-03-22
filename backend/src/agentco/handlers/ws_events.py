@@ -25,6 +25,8 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+import jwt as pyjwt
+
 from ..auth.security import decode_access_token
 from ..core.event_bus import EventBus
 from ..db.session import get_session
@@ -47,8 +49,10 @@ async def ws_company_events(
     if token:
         try:
             user_id = decode_access_token(token)
-        except Exception:
-            pass  # user_id stays None → unauthorized
+        except pyjwt.PyJWTError:
+            pass  # expected: invalid/expired token → user_id stays None → unauthorized
+        except Exception as exc:
+            logger.warning("Unexpected error decoding JWT token: %s", exc)
 
     # 2. ALEX-TD-011: Verify company ownership via DB.
     # ALEX-TD-035: session.close() in finally — DB released before websocket.accept().

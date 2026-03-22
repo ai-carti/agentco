@@ -207,4 +207,33 @@ describe('KanbanBoard', () => {
     const ids = Array.from(cards).map((c) => c.getAttribute('data-testid')?.replace('task-card-', ''))
     expect(ids).toEqual(['tc', 'ta', 'tb'])
   })
+
+  // --- SIRI-UX-130: filter buttons must use role="menuitemcheckbox" for aria-checked ---
+  it('SIRI-UX-130: agent filter options have role=menuitemcheckbox', () => {
+    useAgentStore.setState({
+      agents: [{ id: 'a1', name: 'Alice', role: 'dev', status: 'idle', tasks: [] }],
+      tasks: [],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    const agentFilterBtn = screen.getByTestId('filter-agent-btn')
+    fireEvent.click(agentFilterBtn)
+
+    const agentOption = screen.getByTestId('filter-agent-option-a1')
+    expect(agentOption).toHaveAttribute('role', 'menuitemcheckbox')
+  })
+
+  it('SIRI-UX-130: priority filter options have role=menuitemcheckbox', () => {
+    useAgentStore.setState({
+      tasks: [{ id: 't1', title: 'Task', status: 'todo' }],
+      agents: [],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+
+    const priorityFilterBtn = screen.getByTestId('filter-priority-btn')
+    fireEvent.click(priorityFilterBtn)
+
+    const priorityOption = screen.getByTestId('filter-priority-option-high')
+    expect(priorityOption).toHaveAttribute('role', 'menuitemcheckbox')
+  })
 })

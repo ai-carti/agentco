@@ -301,6 +301,85 @@ describe('WarRoomPage', () => {
     expect(store.agents.length).toBeLessThanOrEqual(4)
   })
 
+  // --- SIRI-UX-128: expandedMessages resets on companyId change (in-place navigation) ---
+  it('SIRI-UX-128: clears expandedMessages when companyId changes via navigation', () => {
+    // Use a navigator component inside MemoryRouter so companyId changes in-place
+    // (same component instance stays mounted, only param changes)
+    function NavTrigger() {
+      const navigate = (window as any).__testNavigate
+      return (
+        <button
+          data-testid="navigate-btn"
+          onClick={() => navigate?.('/companies/comp-B/warroom')}
+        >
+          Go B
+        </button>
+      )
+    }
+
+    let navigateFn: ((path: string) => void) | null = null
+
+    function RouterInspector() {
+      const nav = require('react-router-dom').useNavigate()
+      navigateFn = nav
+      return null
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/companies/comp-A/warroom']}>
+        <RouterInspector />
+        <Routes>
+          <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // Add a long message and expand it in comp-A
+    act(() => {
+      useWarRoomStore.getState().addMessage({
+        id: 'msg-expand-128',
+        senderId: 'a1',
+        senderName: 'Alex',
+        targetId: 'a2',
+        targetName: 'Dev',
+        content: 'A'.repeat(200),
+        timestamp: new Date().toISOString(),
+      })
+    })
+
+    const outerMsgs = screen.getAllByTestId('feed-message')
+    const longMsgOuter = outerMsgs[outerMsgs.length - 1]
+    fireEvent.click(longMsgOuter)
+    // Message should now be expanded
+    expect(longMsgOuter).toHaveAttribute('aria-expanded', 'true')
+
+    // Navigate to comp-B in-place (same component instance, companyId changes)
+    act(() => {
+      navigateFn!('/companies/comp-B/warroom')
+    })
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // Add a message with the SAME id in comp-B
+    act(() => {
+      useWarRoomStore.getState().addMessage({
+        id: 'msg-expand-128',
+        senderId: 'a1',
+        senderName: 'Alex',
+        targetId: 'a2',
+        targetName: 'Dev',
+        content: 'A'.repeat(200),
+        timestamp: new Date().toISOString(),
+      })
+    })
+
+    // expandedMessages should have been cleared when companyId changed
+    const newOuterMsgs = screen.getAllByTestId('feed-message')
+    const newLongMsgOuter = newOuterMsgs[newOuterMsgs.length - 1]
+    expect(newLongMsgOuter).toHaveAttribute('aria-expanded', 'false')
+  })
+
   // --- SIRI-POST-003: mock interval behind feature flag ---
   it('does NOT grow messages via interval when VITE_MOCK_WAR_ROOM is not set', () => {
     // Ensure flag is NOT set (default)
