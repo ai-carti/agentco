@@ -317,6 +317,8 @@ export default function LibraryPage() {
                 <Link
                   to={`/library/${agent.id}/portfolio`}
                   data-testid={`portfolio-link-${agent.id}`}
+                  // SIRI-UX-220: agent-specific aria-label so screen readers can distinguish between multiple Portfolio links
+                  aria-label={`View ${agent.name} portfolio`}
                   style={{
                     padding: '0.4rem 0.875rem',
                     background: '#0f172a',
@@ -336,6 +338,8 @@ export default function LibraryPage() {
                 </Link>
                 <button
                   data-testid={`fork-btn-${agent.id}`}
+                  // SIRI-UX-220: agent-specific aria-label so screen readers can distinguish between multiple Fork buttons
+                  aria-label={`Fork ${agent.name} to a company`}
                   onClick={() => setForkTarget(agent.id)}
                   style={{
                     padding: '0.4rem 0.875rem',

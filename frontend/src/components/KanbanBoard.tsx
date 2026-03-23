@@ -1312,6 +1312,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             )}
             <textarea
               data-testid="create-task-desc-input"
+              // SIRI-UX-221: aria-label for screen readers — placeholder is not a substitute for accessible name
+              aria-label="Task description"
               value={newTaskDesc}
               onChange={(e) => setNewTaskDesc(e.target.value)}
               onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}

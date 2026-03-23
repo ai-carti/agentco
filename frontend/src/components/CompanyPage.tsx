@@ -277,7 +277,9 @@ export default function CompanyPage() {
       })
       if (res.ok) {
         const newAgent = await res.json()
-        setAgents([...agents, newAgent])
+        // SIRI-UX-219: use getState() to avoid stale closure — agents in closure may be outdated
+        // if concurrent updates happened between render and handleCreateAgent call
+        setAgents([...useAgentStore.getState().agents, newAgent])
         setIsAgentFormOpen(false)
         toast.success(`Agent ${data.name} created`)
       } else {
