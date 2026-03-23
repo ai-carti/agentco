@@ -377,6 +377,8 @@ class RunService:
         # compile_graph, create_checkpointer, MemoryService are already in scope via
         # module-level imports added for ALEX-TD-144 (test patchability).
         from ..orchestration.state import AgentState
+        # ALEX-TD-150: single import of _run_mod — used for both graph helpers and ContextVar.
+        # Previously imported twice (once here, once near ContextVar usage) — second was dead code.
         import agentco.services.run as _run_mod
         _compile_graph = _run_mod.compile_graph
         _create_checkpointer = _run_mod.create_checkpointer
@@ -436,7 +438,7 @@ class RunService:
         # available to agent_node nodes during ainvoke without it ever entering
         # the serialized LangGraph state.
         # All async tasks created inside ainvoke inherit the current context.
-        import agentco.services.run as _run_mod
+        # ALEX-TD-150: reuse _run_mod imported above — no second import needed.
         _memory_service_var_ref = _run_mod._memory_service_var
         _ms_token = _memory_service_var_ref.set(_memory_service)
 

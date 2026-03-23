@@ -79,4 +79,9 @@ class AgentState(TypedDict):
     model: NotRequired[str]                      # модель LiteLLM (default "gpt-4o")
     tools: NotRequired[list]                     # tool definitions для LLM
     tool_handlers: NotRequired[dict]             # dict[str, ToolHandler] — обработчики
-    memory_service: NotRequired[object | None]   # MemoryService | None
+    # ALEX-TD-151: memory_service is DEPRECATED in state — do NOT put MemoryService here.
+    # LangGraph serializes state via msgpack at each checkpoint; MemoryService (sqlite3 conn)
+    # is not msgpack-serializable → TypeError (ALEX-TD-147).
+    # MemoryService is passed via _memory_service_var ContextVar in services/run.py:execute_run.
+    # This field stays in TypedDict for backward-compat type annotations only — never set at runtime.
+    memory_service: NotRequired[object | None]   # DEPRECATED: use _memory_service_var ContextVar

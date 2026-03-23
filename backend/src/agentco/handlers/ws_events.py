@@ -21,6 +21,7 @@ of 1008 — better browser compatibility.
 """
 import asyncio
 import logging
+import os
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
 from sqlalchemy import select
@@ -36,6 +37,13 @@ from ..orm.company import CompanyORM
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# ALEX-TD-149: per-user WebSocket connection limit to prevent DoS.
+# Each WS connection subscribes to InProcessEventBus + runs 2 asyncio tasks.
+# Without limit, a single user can exhaust server memory with 10K+ connections.
+# Configurable via MAX_WS_CONNECTIONS_PER_USER env var (default 5).
+_MAX_WS_CONNECTIONS_PER_USER: int = int(os.environ.get("MAX_WS_CONNECTIONS_PER_USER", "5"))
+_active_ws_connections: dict[str, int] = {}  # user_id → active connection count
 
 
 @router.websocket("/ws/companies/{company_id}/events")
@@ -83,6 +91,22 @@ async def ws_company_events(
         # 4003 = Forbidden (valid token but no ownership)
         await websocket.close(code=4003, reason="Company not found or access denied")
         return
+
+    # ALEX-TD-149: enforce per-user connection limit to prevent DoS.
+    # Each accepted WS holds an EventBus subscription + 2 asyncio tasks.
+    # Without limit, one user could exhaust server memory with thousands of connections.
+    assert user_id is not None  # guaranteed by auth checks above
+    current_count = _active_ws_connections.get(user_id, 0)
+    if current_count >= _MAX_WS_CONNECTIONS_PER_USER:
+        logger.warning(
+            "ws_conn_limit: user %s exceeded limit %d (current=%d), closing with 4029",
+            user_id, _MAX_WS_CONNECTIONS_PER_USER, current_count,
+        )
+        await websocket.close(code=4029, reason="Too many connections")
+        return
+
+    # Track this connection
+    _active_ws_connections[user_id] = current_count + 1
 
     bus = EventBus.get()
     # ALEX-TD-081: detect silent client disconnect (TCP close without WS close frame).
@@ -154,3 +178,11 @@ async def ws_company_events(
         forward_task.cancel()
         watch_task.cancel()
         await asyncio.gather(forward_task, watch_task, return_exceptions=True)
+    finally:
+        # ALEX-TD-149: always decrement active connection count on disconnect.
+        # Ensures the slot is freed even on unexpected errors, timeouts, or cancellations.
+        remaining = _active_ws_connections.get(user_id, 1) - 1
+        if remaining <= 0:
+            _active_ws_connections.pop(user_id, None)
+        else:
+            _active_ws_connections[user_id] = remaining

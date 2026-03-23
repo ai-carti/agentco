@@ -26,7 +26,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 import sqlite_vec
+
+logger_vs = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -256,9 +260,29 @@ class PgVectorStore(VectorStore):
         # use its own connection, but our async run_in_executor callers share this instance).
         # Mirrors SqliteVecStore._lock pattern to prevent concurrent-access errors.
         self._lock = threading.Lock()
+        # ALEX-TD-152: store URL for reconnect in _ensure_connection
+        self._database_url = database_url
         self._conn = psycopg2.connect(database_url)
         register_vector(self._conn)
         self._setup()
+
+    def _ensure_connection(self) -> None:
+        """ALEX-TD-152: reconnect if the psycopg2 connection is closed.
+
+        psycopg2 connection.closed: 0=open, 1=closed (EOF), 2=closed (error).
+        In production PostgreSQL (Railway/Supabase/RDS), idle connections are
+        dropped by the server after 5 minutes → InterfaceError on next use.
+
+        This guard re-creates the connection before any DB operation.
+        Called with self._lock held (all callers acquire lock first).
+        """
+        if self._conn.closed:
+            import psycopg2
+            from pgvector.psycopg2 import register_vector
+            logger_vs.debug("PgVectorStore: reconnecting (conn.closed=%d)", self._conn.closed)
+            self._conn = psycopg2.connect(self._database_url)
+            register_vector(self._conn)
+            self._setup()
 
     def _setup(self) -> None:
         """Enable pgvector extension and create tables if not exist."""
@@ -294,7 +318,9 @@ class PgVectorStore(VectorStore):
         vec = np.array(embedding)
 
         # ALEX-TD-088: acquire lock before DB operation
+        # ALEX-TD-152: ensure connection is alive before use
         with self._lock:
+            self._ensure_connection()
             with self._conn.cursor() as cur:
                 cur.execute(
                     """
@@ -316,7 +342,9 @@ class PgVectorStore(VectorStore):
 
         vec = np.array(query_embedding)
         # ALEX-TD-088: acquire lock before DB operation
+        # ALEX-TD-152: ensure connection is alive before use
         with self._lock:
+            self._ensure_connection()
             with self._conn.cursor() as cur:
                 cur.execute(
                     """
@@ -336,7 +364,9 @@ class PgVectorStore(VectorStore):
 
     def delete_by_agent(self, agent_id: str) -> None:
         # ALEX-TD-088: acquire lock before DB operation
+        # ALEX-TD-152: ensure connection is alive before use
         with self._lock:
+            self._ensure_connection()
             with self._conn.cursor() as cur:
                 cur.execute(
                     "DELETE FROM agent_memory_meta WHERE agent_id = %s",
@@ -346,7 +376,9 @@ class PgVectorStore(VectorStore):
 
     def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
         # ALEX-TD-088: acquire lock before DB operation
+        # ALEX-TD-152: ensure connection is alive before use
         with self._lock:
+            self._ensure_connection()
             with self._conn.cursor() as cur:
                 cur.execute(
                     """
