@@ -82,7 +82,8 @@ describe('WarRoom', () => {
     expect(screen.getByTestId('run-status-r1')).toHaveTextContent(/running/i)
   })
 
-  it('run.done updates status to done', () => {
+  it('run.completed updates status to done', () => {
+    // SIRI-UX-224: backend publishes "run.completed" not "run.done"
     renderWarRoom()
     act(() => {
       lastWs().onmessage?.({
@@ -97,7 +98,7 @@ describe('WarRoom', () => {
     })
     act(() => {
       lastWs().onmessage?.({
-        data: JSON.stringify({ type: 'run.done', run_id: 'r2' }),
+        data: JSON.stringify({ type: 'run.completed', run_id: 'r2' }),
       })
     })
     expect(screen.getByTestId('run-status-r2')).toHaveTextContent(/done/i)
