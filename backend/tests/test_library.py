@@ -276,3 +276,84 @@ def test_fork_increments_use_count(auth_client):
     entry = next((e for e in entries if e["id"] == lib_id), None)
     assert entry is not None
     assert entry.get("use_count", 0) == initial_count + 1
+
+
+# ── ALEX-TD-103: cross-tenant forks data leak ────────────────────────────────
+
+def test_portfolio_forks_only_shows_own_company_forks(auth_client):
+    """
+    ALEX-TD-103: GET /api/library/{id}/portfolio не должен раскрывать
+    company_id чужих пользователей через forks.
+
+    Сценарий:
+    1. user_a создаёт агента, сохраняет в библиотеку.
+    2. user_b форкает этого агента.
+    3. user_a запрашивает portfolio — должен видеть только СВОИ форки.
+    4. user_b запрашивает portfolio — должен видеть только СВОИ форки.
+
+    До фикса: оба видят ВСЕ форки, включая company_id чужих пользователей.
+    После фикса: каждый видит только свои форки.
+    """
+    client, _ = auth_client
+
+    # User A создаёт агента и сохраняет в библиотеку
+    token_a = _register_and_login(client, email="td103_user_a@example.com")
+    company_a = _create_company(client, token_a, "TD103 Corp A")
+    agent_a = _create_agent(client, token_a, company_a, "TD103 Template Agent")
+    lib_resp = _add_to_library(client, token_a, agent_a)
+    assert lib_resp.status_code == 201
+    lib_id = lib_resp.json()["id"]
+
+    # User A форкает агента в свою компанию
+    fork_company_a = _create_company(client, token_a, "TD103 Fork Corp A")
+    fork_resp_a = client.post(
+        f"/api/companies/{fork_company_a}/agents/fork",
+        json={"library_agent_id": lib_id},
+        headers=_auth_headers(token_a),
+    )
+    assert fork_resp_a.status_code == 201
+
+    # User B форкает того же агента в свою компанию
+    token_b = _register_and_login(client, email="td103_user_b@example.com")
+    company_b = _create_company(client, token_b, "TD103 Corp B")
+    fork_resp_b = client.post(
+        f"/api/companies/{company_b}/agents/fork",
+        json={"library_agent_id": lib_id},
+        headers=_auth_headers(token_b),
+    )
+    assert fork_resp_b.status_code == 201
+
+    # User A видит portfolio — должен видеть ТОЛЬКО свои форки (company_a)
+    portfolio_resp_a = client.get(
+        f"/api/library/{lib_id}/portfolio",
+        headers=_auth_headers(token_a),
+    )
+    assert portfolio_resp_a.status_code == 200
+    portfolio_a = portfolio_resp_a.json()
+    forks_a = portfolio_a["forks"]
+    fork_company_ids_a = {f["company_id"] for f in forks_a}
+    # User A НЕ должен видеть company_b в своём portfolio
+    assert company_b not in fork_company_ids_a, (
+        f"ALEX-TD-103: portfolio forks leaked other user's company_id={company_b!r}. "
+        f"Forks visible to user_a: {fork_company_ids_a}"
+    )
+    # User A ДОЛЖЕН видеть свой форк
+    assert fork_company_a in fork_company_ids_a
+
+    # User B видит portfolio — должен видеть ТОЛЬКО свои форки (company_b)
+    portfolio_resp_b = client.get(
+        f"/api/library/{lib_id}/portfolio",
+        headers=_auth_headers(token_b),
+    )
+    assert portfolio_resp_b.status_code == 200
+    portfolio_b = portfolio_resp_b.json()
+    forks_b = portfolio_b["forks"]
+    fork_company_ids_b = {f["company_id"] for f in forks_b}
+    # User B НЕ должен видеть company_a или fork_company_a
+    assert company_a not in fork_company_ids_b, (
+        f"ALEX-TD-103: portfolio forks leaked other user's company_id={company_a!r}. "
+        f"Forks visible to user_b: {fork_company_ids_b}"
+    )
+    assert fork_company_a not in fork_company_ids_b
+    # User B ДОЛЖЕН видеть свой форк
+    assert company_b in fork_company_ids_b

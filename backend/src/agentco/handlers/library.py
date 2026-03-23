@@ -131,11 +131,18 @@ def get_portfolio(
     if lib_entry is None:
         raise HTTPException(status_code=404, detail="Library agent not found")
 
-    # Find all agents forked from this library entry
-    # ALEX-TD-097: ORDER BY created_at for deterministic results
+    # ALEX-TD-103 fix: filter forks by current user's companies to prevent cross-tenant
+    # data leak. Previously returned ALL forks from ALL users — any user could enumerate
+    # other users' company_ids by querying portfolio of popular library agents.
+    #
+    # New query: JOIN agents → companies WHERE companies.owner_id = current_user.id
+    # Each user sees only their own forks.
+    from ..orm.company import CompanyORM as _CompanyORM
     forks = session.execute(
         select(AgentORM)
+        .join(_CompanyORM, AgentORM.company_id == _CompanyORM.id)
         .where(AgentORM.library_agent_id == library_id)
+        .where(_CompanyORM.owner_id == current_user.id)
         .order_by(AgentORM.created_at.asc())
     ).scalars().all()
 

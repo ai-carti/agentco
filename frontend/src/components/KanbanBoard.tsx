@@ -755,6 +755,8 @@ function FilterBar({
                 <button
                   data-testid={`filter-badge-remove-agent-${agentId}`}
                   onClick={() => onRemoveAgent(agentId)}
+                  // SIRI-UX-180: descriptive aria-label so screen reader doesn't just say "×"
+                  aria-label={`Remove ${agent?.name ?? agentId} agent filter`}
                   style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
                 >
                   ×
@@ -776,6 +778,8 @@ function FilterBar({
               <button
                 data-testid={`filter-badge-remove-priority-${p}`}
                 onClick={() => onRemovePriority(p)}
+                // SIRI-UX-180: descriptive aria-label so screen reader doesn't just say "×"
+                aria-label={`Remove ${p} priority filter`}
                 style={{ background: 'none', border: 'none', color: '#fcd34d', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
               >
                 ×

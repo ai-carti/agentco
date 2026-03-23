@@ -30,13 +30,15 @@ export default function CompaniesPage() {
   // SIRI-UX-170: focus trap for New Company modal
   const newModalTrapRef = useFocusTrap(showNewModal)
 
-  const load = async () => {
+  // SIRI-UX-179: accept optional AbortSignal so fetch is cancellable from useEffect cleanup
+  const load = async (signal?: AbortSignal) => {
     setLoading(true)
     setLoadError(null)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        ...(signal ? { signal } : {}),
       })
       if (res.ok) {
         const data = await res.json()
@@ -45,7 +47,9 @@ export default function CompaniesPage() {
         // SIRI-UX-148: surface API errors to user
         setLoadError('Failed to load companies. Please try again.')
       }
-    } catch {
+    } catch (err) {
+      // SIRI-UX-179: ignore AbortError when component unmounts
+      if (err instanceof Error && err.name === 'AbortError') return
       // SIRI-UX-148: surface network errors to user
       setLoadError('Failed to load companies. Please try again.')
     } finally {
@@ -54,7 +58,11 @@ export default function CompaniesPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    load(controller.signal)
+    return () => controller.abort()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     if (!newName.trim()) return

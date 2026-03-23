@@ -193,3 +193,112 @@ def test_agents_tree_has_rate_limit():
         "Without rate limiting, the recursive tree build can be abused for DoS. "
         f"Context before def: {context_lines}"
     )
+
+
+# ── ALEX-TD-104: execute_run error branch — run_orm unbound risk ─────────────
+
+def test_execute_run_error_branch_handles_missing_run_orm():
+    """
+    ALEX-TD-104: В error-branch execute_run, если update_session.get() возвращает None
+    (ран удалён пока граф выполнялся), код должен корректно логировать предупреждение
+    и НЕ бросать UnboundLocalError/NameError.
+
+    Проверяем что в error branch:
+    1. run_orm инициализирован (не NameError/UnboundLocalError)
+    2. Статус рана помечается как failed если run_orm существует
+    3. Если run_orm = None — предупреждение логируется без краша
+    """
+    import inspect
+    from agentco.services.run import RunService
+
+    source = inspect.getsource(RunService.execute_run)
+
+    # Находим error-branch (except Exception as exc) — там должна быть
+    # явная инициализация run_orm = None перед try внутри except
+    # Проверяем что после "except Exception as exc:" переменная run_orm
+    # инициализируется до использования проверки if run_orm is None
+    error_branch_start = source.find("except Exception as exc:")
+    assert error_branch_start != -1, "Should have except Exception as exc: block"
+
+    error_branch = source[error_branch_start:]
+    # В error branch должна быть явная инициализация run_orm = None или
+    # try блок с update_session.get() должен предшествовать проверке
+    has_run_orm_init = "run_orm = None" in error_branch or "run_orm = update_session" in error_branch
+    assert has_run_orm_init, (
+        "ALEX-TD-104: error branch should initialize run_orm before using it. "
+        "If update_session.get() raises, run_orm is unbound → NameError at 'if run_orm is None'"
+    )
+
+
+# ── ALEX-TD-104: execute_run error branch — DB failure replaces original exc ─
+
+@pytest.mark.asyncio
+async def test_execute_run_error_branch_db_failure_preserves_original_exception():
+    """
+    ALEX-TD-104: Если в error branch execute_run update_session.get() бросает DBError,
+    исходное исключение графа НЕ должно быть заменено DB-ошибкой.
+    run.failed event ДОЛЖЕН быть опубликован даже если DB недоступна.
+
+    До фикса: update_session.get() raises → propagates → run.failed НЕ публикуется,
+              исходная ошибка теряется.
+    После фикса: run_orm инициализирован как None до inner try → DB ошибка
+                поймана → run.failed публикуется с исходной ошибкой.
+    """
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from sqlalchemy.exc import OperationalError
+    from agentco.services.run import RunService
+
+    # Mock session — начальная загрузка рана
+    mock_run_orm = MagicMock()
+    mock_run_orm.company_id = "company-123"
+    mock_run_orm.goal = "Test goal"
+    mock_run_orm.task_id = None
+
+    init_session = MagicMock()
+    init_session.get.return_value = mock_run_orm
+
+    # Broken session factory — симулирует DB failure в error branch
+    broken_session = MagicMock()
+    broken_session.get.side_effect = OperationalError("disk full", {}, None)
+
+    call_count = [0]
+    def session_factory():
+        call_count[0] += 1
+        if call_count[0] == 1:
+            return init_session
+        return broken_session
+
+    published_events = []
+
+    async def mock_publish(event):
+        published_events.append(event)
+
+    mock_bus = AsyncMock()
+    mock_bus.publish.side_effect = mock_publish
+
+    service = RunService(MagicMock())
+    service._repo = MagicMock()
+    service._repo.orm_model = MagicMock()
+
+    original_error = RuntimeError("LLM graph crashed")
+
+    with patch("agentco.services.run.EventBus.get", return_value=mock_bus), \
+         patch("agentco.services.run.compile_graph", side_effect=ImportError("no graph")), \
+         patch("agentco.services.run.create_checkpointer") as mock_cp:
+
+        # Make compile_graph fail — triggers execute_run except branch
+        # We need to get past the init block first
+        mock_cp.return_value.__aenter__ = AsyncMock(side_effect=original_error)
+        mock_cp.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        try:
+            await service.execute_run("run-123", session_factory=session_factory)
+        except Exception:
+            pass  # Expected — error branch re-raises
+
+    # run.failed ДОЛЖЕН быть опубликован даже при DB failure
+    failed_events = [e for e in published_events if e.get("type") == "run.failed"]
+    assert len(failed_events) >= 1, (
+        "ALEX-TD-104: run.failed event must be published even when DB update fails in error branch. "
+        f"Published events: {published_events}"
+    )

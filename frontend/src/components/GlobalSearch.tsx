@@ -39,12 +39,21 @@ export default function GlobalSearch() {
   }, [])
 
   // Focus input when opened
+  // SIRI-UX-181: store timer ID in ref so cleanup can clearTimeout on unmount/re-render
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (open) {
       setQuery('')
       setDebouncedQuery('')
       setActiveIndex(-1)
-      setTimeout(() => inputRef.current?.focus(), 0)
+      if (focusTimerRef.current) clearTimeout(focusTimerRef.current)
+      focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 0)
+    }
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current)
+        focusTimerRef.current = null
+      }
     }
   }, [open])
 
