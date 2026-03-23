@@ -4,7 +4,7 @@
  * AC:
  * - drag 5+ cards into another column across multiple iterations
  * - rollback on API 500 (card returns to original column)
- * - aria-grabbed / aria-dropeffect present
+ * - deprecated aria-grabbed / aria-dropeffect are NOT present (removed per SIRI-UX-230)
  * - no JS errors during drag
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
@@ -115,53 +115,49 @@ describe('FE-004: KanbanBoard drag & drop stress test', () => {
     expect(store.tasks.every((t) => t.status === 'todo')).toBe(true)
   })
 
-  it('aria-grabbed is false by default on all draggable cards', () => {
+  // SIRI-UX-230: aria-grabbed was deprecated in WAI-ARIA 1.1 and removed in 1.2
+  it('task cards do not have deprecated aria-grabbed attribute', () => {
     useAgentStore.setState({ tasks: makeTasks(5) })
     renderWithToast(<KanbanBoard companyId="a11y-co" />)
 
     for (let i = 0; i < 5; i++) {
       const card = screen.getByTestId(`task-card-stress-${i}`)
-      expect(card).toHaveAttribute('aria-grabbed')
-      // false (not being dragged)
-      expect(card.getAttribute('aria-grabbed')).toBe('false')
+      expect(card).not.toHaveAttribute('aria-grabbed')
     }
   })
 
-  it('aria-grabbed becomes true on dragStart for dragged card only', () => {
+  it('task cards remain draggable without aria-grabbed', () => {
     const tasks = makeTasks(3)
     useAgentStore.setState({ tasks })
     renderWithToast(<KanbanBoard companyId="a11y-co2" />)
 
     const card0 = screen.getByTestId('task-card-stress-0')
-    const card1 = screen.getByTestId('task-card-stress-1')
 
-    fireEvent.dragStart(card0, { dataTransfer: { setData: vi.fn(), getData: () => 'stress-0' } })
-
-    expect(card0.getAttribute('aria-grabbed')).toBe('true')
-    // Other cards stay false
-    expect(card1.getAttribute('aria-grabbed')).toBe('false')
+    // draggable attribute is still present — native HTML5 DnD works without aria-grabbed
+    expect(card0).toHaveAttribute('draggable', 'true')
+    expect(card0).not.toHaveAttribute('aria-grabbed')
   })
 
-  it('aria-grabbed resets to false on dragEnd', () => {
+  it('task cards after dragEnd still have no aria-grabbed', () => {
     useAgentStore.setState({ tasks: makeTasks(2) })
     renderWithToast(<KanbanBoard companyId="a11y-co3" />)
 
     const card = screen.getByTestId('task-card-stress-0')
     fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), getData: () => 'stress-0' } })
-    expect(card.getAttribute('aria-grabbed')).toBe('true')
-
     fireEvent.dragEnd(card)
-    expect(card.getAttribute('aria-grabbed')).toBe('false')
+
+    expect(card).not.toHaveAttribute('aria-grabbed')
   })
 
-  it('all kanban columns have aria-dropeffect="move"', () => {
+  // SIRI-UX-230: aria-dropeffect was deprecated in WAI-ARIA 1.1 and removed in 1.2
+  it('kanban columns do not have deprecated aria-dropeffect attribute', () => {
     useAgentStore.setState({ tasks: makeTasks(1) })
     renderWithToast(<KanbanBoard companyId="a11y-co4" />)
 
     const columnIds = ['backlog', 'todo', 'in_progress', 'done']
     for (const colId of columnIds) {
       const col = screen.getByTestId(`kanban-column-${colId}`)
-      expect(col).toHaveAttribute('aria-dropeffect', 'move')
+      expect(col).not.toHaveAttribute('aria-dropeffect')
     }
   })
 

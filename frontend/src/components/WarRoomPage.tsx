@@ -495,7 +495,16 @@ export default function WarRoomPage() {
         {/* Mobile agent panel backdrop */}
         {isMobile && agentPanelOpen && (
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Close agents panel"
             onClick={() => setAgentPanelOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault()
+                setAgentPanelOpen(false)
+              }
+            }}
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9 }}
           />
         )}

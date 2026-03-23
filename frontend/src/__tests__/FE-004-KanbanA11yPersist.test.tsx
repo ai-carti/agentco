@@ -15,22 +15,24 @@ beforeEach(() => {
 })
 
 describe('FE-004: KanbanBoard a11y + rollback + localStorage persist', () => {
-  it('drag handle has aria-grabbed attribute', () => {
+  // SIRI-UX-230: aria-grabbed is deprecated in WAI-ARIA 1.1, removed in 1.2
+  it('drag handle does NOT have deprecated aria-grabbed attribute', () => {
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Task One', status: 'todo', assignee_name: 'Alice' }],
     })
     renderWithToast(<KanbanBoard companyId="c1" />)
     const card = screen.getByTestId('task-card-t1')
-    expect(card).toHaveAttribute('aria-grabbed')
+    expect(card).not.toHaveAttribute('aria-grabbed')
   })
 
-  it('kanban column has aria-dropeffect attribute', () => {
+  // SIRI-UX-230: aria-dropeffect is deprecated in WAI-ARIA 1.1, removed in 1.2
+  it('kanban column does NOT have deprecated aria-dropeffect attribute', () => {
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Task One', status: 'todo', assignee_name: 'Alice' }],
     })
     renderWithToast(<KanbanBoard companyId="c1" />)
     const col = screen.getByTestId('kanban-column-in_progress')
-    expect(col).toHaveAttribute('aria-dropeffect')
+    expect(col).not.toHaveAttribute('aria-dropeffect')
   })
 
   it('rollback: drag + API 500 → task returns to original column', async () => {
@@ -81,13 +83,14 @@ describe('FE-004: KanbanBoard a11y + rollback + localStorage persist', () => {
     })
   })
 
-  it('aria-grabbed becomes true during drag', () => {
+  // SIRI-UX-230: aria-grabbed removed — drag state no longer exposed via deprecated attr
+  it('card remains without aria-grabbed even during drag', () => {
     useAgentStore.setState({
       tasks: [{ id: 't1', title: 'Task One', status: 'todo', assignee_name: 'Alice' }],
     })
     renderWithToast(<KanbanBoard companyId="c1" />)
     const card = screen.getByTestId('task-card-t1')
     fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), getData: () => 't1' } })
-    expect(card).toHaveAttribute('aria-grabbed', 'true')
+    expect(card).not.toHaveAttribute('aria-grabbed')
   })
 })

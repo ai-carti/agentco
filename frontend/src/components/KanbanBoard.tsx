@@ -42,7 +42,7 @@ interface TaskCardProps {
   isGrabbed?: boolean
 }
 
-function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrabbed = false }: TaskCardProps) {
+function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -286,7 +286,6 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       // SIRI-UX-182: keyboard accessibility — role=button + tabIndex + onKeyDown
       role="button"
       tabIndex={0}
-      aria-grabbed={isGrabbed}
       aria-label={`Task: ${task.title}`}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
@@ -1201,7 +1200,6 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           <div
             key={col.id}
             data-testid={`kanban-column-${col.id}`}
-            aria-dropeffect="move"
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}

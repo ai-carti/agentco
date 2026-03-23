@@ -236,4 +236,23 @@ describe('KanbanBoard', () => {
     const priorityOption = screen.getByTestId('filter-priority-option-high')
     expect(priorityOption).toHaveAttribute('role', 'menuitemcheckbox')
   })
+
+  // --- SIRI-UX-230: remove deprecated aria attrs ---
+  it('SIRI-UX-230: kanban columns do not have aria-dropeffect', () => {
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    const columns = screen.getAllByTestId(/^kanban-column-/)
+    for (const col of columns) {
+      expect(col).not.toHaveAttribute('aria-dropeffect')
+    }
+  })
+
+  it('SIRI-UX-230: task cards do not have aria-grabbed', () => {
+    useAgentStore.setState({
+      tasks: [{ id: 't1', title: 'Task', status: 'todo' }],
+      agents: [],
+    })
+    renderWithToast(<KanbanBoard companyId="c1" />)
+    const card = screen.getByTestId('task-card-t1')
+    expect(card).not.toHaveAttribute('aria-grabbed')
+  })
 })

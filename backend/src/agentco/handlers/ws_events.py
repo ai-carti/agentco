@@ -45,6 +45,20 @@ router = APIRouter()
 _MAX_WS_CONNECTIONS_PER_USER: int = int(os.environ.get("MAX_WS_CONNECTIONS_PER_USER", "5"))
 _active_ws_connections: dict[str, int] = {}  # user_id → active connection count
 
+# ALEX-TD-159: per-user asyncio.Lock for TOCTOU-safe read-check-increment.
+# Without this lock, two concurrent WS connections from the same user can both
+# read the same current_count (below limit), both pass the check, and both
+# increment — resulting in more accepted connections than the configured limit.
+# The lock ensures check+increment is atomic across concurrent asyncio coroutines.
+_ws_connection_locks: dict[str, asyncio.Lock] = {}  # user_id → Lock
+
+
+def _get_ws_lock(user_id: str) -> asyncio.Lock:
+    """Return (creating if needed) the per-user asyncio.Lock."""
+    if user_id not in _ws_connection_locks:
+        _ws_connection_locks[user_id] = asyncio.Lock()
+    return _ws_connection_locks[user_id]
+
 
 @router.websocket("/ws/companies/{company_id}/events")
 async def ws_company_events(
@@ -92,21 +106,26 @@ async def ws_company_events(
         await websocket.close(code=4003, reason="Company not found or access denied")
         return
 
-    # ALEX-TD-149: enforce per-user connection limit to prevent DoS.
-    # Each accepted WS holds an EventBus subscription + 2 asyncio tasks.
-    # Without limit, one user could exhaust server memory with thousands of connections.
+    # ALEX-TD-149 + ALEX-TD-159: enforce per-user connection limit (DoS prevention)
+    # with TOCTOU-safe atomic check-increment via per-user asyncio.Lock.
+    #
+    # Without the lock: two concurrent connections can both read current_count=0,
+    # both pass the limit check, and both increment — exceeding the limit silently.
+    # With the lock: only one coroutine runs the check+increment at a time.
     assert user_id is not None  # guaranteed by auth checks above
-    current_count = _active_ws_connections.get(user_id, 0)
-    if current_count >= _MAX_WS_CONNECTIONS_PER_USER:
-        logger.warning(
-            "ws_conn_limit: user %s exceeded limit %d (current=%d), closing with 4029",
-            user_id, _MAX_WS_CONNECTIONS_PER_USER, current_count,
-        )
-        await websocket.close(code=4029, reason="Too many connections")
-        return
+    _lock = _get_ws_lock(user_id)
+    async with _lock:
+        current_count = _active_ws_connections.get(user_id, 0)
+        if current_count >= _MAX_WS_CONNECTIONS_PER_USER:
+            logger.warning(
+                "ws_conn_limit: user %s exceeded limit %d (current=%d), closing with 4029",
+                user_id, _MAX_WS_CONNECTIONS_PER_USER, current_count,
+            )
+            await websocket.close(code=4029, reason="Too many connections")
+            return
 
-    # Track this connection
-    _active_ws_connections[user_id] = current_count + 1
+        # Atomically increment — inside the lock, no other coroutine can race here
+        _active_ws_connections[user_id] = current_count + 1
 
     bus = EventBus.get()
     # ALEX-TD-081: detect silent client disconnect (TCP close without WS close frame).

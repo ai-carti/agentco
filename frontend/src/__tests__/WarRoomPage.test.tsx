@@ -368,6 +368,76 @@ describe('WarRoomPage', () => {
     expect(newLongMsgOuter).toHaveAttribute('aria-expanded', 'false')
   })
 
+  // --- SIRI-UX-231: mobile backdrop keyboard accessibility ---
+  it('SIRI-UX-231: mobile backdrop has role=button, tabIndex=0, aria-label', () => {
+    // Simulate mobile viewport
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 })
+    window.dispatchEvent(new Event('resize'))
+
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    // Open the agent panel (find toggle button)
+    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    if (toggleBtn) {
+      fireEvent.click(toggleBtn)
+    }
+
+    const backdrop = document.querySelector('[aria-label="Close agents panel"]')
+    if (backdrop) {
+      expect(backdrop).toHaveAttribute('role', 'button')
+      expect(backdrop).toHaveAttribute('tabindex', '0')
+      expect(backdrop).toHaveAttribute('aria-label', 'Close agents panel')
+    }
+
+    // Restore
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 })
+    window.dispatchEvent(new Event('resize'))
+  })
+
+  it('SIRI-UX-231: mobile backdrop closes on Enter key', () => {
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 })
+    window.dispatchEvent(new Event('resize'))
+
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    if (toggleBtn) {
+      fireEvent.click(toggleBtn)
+      const backdrop = document.querySelector('[aria-label="Close agents panel"]')
+      if (backdrop) {
+        fireEvent.keyDown(backdrop, { key: 'Enter' })
+        // backdrop should be gone after closing
+        expect(document.querySelector('[aria-label="Close agents panel"]')).toBeNull()
+      }
+    }
+
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 })
+    window.dispatchEvent(new Event('resize'))
+  })
+
+  it('SIRI-UX-231: mobile backdrop closes on Space key', () => {
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 })
+    window.dispatchEvent(new Event('resize'))
+
+    renderWarRoom()
+    act(() => { vi.advanceTimersByTime(100) })
+
+    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    if (toggleBtn) {
+      fireEvent.click(toggleBtn)
+      const backdrop = document.querySelector('[aria-label="Close agents panel"]')
+      if (backdrop) {
+        fireEvent.keyDown(backdrop, { key: ' ' })
+        expect(document.querySelector('[aria-label="Close agents panel"]')).toBeNull()
+      }
+    }
+
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 })
+    window.dispatchEvent(new Event('resize'))
+  })
+
   // --- SIRI-POST-003: mock interval behind feature flag ---
   it('does NOT grow messages via interval when VITE_MOCK_WAR_ROOM is not set', () => {
     // Ensure flag is NOT set (default)

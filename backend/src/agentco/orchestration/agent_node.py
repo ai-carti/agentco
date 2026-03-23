@@ -15,8 +15,10 @@ M2-003: Agent Node функция для LangGraph.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import os
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Callable, Coroutine, Optional
 
@@ -39,6 +41,11 @@ _memory_service_var: ContextVar[Optional["MemoryService"]] = ContextVar(
 )
 
 logger = logging.getLogger(__name__)
+
+# ALEX-TD-158: per-LLM-call timeout. Prevents a single hung acompletion() from
+# consuming the entire run budget (600s). Each call gets its own deadline;
+# TimeoutError propagates to _execute_agent for retry.
+_LLM_CALL_TIMEOUT_SEC: float = float(os.getenv("LLM_CALL_TIMEOUT_SEC", "120"))
 
 
 # ─── Cost rates (USD per 1K tokens by model prefix) ─────────────────────────
@@ -271,7 +278,13 @@ async def agent_node(state: AgentState) -> dict:
         if tools:
             call_kwargs["tools"] = tools
 
-        response = await litellm.acompletion(**call_kwargs)
+        # ALEX-TD-158: wrap each LLM call in a per-call timeout so a hung
+        # provider doesn't consume the entire run budget silently.
+        # asyncio.TimeoutError propagates to _execute_agent for retry.
+        response = await asyncio.wait_for(
+            litellm.acompletion(**call_kwargs),
+            timeout=_LLM_CALL_TIMEOUT_SEC,
+        )
 
         # ── Collect streaming response ─────────────────────────────────────
         full_text = ""

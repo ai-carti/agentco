@@ -18,6 +18,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Configurable via env vars so production can tighten limits without code changes.
 _RATE_LIMIT_REGISTER = os.getenv("RATE_LIMIT_AUTH_REGISTER", "5/minute")
 _RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_AUTH_LOGIN", "10/minute")
+# ALEX-TD-157: rate limit for /me — prevents unbounded authenticated polling
+# (JWT decode + DB lookup on every request).
+_RATE_LIMIT_ME = os.getenv("RATE_LIMIT_AUTH_ME", "120/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -97,7 +100,8 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
 
 
 @router.get("/me", response_model=MeResponse)
-def me(current_user: UserORM = Depends(get_current_user)):
+@limiter.limit(_RATE_LIMIT_ME)
+def me(request: Request, current_user: UserORM = Depends(get_current_user)):
     """Protected endpoint: returns current user info."""
     return MeResponse(
         id=current_user.id,
