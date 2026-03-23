@@ -34,12 +34,15 @@ function AppLayout() {
             {/* SIRI-UX-140: show inline spinner instead of null so slow-network users see feedback */}
             <Suspense fallback={
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  border: '3px solid #1e293b',
-                  borderTopColor: '#3b82f6',
-                  animation: 'spin 0.8s linear infinite',
-                }} />
+                {/* SIRI-UX-228: use CSS class instead of inline animation so prefers-reduced-motion can override */}
+                <div
+                  className="app-suspense-spinner"
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    border: '3px solid #1e293b',
+                    borderTopColor: '#3b82f6',
+                  }}
+                />
               </div>
             }>
               <Routes>
@@ -71,7 +74,7 @@ function App() {
 
   useEffect(() => {
     initAuth()
-  }, [])
+  }, [initAuth]) // SIRI-UX-229: initAuth is a stable Zustand action but explicit dep is correct
 
   return (
     <div style={{ fontFamily: 'sans-serif', background: '#0f172a', minHeight: '100vh', color: '#f8fafc' }}>

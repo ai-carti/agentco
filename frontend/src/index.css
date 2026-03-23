@@ -23,6 +23,11 @@
   animation: spin 0.8s linear infinite;
 }
 
+/* SIRI-UX-228: CSS class for App-level Suspense fallback spinner — same pattern as war-room-connecting-spinner */
+.app-suspense-spinner {
+  animation: spin 0.8s linear infinite;
+}
+
 /* PRE-DEMO-POLISH: thinking dots bounce animation */
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
