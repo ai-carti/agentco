@@ -198,12 +198,15 @@ export default function WarRoomPage() {
   const handleStop = async () => {
     if (!companyId || stopping) return
     setStopping(true)
+    // SIRI-UX-173: AbortController to prevent state updates on unmounted component
+    const abortController = new AbortController()
+    const { signal } = abortController
     try {
       const token = getStoredToken()
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
 
       // Fetch active runs and stop each
-      const runsRes = await fetch(`${BASE_URL}/api/companies/${companyId}/runs?status=running`, { headers })
+      const runsRes = await fetch(`${BASE_URL}/api/companies/${companyId}/runs?status=running`, { headers, signal })
       if (!runsRes.ok) {
         toast.error(`Failed to fetch runs (${runsRes.status})`)
         return
@@ -222,6 +225,7 @@ export default function WarRoomPage() {
           fetch(`${BASE_URL}/api/companies/${companyId}/runs/${r.id}/stop`, {
             method: 'POST',
             headers,
+            signal,
           }),
         ),
       )
@@ -234,11 +238,16 @@ export default function WarRoomPage() {
         setRunStatus('stopped')
         toast.success('All runs stopped')
       }
-    } catch {
+    } catch (err) {
+      // SIRI-UX-173: guard against AbortError when component unmounts during request
+      if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Failed to stop runs')
     } finally {
-      setStopping(false)
+      if (!signal.aborted) {
+        setStopping(false)
+      }
     }
+    return () => abortController.abort()
   }
 
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
@@ -518,6 +527,7 @@ export default function WarRoomPage() {
                     </div>
                     <span
                       data-testid="agent-status-dot"
+                      role="img"
                       className={statusDotStyle[agent.status]}
                       aria-label={statusLabel[agent.status]}
                       style={{

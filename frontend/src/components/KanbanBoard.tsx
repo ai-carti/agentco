@@ -8,7 +8,8 @@ import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import { ClipboardList } from 'lucide-react'
 // SIRI-UX-049: import shared utilities to eliminate duplication
-import { STATUS_COLORS, getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
+// SIRI-UX-172: PRIORITY_COLORS now imported from taskUtils (was duplicated)
+import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
 // SIRI-POST-006: focus trap hook for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -20,12 +21,6 @@ const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: 'in_progress', label: 'In Progress' },
   { id: 'done', label: 'Done' },
 ]
-
-const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  high:   { bg: '#7f1d1d', text: '#fca5a5', label: 'High' },
-  medium: { bg: '#78350f', text: '#fcd34d', label: 'Medium' },
-  low:    { bg: '#1f2937', text: '#9ca3af', label: 'Low' },
-}
 
 // SIRI-UX-049: getInitials imported from taskUtils (alias to avoid breaking existing usages)
 const getInitials = _getInitials
@@ -56,6 +51,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const [assignOpen, setAssignOpen] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDesc, setEditDesc] = useState(task.description ?? '')
+  // SIRI-UX-171: loading states for mutations to prevent duplicate requests
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [assigning, setAssigning] = useState(false)
   const toast = useToast()
   const agents = useAgentStore((s) => s.agents)
   const setTasks = useAgentStore((s) => s.setTasks)
@@ -116,6 +115,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   }
 
   const handleEdit = async () => {
+    if (saving) return
+    setSaving(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
@@ -135,10 +136,14 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       }
     } catch {
       toast.error('Something went wrong. Try again.')
+    } finally {
+      setSaving(false)
     }
   }
 
   const handleDelete = async () => {
+    if (deleting) return
+    setDeleting(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
@@ -154,10 +159,14 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       }
     } catch {
       toast.error('Something went wrong. Try again.')
+    } finally {
+      setDeleting(false)
     }
   }
 
   const handleAssign = async (agentId: string, agentName: string) => {
+    if (assigning) return
+    setAssigning(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
@@ -177,6 +186,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       }
     } catch {
       toast.error('Something went wrong. Try again.')
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -439,10 +450,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
               <Button
                 variant="primary"
                 onClick={handleEdit}
-                disabled={!editTitle.trim()}
+                disabled={!editTitle.trim() || saving}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
-                Save
+                {saving ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </div>
@@ -483,9 +494,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
                 data-testid="confirm-delete-btn"
                 variant="danger"
                 onClick={handleDelete}
+                disabled={deleting}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
-                Delete
+                {deleting ? 'Deleting…' : 'Delete'}
               </Button>
             </div>
           </div>
@@ -519,11 +531,12 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
                     key={agent.id}
                     data-testid={`assign-agent-${agent.id}`}
                     onClick={() => handleAssign(agent.id, agent.name)}
+                    disabled={assigning}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
                       padding: '0.5rem 0.75rem', background: 'transparent',
                       border: 'none', borderRadius: 6, color: '#f8fafc',
-                      cursor: 'pointer', fontSize: '0.8rem', textAlign: 'left',
+                      cursor: assigning ? 'not-allowed' : 'pointer', fontSize: '0.8rem', textAlign: 'left',
                       width: '100%',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}

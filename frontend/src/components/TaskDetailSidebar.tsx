@@ -4,17 +4,14 @@ import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
-import { STATUS_COLORS, getAvatarColor, getInitials } from '../utils/taskUtils'
+// SIRI-UX-172: PRIORITY_COLORS now imported from taskUtils (was duplicated)
+import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials } from '../utils/taskUtils'
 // SIRI-UX-150: focus trap for accessibility
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
-const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  high: { bg: '#450a0a', text: '#ef4444' },
-  medium: { bg: '#451a03', text: '#f59e0b' },
-  low: { bg: '#1f2937', text: '#6b7280' },
-}
+// SIRI-UX-172: PRIORITY_COLORS moved to taskUtils.ts
 
 interface LogEntry {
   timestamp: string

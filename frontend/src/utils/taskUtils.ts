@@ -1,4 +1,10 @@
 // SIRI-UX-049: shared utilities extracted from KanbanBoard.tsx and TaskDetailSidebar.tsx
+// SIRI-UX-172: unified PRIORITY_COLORS (was duplicated in KanbanBoard and TaskDetailSidebar)
+export const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  high:   { bg: '#7f1d1d', text: '#fca5a5', label: 'High' },
+  medium: { bg: '#78350f', text: '#fcd34d', label: 'Medium' },
+  low:    { bg: '#1f2937', text: '#9ca3af', label: 'Low' },
+}
 
 export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   todo: { bg: '#374151', text: '#d1d5db' },

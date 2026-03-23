@@ -6,6 +6,8 @@ import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import OnboardingPage from './OnboardingPage'
 import { Building2 } from 'lucide-react'
+// SIRI-UX-170: focus trap for New Company modal
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -25,6 +27,8 @@ export default function CompaniesPage() {
   const [creating, setCreating] = useState(false)
   // Track whether this is the first load (for onboarding)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
+  // SIRI-UX-170: focus trap for New Company modal
+  const newModalTrapRef = useFocusTrap(showNewModal)
 
   const load = async () => {
     setLoading(true)
@@ -186,7 +190,7 @@ export default function CompaniesPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowNewModal(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape') setShowNewModal(false) }}
         >
-          <div style={{
+          <div ref={newModalTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
             border: '1px solid #374151',
           }}>
