@@ -43,6 +43,8 @@ export default function WarRoom() {
   const [, setTick] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // SIRI-UX-232: track mounted state so onclose doesn't schedule reconnect after cleanup runs
+  const mountedRef = useRef(true)
   const navigate = useNavigate()
 
   // BUG-043: initial REST fetch to populate runs on mount / page refresh
@@ -142,6 +144,10 @@ export default function WarRoom() {
       // SIRI-UX-153: if onopen never fired, isConnecting may still be true — clear it
       // so we don't show a blank screen during reconnect cycles
       setIsConnecting(false)
+      // SIRI-UX-232: if component unmounted, cleanup already ran — do NOT schedule reconnect
+      if (!mountedRef.current) return
+      // SIRI-UX-233: skip reconnect on intentional clean close (code 1000) — matches useWarRoomSocket pattern
+      if (event?.wasClean && event?.code === 1000) return
       // SIRI-UX-147: do NOT reconnect on auth/permission errors — would loop forever
       if (event?.code === 4001 || event?.code === 4003) return
       reconnectTimer.current = setTimeout(() => {
@@ -155,6 +161,8 @@ export default function WarRoom() {
   useEffect(() => {
     connect()
     return () => {
+      // SIRI-UX-232: mark unmounted BEFORE close() so onclose doesn't schedule reconnect
+      mountedRef.current = false
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
       wsRef.current?.close()
     }

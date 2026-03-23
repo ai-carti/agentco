@@ -143,6 +143,8 @@ export default function CompanyPage() {
   }, [isAgentFormOpen, handleModalEscape])
 
   useEffect(() => {
+    // SIRI-UX-234: reset local activeTab so switching companies always lands on War Room
+    setActiveTab('war-room')
     setActiveCompanyTab('war-room')
     return () => setActiveCompanyTab(null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
