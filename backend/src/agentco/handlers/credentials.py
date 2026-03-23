@@ -168,8 +168,17 @@ def list_available_providers(
 
 
 class ValidateKeyRequest(BaseModel):
-    provider: str
-    api_key: str
+    # ALEX-TD-115 fix: max_length guards — mirrors CredentialCreate (regression from ALEX-TD-110)
+    provider: str = Field(max_length=50)
+    api_key: str = Field(max_length=512)
+
+    @field_validator("api_key")
+    @classmethod
+    def api_key_must_not_be_empty(cls, v: str) -> str:
+        v_stripped = v.strip()
+        if not v_stripped:
+            raise ValueError("api_key must not be empty")
+        return v_stripped
 
 
 class ValidateKeyResponse(BaseModel):
