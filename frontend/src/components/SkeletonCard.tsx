@@ -102,7 +102,8 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
 
   if (timedOut) {
     return (
-      <div style={{ padding: '1rem', textAlign: 'center', color: '#f87171', fontSize: '0.875rem' }}>
+      // SIRI-UX-236: role="alert" so screen readers announce the timeout error to the user
+      <div role="alert" style={{ padding: '1rem', textAlign: 'center', color: '#f87171', fontSize: '0.875rem' }}>
         Loading took too long. Please try refreshing.
       </div>
     )

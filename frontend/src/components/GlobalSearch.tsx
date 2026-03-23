@@ -187,7 +187,12 @@ export default function GlobalSearch() {
           paddingTop: '15vh', zIndex: 100,
         }}
       >
-        <div style={{
+        {/* SIRI-UX-235: role="dialog" + aria-modal="true" so screen readers treat this as a modal dialog */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search"
+          style={{
           background: '#1f2937', borderRadius: 10, width: '100%', maxWidth: 520,
           border: '1px solid #374151', overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
