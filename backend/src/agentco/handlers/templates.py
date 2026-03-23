@@ -43,7 +43,8 @@ class TemplateOut(BaseModel):
 
 class CreateFromTemplateRequest(BaseModel):
     template_id: str
-    name: str = Field(min_length=1)
+    # ALEX-TD-153: max_length=200 consistent with CompanyCreate (handlers/companies.py)
+    name: str = Field(min_length=1, max_length=200)
 
     @field_validator("name", mode="before")
     @classmethod
@@ -73,7 +74,8 @@ class CompanyFromTemplateOut(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/api/templates", response_model=list[TemplateOut])
-def list_templates(current_user: UserORM = Depends(get_current_user)):
+@limiter.limit(_RATE_LIMIT_TEMPLATES_READ)
+def list_templates(request: Request, current_user: UserORM = Depends(get_current_user)):
     """Return all available company templates."""
     return [
         TemplateOut(
@@ -91,7 +93,9 @@ def list_templates(current_user: UserORM = Depends(get_current_user)):
     response_model=CompanyFromTemplateOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(_RATE_LIMIT_TEMPLATES_CREATE)
 def create_from_template(
+    request: Request,
     body: CreateFromTemplateRequest,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
