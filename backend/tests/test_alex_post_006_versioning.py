@@ -65,9 +65,9 @@ def test_v1_create_company(auth_client):
 def test_v1_auth_register_and_login(auth_client):
     """Auth endpoints work under /auth (not versioned)."""
     client, _ = auth_client
-    resp = client.post("/auth/register", json={"email": "newv1@test.com", "password": "secret"})
+    resp = client.post("/auth/register", json={"email": "newv1@test.com", "password": "secret12"})
     assert resp.status_code == 201
-    resp2 = client.post("/auth/login", json={"email": "newv1@test.com", "password": "secret"})
+    resp2 = client.post("/auth/login", json={"email": "newv1@test.com", "password": "secret12"})
     assert resp2.status_code == 200
     assert "access_token" in resp2.json()
 

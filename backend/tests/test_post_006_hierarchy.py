@@ -55,8 +55,8 @@ class TestAgentHierarchyAPI:
     """AC1+AC5: создание иерархических агентов и получение дерева."""
 
     def _register_and_login(self, client, email="h@test.com"):
-        client.post("/auth/register", json={"email": email, "password": "secret"})
-        r = client.post("/auth/login", json={"email": email, "password": "secret"})
+        client.post("/auth/register", json={"email": email, "password": "secret12"})
+        r = client.post("/auth/login", json={"email": email, "password": "secret12"})
         return r.json()["access_token"]
 
     def test_create_child_agent_with_parent(self, auth_client):
