@@ -104,9 +104,9 @@ const TASK = {
   description: 'details',
   status: 'todo' as const,
   priority: 'high' as const,
-  assignee_id: null,
-  assignee_name: null,
-  due_date: null,
+  assignee_id: undefined,
+  assignee_name: undefined,
+  due_date: undefined,
   company_id: 'c1',
 }
 
@@ -115,10 +115,7 @@ describe('SIRI-UX-171: TaskCard loading states for edit/delete/assign', () => {
     act(() => {
       useAgentStore.setState({
         tasks: [TASK],
-        agents: [{ id: 'a1', name: 'Alice', role: 'CEO', avatar: '🤖', status: 'idle', last_message: null }],
-        runs: [],
-        messages: [],
-        flashingAgents: new Set(),
+        agents: [{ id: 'a1', name: 'Alice', role: 'CEO', status: 'idle' as const }],
       })
     })
   })
@@ -128,10 +125,10 @@ describe('SIRI-UX-171: TaskCard loading states for edit/delete/assign', () => {
   })
 
   it('Save button is disabled while PATCH is in-flight (saving state)', async () => {
-    let resolvePatch: (v: unknown) => void
+    let resolvePatch!: (value: Response | PromiseLike<Response>) => void
     vi.spyOn(globalThis, 'fetch').mockImplementation((_url, opts) => {
       if (opts?.method === 'PATCH') {
-        return new Promise((resolve) => { resolvePatch = resolve })
+        return new Promise<Response>((resolve) => { resolvePatch = resolve })
       }
       return Promise.resolve({ ok: true, json: async () => [] } as Response)
     })
@@ -163,15 +160,15 @@ describe('SIRI-UX-171: TaskCard loading states for edit/delete/assign', () => {
 
     // Resolve the request
     act(() => {
-      resolvePatch!({ ok: true, json: async () => ({}) })
+      resolvePatch({ ok: true, json: async () => ({}) } as Response)
     })
   })
 
   it('Delete button is disabled while DELETE is in-flight (deleting state)', async () => {
-    let resolveDelete: (v: unknown) => void
+    let resolveDelete!: (value: Response | PromiseLike<Response>) => void
     vi.spyOn(globalThis, 'fetch').mockImplementation((_url, opts) => {
       if (opts?.method === 'DELETE') {
-        return new Promise((resolve) => { resolveDelete = resolve })
+        return new Promise<Response>((resolve) => { resolveDelete = resolve })
       }
       return Promise.resolve({ ok: true, json: async () => [] } as Response)
     })
@@ -200,15 +197,15 @@ describe('SIRI-UX-171: TaskCard loading states for edit/delete/assign', () => {
 
     // Resolve
     act(() => {
-      resolveDelete!({ ok: true })
+      resolveDelete({ ok: true } as Response)
     })
   })
 
   it('Assign buttons are disabled while PATCH is in-flight (assigning state)', async () => {
-    let resolveAssign: (v: unknown) => void
+    let resolveAssign!: (value: Response | PromiseLike<Response>) => void
     vi.spyOn(globalThis, 'fetch').mockImplementation((_url, opts) => {
       if (opts?.method === 'PATCH') {
-        return new Promise((resolve) => { resolveAssign = resolve })
+        return new Promise<Response>((resolve) => { resolveAssign = resolve })
       }
       return Promise.resolve({ ok: true, json: async () => [] } as Response)
     })
@@ -236,7 +233,7 @@ describe('SIRI-UX-171: TaskCard loading states for edit/delete/assign', () => {
 
     // Resolve
     act(() => {
-      resolveAssign!({ ok: true, json: async () => ({}) })
+      resolveAssign({ ok: true, json: async () => ({}) } as Response)
     })
   })
 })
