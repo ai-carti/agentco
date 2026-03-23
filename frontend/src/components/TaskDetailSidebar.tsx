@@ -63,6 +63,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
     const { signal } = controller
 
     const fetchLogs = async () => {
+      // SIRI-UX-177: reset stale logs immediately so previous task logs don't flash
+      setLogs([])
+      setStatusHistory([])
       setLogsLoading(true)
       setLogsError(false)
       try {

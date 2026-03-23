@@ -50,6 +50,8 @@ export default function WarRoomPage() {
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const feedEndRef = useRef<HTMLDivElement | null>(null)
+  // SIRI-UX-175: store abort controller for handleStop so it can be cancelled on unmount
+  const stopAbortRef = useRef<AbortController | null>(null)
   const navigate = useNavigate()
   const { id: companyId } = useParams<{ id?: string }>()
   const toast = useToast()
@@ -195,11 +197,17 @@ export default function WarRoomPage() {
     return () => clearTimeout(timer)
   }, [flashingAgents, clearFlash])
 
+  // SIRI-UX-175: abort any in-flight stop request when component unmounts
+  useEffect(() => {
+    return () => { stopAbortRef.current?.abort() }
+  }, [])
+
   const handleStop = async () => {
     if (!companyId || stopping) return
     setStopping(true)
-    // SIRI-UX-173: AbortController to prevent state updates on unmounted component
+    // SIRI-UX-173/175: AbortController stored in ref so unmount can abort it
     const abortController = new AbortController()
+    stopAbortRef.current = abortController
     const { signal } = abortController
     try {
       const token = getStoredToken()
@@ -245,9 +253,9 @@ export default function WarRoomPage() {
     } finally {
       if (!signal.aborted) {
         setStopping(false)
+        stopAbortRef.current = null
       }
     }
-    return () => abortController.abort()
   }
 
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data

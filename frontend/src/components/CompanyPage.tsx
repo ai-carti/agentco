@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
@@ -120,6 +120,11 @@ export default function CompanyPage() {
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
   // SIRI-UX-155: focus trap for agent creation modal
   const agentModalTrapRef = useFocusTrap(isAgentFormOpen)
+  // SIRI-UX-176: abort controller for handleLoadMoreTasks
+  const loadMoreAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { loadMoreAbortRef.current?.abort() }
+  }, [])
 
   // SIRI-UX-091: close modal on Escape key
   const handleModalEscape = useCallback((e: KeyboardEvent) => {
@@ -215,12 +220,17 @@ export default function CompanyPage() {
 
   const handleLoadMoreTasks = async () => {
     if (!id || !hasMoreTasks) return
+    // SIRI-UX-176: abort any previous in-flight load-more request
+    loadMoreAbortRef.current?.abort()
+    const controller = new AbortController()
+    loadMoreAbortRef.current = controller
+    const { signal } = controller
     const token = getStoredToken()
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
     try {
       const res = await fetch(
         `${BASE_URL}/api/companies/${id}/tasks?limit=${TASK_LIMIT}&offset=${taskOffset}`,
-        { headers }
+        { headers, signal }
       )
       if (res.ok) {
         const data = await res.json()
@@ -233,9 +243,13 @@ export default function CompanyPage() {
         // SIRI-UX-151: surface load-more errors so user knows what happened
         toast.error(`Failed to load more tasks (${res.status})`)
       }
-    } catch {
+    } catch (err) {
+      // SIRI-UX-176: ignore AbortError when component unmounts
+      if (err instanceof Error && err.name === 'AbortError') return
       // SIRI-UX-151: surface network errors
       toast.error('Failed to load more tasks')
+    } finally {
+      if (!signal.aborted) loadMoreAbortRef.current = null
     }
   }
 

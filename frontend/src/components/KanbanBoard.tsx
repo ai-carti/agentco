@@ -601,6 +601,19 @@ function FilterBar({
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
+  // SIRI-UX-178: close dropdowns on Escape key
+  useEffect(() => {
+    if (!agentDropdownOpen && !priorityDropdownOpen) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setAgentDropdownOpen(false)
+        setPriorityDropdownOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [agentDropdownOpen, priorityDropdownOpen])
+
   return (
     <div ref={filterBarRef} style={{ padding: '0.75rem 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
