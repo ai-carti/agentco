@@ -63,6 +63,11 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const editTrapRef = useFocusTrap(editOpen)
   const deleteTrapRef = useFocusTrap(deleteOpen)
   const assignTrapRef = useFocusTrap(assignOpen)
+  // SIRI-UX-188: AbortController refs to guard setState in finally on unmounted component
+  const runAbortRef = useRef<AbortController | null>(null)
+  const editAbortRef = useRef<AbortController | null>(null)
+  const deleteAbortRef = useRef<AbortController | null>(null)
+  const assignAbortRef = useRef<AbortController | null>(null)
 
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
@@ -83,6 +88,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
 
   const handleRun = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    runAbortRef.current?.abort()
+    const controller = new AbortController()
+    runAbortRef.current = controller
+    const { signal } = controller
     setRunning(true)
     setRunError(null)
     try {
@@ -93,29 +102,42 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal,
       })
       if (!res.ok) {
         const msg = `Failed to run task (${res.status})`
-        setRunError(msg)
-        toast.error(msg)
+        if (!signal.aborted) {
+          setRunError(msg)
+          toast.error(msg)
+        }
       } else {
         // SIRI-UX-047: update local status so Run button hides, preventing double-run
-        setTasks(useAgentStore.getState().tasks.map((t) =>
-          t.id === task.id ? { ...t, status: 'in_progress' as const } : t
-        ))
-        toast.success(`▶ Running: ${task.title}`)
+        if (!signal.aborted) {
+          setTasks(useAgentStore.getState().tasks.map((t) =>
+            t.id === task.id ? { ...t, status: 'in_progress' as const } : t
+          ))
+          toast.success(`▶ Running: ${task.title}`)
+        }
       }
     } catch {
-      const msg = 'Network error — could not run task'
-      setRunError(msg)
-      toast.error(msg)
+      if (!signal.aborted) {
+        const msg = 'Network error — could not run task'
+        setRunError(msg)
+        toast.error(msg)
+      }
     } finally {
-      setRunning(false)
+      if (!signal.aborted) {
+        setRunning(false)
+      }
     }
   }
 
   const handleEdit = async () => {
     if (saving) return
+    editAbortRef.current?.abort()
+    const controller = new AbortController()
+    editAbortRef.current = controller
+    const { signal } = controller
     setSaving(true)
     try {
       const token = getStoredToken()
@@ -126,46 +148,68 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ title: editTitle, description: editDesc }),
+        signal,
       })
-      if (res.ok) {
-        setTasks(tasks.map((t) => t.id === task.id ? { ...t, title: editTitle, description: editDesc } : t))
-        toast.success(`Task updated`)
-        setEditOpen(false)
-      } else {
-        toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        if (res.ok) {
+          setTasks(tasks.map((t) => t.id === task.id ? { ...t, title: editTitle, description: editDesc } : t))
+          toast.success(`Task updated`)
+          setEditOpen(false)
+        } else {
+          toast.error('Something went wrong. Try again.')
+        }
       }
     } catch {
-      toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        toast.error('Something went wrong. Try again.')
+      }
     } finally {
-      setSaving(false)
+      if (!signal.aborted) {
+        setSaving(false)
+      }
     }
   }
 
   const handleDelete = async () => {
     if (deleting) return
+    deleteAbortRef.current?.abort()
+    const controller = new AbortController()
+    deleteAbortRef.current = controller
+    const { signal } = controller
     setDeleting(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${task.id}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal,
       })
-      if (res.ok) {
-        setTasks(tasks.filter((t) => t.id !== task.id))
-        toast.success(`Task "${task.title}" deleted`)
-        setDeleteOpen(false)
-      } else {
-        toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        if (res.ok) {
+          setTasks(tasks.filter((t) => t.id !== task.id))
+          toast.success(`Task "${task.title}" deleted`)
+          setDeleteOpen(false)
+        } else {
+          toast.error('Something went wrong. Try again.')
+        }
       }
     } catch {
-      toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        toast.error('Something went wrong. Try again.')
+      }
     } finally {
-      setDeleting(false)
+      if (!signal.aborted) {
+        setDeleting(false)
+      }
     }
   }
 
   const handleAssign = async (agentId: string, agentName: string) => {
     if (assigning) return
+    assignAbortRef.current?.abort()
+    const controller = new AbortController()
+    assignAbortRef.current = controller
+    const { signal } = controller
     setAssigning(true)
     try {
       const token = getStoredToken()
@@ -176,18 +220,25 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ assignee_id: agentId }),
+        signal,
       })
-      if (res.ok) {
-        setTasks(tasks.map((t) => t.id === task.id ? { ...t, assignee_id: agentId, assignee_name: agentName } : t))
-        toast.success(`Task assigned to ${agentName}`)
-        setAssignOpen(false)
-      } else {
-        toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        if (res.ok) {
+          setTasks(tasks.map((t) => t.id === task.id ? { ...t, assignee_id: agentId, assignee_name: agentName } : t))
+          toast.success(`Task assigned to ${agentName}`)
+          setAssignOpen(false)
+        } else {
+          toast.error('Something went wrong. Try again.')
+        }
       }
     } catch {
-      toast.error('Something went wrong. Try again.')
+      if (!signal.aborted) {
+        toast.error('Something went wrong. Try again.')
+      }
     } finally {
-      setAssigning(false)
+      if (!signal.aborted) {
+        setAssigning(false)
+      }
     }
   }
 

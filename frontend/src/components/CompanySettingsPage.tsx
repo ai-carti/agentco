@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -28,6 +28,8 @@ export default function CompanySettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   // SIRI-POST-006: focus trap
   const deleteTrapRef = useFocusTrap(deleteModalOpen)
+  // SIRI-UX-189: AbortController ref to guard setState/toast in finally on unmounted component
+  const saveAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!companyId) return
@@ -52,6 +54,10 @@ export default function CompanySettingsPage() {
   }, [companyId])
 
   const handleSave = async () => {
+    saveAbortRef.current?.abort()
+    const controller = new AbortController()
+    saveAbortRef.current = controller
+    const { signal } = controller
     setSaving(true)
     try {
       const token = getStoredToken()
@@ -62,17 +68,24 @@ export default function CompanySettingsPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ name, description }),
+        signal,
       })
-      if (res.ok) {
-        toast.success('Company settings saved')
-        setCompany((c) => c ? { ...c, name, description } : c)
-      } else {
-        toast.error('Failed to save settings')
+      if (!signal.aborted) {
+        if (res.ok) {
+          toast.success('Company settings saved')
+          setCompany((c) => c ? { ...c, name, description } : c)
+        } else {
+          toast.error('Failed to save settings')
+        }
       }
     } catch {
-      toast.error('Network error')
+      if (!signal.aborted) {
+        toast.error('Network error')
+      }
     } finally {
-      setSaving(false)
+      if (!signal.aborted) {
+        setSaving(false)
+      }
     }
   }
 

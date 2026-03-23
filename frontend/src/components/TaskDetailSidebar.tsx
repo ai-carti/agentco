@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { type Task, useAgentStore } from '../store/agentStore'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
@@ -56,6 +56,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const setTasks = useAgentStore((s) => s.setTasks)
   // SIRI-UX-150: focus trap — keep focus within sidebar while open
   const trapRef = useFocusTrap(true)
+  // SIRI-UX-190: AbortController ref to guard setState in finally on unmounted component
+  const runAbortRef = useRef<AbortController | null>(null)
 
   // Fetch logs
   useEffect(() => {
@@ -114,6 +116,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   }, [handleKeyDown])
 
   const handleRun = async () => {
+    runAbortRef.current?.abort()
+    const controller = new AbortController()
+    runAbortRef.current = controller
+    const { signal } = controller
     setRunning(true)
     try {
       const token = getStoredToken()
@@ -123,20 +129,27 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal,
       })
-      if (res.ok) {
-        // SIRI-UX-081: optimistic update — hide Run button, match KanbanBoard behavior
-        setTasks(useAgentStore.getState().tasks.map((t) =>
-          t.id === task.id ? { ...t, status: 'in_progress' as const } : t
-        ))
-        toast.success(`▶ Running: ${task.title}...`)
-      } else {
-        toast.error('Something went wrong...')
+      if (!signal.aborted) {
+        if (res.ok) {
+          // SIRI-UX-081: optimistic update — hide Run button, match KanbanBoard behavior
+          setTasks(useAgentStore.getState().tasks.map((t) =>
+            t.id === task.id ? { ...t, status: 'in_progress' as const } : t
+          ))
+          toast.success(`▶ Running: ${task.title}...`)
+        } else {
+          toast.error('Something went wrong...')
+        }
       }
     } catch {
-      toast.error('Something went wrong...')
+      if (!signal.aborted) {
+        toast.error('Something went wrong...')
+      }
     } finally {
-      setRunning(false)
+      if (!signal.aborted) {
+        setRunning(false)
+      }
     }
   }
 

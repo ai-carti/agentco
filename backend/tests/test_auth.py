@@ -67,10 +67,42 @@ def test_register_empty_password_returns_422(auth_client):
     assert response.status_code == 422
 
 
+# ── ALEX-TD-114: Пароль < 8 символов не должен приниматься → 422 ─────────────
+
+def test_register_short_password_1_char_returns_422(auth_client):
+    """ALEX-TD-114: 1-символьный пароль должен отклоняться с 422."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "shortpass1@example.com", "password": "a"},
+    )
+    assert response.status_code == 422
+
+
+def test_register_short_password_7_chars_returns_422(auth_client):
+    """ALEX-TD-114: 7-символьный пароль — ниже минимума 8, должен быть 422."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "shortpass7@example.com", "password": "1234567"},
+    )
+    assert response.status_code == 422
+
+
+def test_register_password_exactly_8_chars_returns_201(auth_client):
+    """ALEX-TD-114: ровно 8 символов — граничное значение, должен быть 201."""
+    client, _ = auth_client
+    response = client.post(
+        "/auth/register",
+        json={"email": "minpass8@example.com", "password": "12345678"},
+    )
+    assert response.status_code == 201
+
+
 def test_login_empty_password_returns_401(auth_client):
     """Вход с пустым паролем должен возвращать 401."""
     client, _ = auth_client
-    client.post("/auth/register", json={"email": "user@example.com", "password": "correct"})
+    client.post("/auth/register", json={"email": "user@example.com", "password": "correct1"})
     response = client.post("/auth/login", json={"email": "user@example.com", "password": ""})
     assert response.status_code == 401
 
@@ -102,15 +134,15 @@ def test_register_returns_user_id(auth_client):
 
 def test_login_returns_200(auth_client):
     client, _ = auth_client
-    client.post("/auth/register", json={"email": "user@example.com", "password": "pass123"})
-    response = client.post("/auth/login", json={"email": "user@example.com", "password": "pass123"})
+    client.post("/auth/register", json={"email": "user@example.com", "password": "pass1234"})
+    response = client.post("/auth/login", json={"email": "user@example.com", "password": "pass1234"})
     assert response.status_code == 200
 
 
 def test_login_returns_access_token(auth_client):
     client, _ = auth_client
-    client.post("/auth/register", json={"email": "user@example.com", "password": "pass123"})
-    response = client.post("/auth/login", json={"email": "user@example.com", "password": "pass123"})
+    client.post("/auth/register", json={"email": "user@example.com", "password": "pass1234"})
+    response = client.post("/auth/login", json={"email": "user@example.com", "password": "pass1234"})
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
@@ -121,7 +153,7 @@ def test_login_returns_access_token(auth_client):
 
 def test_login_wrong_password_returns_401(auth_client):
     client, _ = auth_client
-    client.post("/auth/register", json={"email": "user@example.com", "password": "correct"})
+    client.post("/auth/register", json={"email": "user@example.com", "password": "correct1"})
     response = client.post("/auth/login", json={"email": "user@example.com", "password": "wrong"})
     assert response.status_code == 401
 
@@ -130,7 +162,7 @@ def test_login_wrong_password_returns_401(auth_client):
 
 def test_login_nonexistent_user_returns_401(auth_client):
     client, _ = auth_client
-    response = client.post("/auth/login", json={"email": "nobody@example.com", "password": "pass123"})
+    response = client.post("/auth/login", json={"email": "nobody@example.com", "password": "pass1234"})
     assert response.status_code == 401
 
 
@@ -138,8 +170,8 @@ def test_login_nonexistent_user_returns_401(auth_client):
 
 def test_protected_endpoint_with_valid_token_returns_200(auth_client):
     client, _ = auth_client
-    client.post("/auth/register", json={"email": "user@example.com", "password": "pass123"})
-    login_resp = client.post("/auth/login", json={"email": "user@example.com", "password": "pass123"})
+    client.post("/auth/register", json={"email": "user@example.com", "password": "pass1234"})
+    login_resp = client.post("/auth/login", json={"email": "user@example.com", "password": "pass1234"})
     token = login_resp.json()["access_token"]
     response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
