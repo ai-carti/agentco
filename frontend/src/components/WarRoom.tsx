@@ -96,15 +96,17 @@ export default function WarRoom() {
       }
       const type: string = event.type
       if (type === 'run.started') {
+        // SIRI-UX-205: guard against missing run_id — event fields are optional, Run.run_id is required
+        if (!event.run_id) return
         setRuns((prev) => {
           const next = [
             ...prev,
             {
-              run_id: event.run_id,
-              agent_name: event.agent_name,
-              task_title: event.task_title,
+              run_id: event.run_id as string,
+              agent_name: event.agent_name ?? '',
+              task_title: event.task_title ?? '',
               status: 'running' as Run['status'],
-              started_at: event.started_at,
+              started_at: event.started_at ?? new Date().toISOString(),
             },
           ]
           // SIRI-UX-146: cap at MAX_RUNS to prevent unbounded memory growth

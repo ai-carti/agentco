@@ -69,6 +69,16 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const deleteAbortRef = useRef<AbortController | null>(null)
   const assignAbortRef = useRef<AbortController | null>(null)
 
+  // SIRI-UX-206: abort all in-flight requests on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      runAbortRef.current?.abort()
+      editAbortRef.current?.abort()
+      deleteAbortRef.current?.abort()
+      assignAbortRef.current?.abort()
+    }
+  }, [])
+
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
   // BUG-050 / SIRI-UX-062 / SIRI-UX-070: close menu + modals on Escape key
@@ -888,6 +898,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   useEffect(() => {
     return () => { createTaskAbortRef.current?.abort() }
   }, [])
+  // SIRI-UX-207: abort controller for handleDrop PATCH to prevent setState on unmount
+  const dropAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { dropAbortRef.current?.abort() }
+  }, [])
 
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
@@ -1075,6 +1090,12 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     const optimisticTasks = currentTasks.map((t) => t.id === taskId ? { ...t, status: newStatus } : t)
     setTasks(optimisticTasks)
 
+    // SIRI-UX-207: abort any previous drop PATCH; new AbortController for this request
+    dropAbortRef.current?.abort()
+    const controller = new AbortController()
+    dropAbortRef.current = controller
+    const { signal } = controller
+
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${taskId}`, {
@@ -1084,17 +1105,22 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ status: newStatus }),
+        signal,
       })
-      if (!res.ok) {
-        // Rollback
-        const rollbackTasks = useAgentStore.getState().tasks
-        setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
-        toast.error('Failed to move task')
-      } else {
-        // Persist order to localStorage on success
-        persistTaskOrder(optimisticTasks)
+      if (!signal.aborted) {
+        if (!res.ok) {
+          // Rollback
+          const rollbackTasks = useAgentStore.getState().tasks
+          setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
+          toast.error('Failed to move task')
+        } else {
+          // Persist order to localStorage on success
+          persistTaskOrder(optimisticTasks)
+        }
       }
-    } catch {
+    } catch (err) {
+      // SIRI-UX-207: ignore AbortError (component unmounted mid-drop)
+      if (err instanceof Error && err.name === 'AbortError') return
       // Rollback
       const rollbackTasks = useAgentStore.getState().tasks
       setTasks(rollbackTasks.map((t) => t.id === taskId ? { ...t, status: oldStatus } : t))
