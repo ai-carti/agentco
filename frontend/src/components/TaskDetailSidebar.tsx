@@ -344,8 +344,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               ) : logs.length === 0 ? (
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (
-                logs.map((entry) => (
-                  <div key={`${entry.timestamp}-${entry.message}`} style={{ marginBottom: '0.25rem' }}>
+                logs.map((entry, idx) => (
+                  // SIRI-UX-217: use index in key to prevent duplicate-key collision when
+                  // two log entries share identical timestamp + message strings
+                  <div key={`${idx}-${entry.timestamp}-${entry.message}`} style={{ marginBottom: '0.25rem' }}>
                     <span style={{ color: '#64748b', marginRight: '0.5rem' }}>
                       [{formatTimestamp(entry.timestamp)}]
                     </span>

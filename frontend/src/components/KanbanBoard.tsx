@@ -297,18 +297,18 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         cursor: 'pointer',
         border: '1px solid #374151',
         position: 'relative',
-        transition: 'box-shadow 0.15s, transform 0.15s, border-color 0.15s',
+        transition: 'box-shadow 0.15s, border-color 0.15s',
         outline: 'none',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = '#6b7280'
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.4)'
-        e.currentTarget.style.transform = 'scale(1.01)'
+        // SIRI-UX-218: use box-shadow instead of transform:scale — scale creates a CSS stacking
+        // context which breaks position:fixed children (Edit/Delete/Assign modals).
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.5)'
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = '#374151'
         e.currentTarget.style.boxShadow = 'none'
-        e.currentTarget.style.transform = 'scale(1)'
       }}
       onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
       onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}

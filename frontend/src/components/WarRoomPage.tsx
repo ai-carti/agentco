@@ -255,6 +255,8 @@ export default function WarRoomPage() {
         ),
       )
 
+      // SIRI-UX-216: guard signal after async Promise.allSettled — component may have unmounted
+      if (signal.aborted) return
       const failures = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok))
       if (failures.length > 0) {
         toast.error(`Failed to stop ${failures.length} run(s)`)

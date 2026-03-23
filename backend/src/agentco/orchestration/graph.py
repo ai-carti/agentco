@@ -23,11 +23,15 @@ def _should_continue(state: AgentState) -> str:
 
     Возможные переходы:
     - "subagent" — есть pending задачи → отправить к subagent
-    - "__end__" — статус не "running" (error/completed/failed) → завершить
+    - "__end__" — статус не "running" (error/completed/failed/done) → завершить
+
+    ALEX-TD-133 fix: добавлен "done" в terminal set.
+    execute_run сохраняет run.status="done" для успешных ранов — без этого
+    граф входил в бесконечный цикл при status="done".
     """
     status = state.get("status", "running")
 
-    if status in ("error", "completed", "failed"):
+    if status in ("error", "completed", "failed", "done"):
         return END
 
     if state.get("pending_tasks"):
@@ -43,10 +47,12 @@ def _after_subagent(state: AgentState) -> str:
 
     - "ceo" — subagent завершил задачи → CEO синтезирует результат
     - "subagent" — ещё есть pending задачи → продолжаем выполнять
-    - "__end__" — статус не "running" (error/completed/failed) → завершить
+    - "__end__" — статус не "running" (error/completed/failed/done) → завершить
+
+    ALEX-TD-133 fix: добавлен "done" в terminal set (см. _should_continue).
     """
     status = state.get("status", "running")
-    if status in ("error", "completed", "failed"):
+    if status in ("error", "completed", "failed", "done"):
         return END
 
     if state.get("pending_tasks"):
@@ -120,9 +126,10 @@ def compile(checkpointer=None):
 def _should_continue_hierarchical(state: AgentState) -> str:
     """
     Conditional edge после CEO node в иерархическом графе.
+    ALEX-TD-133 fix: добавлен "done" в terminal set.
     """
     status = state.get("status", "running")
-    if status in ("error", "completed", "failed"):
+    if status in ("error", "completed", "failed", "done"):
         return END
     if state.get("pending_tasks"):
         return "hierarchical"
@@ -132,9 +139,10 @@ def _should_continue_hierarchical(state: AgentState) -> str:
 def _after_hierarchical(state: AgentState) -> str:
     """
     Conditional edge после hierarchical node.
+    ALEX-TD-133 fix: добавлен "done" в terminal set.
     """
     status = state.get("status", "running")
-    if status in ("error", "completed", "failed"):
+    if status in ("error", "completed", "failed", "done"):
         return END
     if state.get("pending_tasks"):
         return "hierarchical"

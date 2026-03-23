@@ -161,27 +161,34 @@ class RunService:
         run = self._repo.add(run)
         self._session.commit()
 
-        # 5. Публикуем run.started
-        bus = EventBus.get()
-        loop = asyncio.get_running_loop()
-        loop.create_task(bus.publish({
-            "type": "run.started",
-            "company_id": company_id,
-            "run_id": run.id,
-            "payload": {"status": "pending", "task_id": task_id},
-        }))
+        # 5. Публикуем run.started + запускаем background task
+        # ALEX-TD-134 fix: обёртка в try/except RuntimeError аналогично create_with_goal.
+        # create_and_start ранее падал с RuntimeError в синхронном тестовом контексте
+        # вместо graceful degradation.
+        try:
+            bus = EventBus.get()
+            loop = asyncio.get_running_loop()
+            loop.create_task(bus.publish({
+                "type": "run.started",
+                "company_id": company_id,
+                "run_id": run.id,
+                "payload": {"status": "pending", "task_id": task_id},
+            }))
 
-        # 6. Запускаем background task
-        bg_task = loop.create_task(
-            self._execute_agent(run.id, task_id, agent_id, company_id, session_factory)
-        )
-        RunService._active_tasks[run.id] = bg_task
+            # 6. Запускаем background task
+            bg_task = loop.create_task(
+                self._execute_agent(run.id, task_id, agent_id, company_id, session_factory)
+            )
+            RunService._active_tasks[run.id] = bg_task
 
-        # Cleanup на завершении
-        def _on_done(fut: asyncio.Task):
-            RunService._active_tasks.pop(run.id, None)
+            # Cleanup на завершении
+            def _on_done(fut: asyncio.Task):
+                RunService._active_tasks.pop(run.id, None)
 
-        bg_task.add_done_callback(_on_done)
+            bg_task.add_done_callback(_on_done)
+        except RuntimeError:
+            # No running event loop (e.g. sync test context) — skip bg task and event publish.
+            logger.debug("create_and_start: no running event loop, skipping bg task for run %s", run.id)
 
         return run
 

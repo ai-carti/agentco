@@ -13,6 +13,8 @@ import os
 
 # ALEX-TD-050: rate limit for validate-key endpoint — each call makes a real LLM request
 _RATE_LIMIT_VALIDATE_KEY = os.getenv("RATE_LIMIT_VALIDATE_KEY", "5/minute")
+# ALEX-TD-132: rate limit for credential CRUD endpoints
+_RATE_LIMIT_CREDENTIALS = os.getenv("RATE_LIMIT_CREDENTIALS", "30/minute")
 
 router = APIRouter(tags=["credentials"])
 
@@ -83,7 +85,9 @@ class CredentialOut(BaseModel):
     response_model=CredentialOut,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def create_credential(
+    request: Request,
     company_id: str,
     body: CredentialCreate,
     session: Session = Depends(get_session),
@@ -104,7 +108,9 @@ def create_credential(
     "/api/companies/{company_id}/credentials",
     response_model=list[CredentialOut],
 )
+@limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def list_credentials(
+    request: Request,
     company_id: str,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
@@ -127,7 +133,9 @@ def list_credentials(
     "/api/companies/{company_id}/credentials/{credential_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def delete_credential(
+    request: Request,
     company_id: str,
     credential_id: str,
     session: Session = Depends(get_session),

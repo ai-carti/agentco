@@ -62,6 +62,8 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
     const controller = new AbortController()
     launchAbortRef.current = controller
     const { signal } = controller
+    // SIRI-UX-215: track whether we navigated away to skip setState in finally (component unmounts)
+    let navigated = false
     setLoading(true)
     try {
       const token = getStoredToken()
@@ -111,6 +113,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
       }
 
       toast.success(`🚀 "${companyName.trim()}" created! Welcome to AgentCo.`)
+      navigated = true
       if (onCompanyCreated && companyId) {
         onCompanyCreated(companyId)
       } else if (companyId) {
@@ -122,7 +125,9 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
       if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Something went wrong. Try again.')
     } finally {
-      if (!signal.aborted) {
+      // SIRI-UX-215: skip setState if we just navigated away — component is unmounted,
+      // calling setState would trigger React "Can't perform a state update on unmounted component"
+      if (!signal.aborted && !navigated) {
         setLoading(false)
         launchAbortRef.current = null
       }
