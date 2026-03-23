@@ -68,6 +68,7 @@ export default function WarRoomPage() {
   const connectingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    // SIRI-UX-184: always clean up timer on re-run (regardless of which branch set it)
     // If agents arrive, stop connecting state
     if (agents.length > 0) {
       setIsConnecting(false)
@@ -75,19 +76,34 @@ export default function WarRoomPage() {
         clearTimeout(connectingTimerRef.current)
         connectingTimerRef.current = null
       }
-      return
+      return () => {
+        if (connectingTimerRef.current) {
+          clearTimeout(connectingTimerRef.current)
+          connectingTimerRef.current = null
+        }
+      }
     }
     // Only apply isConnecting logic when real WS is connected
     if (isConnected && agents.length === 0) {
       connectingTimerRef.current = setTimeout(() => {
         setIsConnecting(false)
+        connectingTimerRef.current = null
       }, 3000)
       return () => {
-        if (connectingTimerRef.current) clearTimeout(connectingTimerRef.current)
+        if (connectingTimerRef.current) {
+          clearTimeout(connectingTimerRef.current)
+          connectingTimerRef.current = null
+        }
       }
     }
     // Not connected via real WS — not in connecting state
     setIsConnecting(false)
+    return () => {
+      if (connectingTimerRef.current) {
+        clearTimeout(connectingTimerRef.current)
+        connectingTimerRef.current = null
+      }
+    }
   }, [isConnected, agents.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // SIRI-UX-113: reset store when companyId changes (switching between companies)

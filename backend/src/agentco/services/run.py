@@ -433,6 +433,12 @@ class RunService:
             logger.error("execute_run failed for %s: %s", run_id, exc)
 
             # ALEX-TD-024: use fresh session for error update too
+            # ALEX-TD-104: initialize run_orm = None BEFORE inner try to prevent UnboundLocalError.
+            # If update_session.get() raises OperationalError (disk full, DB down), the OperationalError
+            # propagates out of the inner try/finally. Without pre-initialization, run_orm is unbound
+            # → NameError at 'if run_orm is None' → 'await bus.publish(run.failed)' is never reached
+            # → frontend stays stuck in 'running' state indefinitely.
+            run_orm = None
             update_session = _get_session_for_update()
             try:
                 run_orm = update_session.get(self._repo.orm_model, run_id)
@@ -441,6 +447,12 @@ class RunService:
                     run_orm.error = str(exc)
                     run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     update_session.commit()
+            except Exception as db_exc:
+                # ALEX-TD-104: catch DB errors so run.failed event is always published below.
+                logger.warning(
+                    "execute_run: DB update failed in error branch for run_id=%s: %s",
+                    run_id, db_exc,
+                )
             finally:
                 if session_factory is not None:
                     update_session.close()

@@ -124,6 +124,8 @@ def list_library(
 @router.get("/api/library/{library_id}/portfolio", response_model=PortfolioOut)
 def get_portfolio(
     library_id: str,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
@@ -144,6 +146,8 @@ def get_portfolio(
         .where(AgentORM.library_agent_id == library_id)
         .where(_CompanyORM.owner_id == current_user.id)
         .order_by(AgentORM.created_at.asc())
+        .limit(limit)
+        .offset(offset)
     ).scalars().all()
 
     return PortfolioOut(

@@ -360,11 +360,13 @@ async def agent_node(state: AgentState) -> dict:
                 new_messages.append(tool_msg)
 
         else:
-            # Обычный текстовый ответ
-            new_messages.append({
-                "role": "assistant",
-                "content": full_text,
-            })
+            # ALEX-TD-106: skip empty assistant messages — Anthropic requires non-empty content,
+            # and empty messages pollute the conversation history without value.
+            if full_text:
+                new_messages.append({
+                    "role": "assistant",
+                    "content": full_text,
+                })
 
         # ── Сохраняем результат в память ──────────────────────────────────
         if full_text:

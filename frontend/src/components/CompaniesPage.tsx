@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -29,6 +29,11 @@ export default function CompaniesPage() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   // SIRI-UX-170: focus trap for New Company modal
   const newModalTrapRef = useFocusTrap(showNewModal)
+  // SIRI-UX-183: abort controller for handleCreate POST
+  const createAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { createAbortRef.current?.abort() }
+  }, [])
 
   // SIRI-UX-179: accept optional AbortSignal so fetch is cancellable from useEffect cleanup
   const load = async (signal?: AbortSignal) => {
@@ -66,6 +71,11 @@ export default function CompaniesPage() {
 
   const handleCreate = async () => {
     if (!newName.trim()) return
+    // SIRI-UX-183: abort any previous in-flight create request
+    createAbortRef.current?.abort()
+    const controller = new AbortController()
+    createAbortRef.current = controller
+    const { signal } = controller
     setCreating(true)
     try {
       const token = getStoredToken()
@@ -76,6 +86,7 @@ export default function CompaniesPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ name: newName.trim() }),
+        signal,
       })
       if (res.ok) {
         toast.success(`Company ${newName.trim()} created`)
@@ -85,10 +96,14 @@ export default function CompaniesPage() {
       } else {
         toast.error('Something went wrong. Try again.')
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Something went wrong. Try again.')
     } finally {
-      setCreating(false)
+      if (!signal.aborted) {
+        setCreating(false)
+        createAbortRef.current = null
+      }
     }
   }
 

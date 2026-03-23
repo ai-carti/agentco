@@ -357,3 +357,100 @@ def test_portfolio_forks_only_shows_own_company_forks(auth_client):
     assert fork_company_a not in fork_company_ids_b
     # User B ДОЛЖЕН видеть свой форк
     assert company_b in fork_company_ids_b
+
+
+# ── ALEX-TD-105: pagination in get_portfolio ──────────────────────────────────
+
+def test_portfolio_supports_limit_param(auth_client):
+    """
+    ALEX-TD-105: GET /api/library/{id}/portfolio должен принимать ?limit= параметр.
+    Проверяем что limit ограничивает количество возвращаемых форков.
+    """
+    client, _ = auth_client
+    token = _register_and_login(client, email="td105_limit@example.com")
+
+    # Создаём агента в библиотеке
+    company_id = _create_company(client, token, "TD105 Base Corp")
+    agent_id = _create_agent(client, token, company_id, "TD105 Template Agent")
+    lib_resp = _add_to_library(client, token, agent_id)
+    assert lib_resp.status_code == 201
+    lib_id = lib_resp.json()["id"]
+
+    # Создаём 3 форка
+    for i in range(3):
+        fork_company = _create_company(client, token, f"TD105 Fork Corp {i}")
+        fork_resp = client.post(
+            f"/api/companies/{fork_company}/agents/fork",
+            json={"library_agent_id": lib_id},
+            headers=_auth_headers(token),
+        )
+        assert fork_resp.status_code == 201
+
+    # Запрашиваем с limit=2 — должны получить не более 2 форков
+    resp = client.get(
+        f"/api/library/{lib_id}/portfolio?limit=2",
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "forks" in data
+    assert len(data["forks"]) <= 2, (
+        f"ALEX-TD-105: limit=2 should return at most 2 forks, got {len(data['forks'])}"
+    )
+
+
+def test_portfolio_supports_offset_param(auth_client):
+    """
+    ALEX-TD-105: GET /api/library/{id}/portfolio должен принимать ?offset= параметр.
+    С offset=2 при 3 форках должно вернуться не более 1 форка.
+    """
+    client, _ = auth_client
+    token = _register_and_login(client, email="td105_offset@example.com")
+
+    company_id = _create_company(client, token, "TD105 Offset Corp")
+    agent_id = _create_agent(client, token, company_id, "TD105 Offset Agent")
+    lib_resp = _add_to_library(client, token, agent_id)
+    assert lib_resp.status_code == 201
+    lib_id = lib_resp.json()["id"]
+
+    # Создаём 3 форка
+    for i in range(3):
+        fork_company = _create_company(client, token, f"TD105 Offset Fork Corp {i}")
+        client.post(
+            f"/api/companies/{fork_company}/agents/fork",
+            json={"library_agent_id": lib_id},
+            headers=_auth_headers(token),
+        )
+
+    # С offset=2 должно вернуться не более 1 форка (всего 3, пропускаем 2)
+    resp = client.get(
+        f"/api/library/{lib_id}/portfolio?offset=2",
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["forks"]) <= 1, (
+        f"ALEX-TD-105: offset=2 with 3 forks should return at most 1 fork, got {len(data['forks'])}"
+    )
+
+
+def test_portfolio_limit_default_is_50(auth_client):
+    """
+    ALEX-TD-105: default limit должен быть 50 (возможность убедиться что параметр принимается).
+    Запрос без параметров должен возвращать 200 с forks (не ошибку).
+    """
+    client, _ = auth_client
+    token = _register_and_login(client, email="td105_default@example.com")
+
+    company_id = _create_company(client, token, "TD105 Default Corp")
+    agent_id = _create_agent(client, token, company_id, "TD105 Default Agent")
+    lib_resp = _add_to_library(client, token, agent_id)
+    lib_id = lib_resp.json()["id"]
+
+    # Без параметров — должен работать нормально
+    resp = client.get(
+        f"/api/library/{lib_id}/portfolio",
+        headers=_auth_headers(token),
+    )
+    assert resp.status_code == 200
+    assert "forks" in resp.json()

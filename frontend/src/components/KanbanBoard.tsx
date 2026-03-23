@@ -215,10 +215,20 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
     <div
       data-testid={`task-card-${task.id}`}
       draggable
+      // SIRI-UX-182: keyboard accessibility — role=button + tabIndex + onKeyDown
+      role="button"
+      tabIndex={0}
       aria-grabbed={isGrabbed}
+      aria-label={`Task: ${task.title}`}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onCardClick(task)
+        }
+      }}
       style={{
         background: '#1f2937',
         borderRadius: 8,
@@ -227,6 +237,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         border: '1px solid #374151',
         position: 'relative',
         transition: 'box-shadow 0.15s, transform 0.15s, border-color 0.15s',
+        outline: 'none',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = '#6b7280'
@@ -238,6 +249,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         e.currentTarget.style.boxShadow = 'none'
         e.currentTarget.style.transform = 'scale(1)'
       }}
+      onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
+      onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
     >
       {/* Header: title + menu */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>

@@ -658,3 +658,59 @@ class TestLlmTokenCostField:
             )
             assert isinstance(event["cost"], float), f"cost должен быть float, got {type(event['cost'])}"
             assert event["cost"] >= 0.0, "cost не может быть отрицательным"
+
+
+# ─── ALEX-TD-106: пустой LLM response не должен добавлять empty message ────────
+
+class TestEmptyLLMResponse:
+    """ALEX-TD-106: если LLM вернул пустой текст и нет tool_calls,
+    в new_messages НЕ должно добавляться {"role":"assistant","content":""}."""
+
+    @pytest.mark.asyncio
+    async def test_empty_llm_response_does_not_add_empty_message(self):
+        """
+        LLM возвращает пустой текст без tool_calls →
+        agent_node НЕ добавляет {"role":"assistant","content":""} в new_messages.
+        """
+        from agentco.orchestration.agent_node import agent_node
+        # Поток с пустым контентом
+        empty_chunk = _make_text_chunk("", finish_reason=None)
+        finish_chunk = _make_text_chunk("", finish_reason="stop")
+        stream = _make_async_stream([empty_chunk, finish_chunk])
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        new_messages = result.get("messages", [])
+        # Должно быть 0 сообщений — пустой ответ не добавляется
+        empty_assistant_msgs = [
+            m for m in new_messages
+            if m.get("role") == "assistant" and m.get("content") == ""
+        ]
+        assert len(empty_assistant_msgs) == 0, (
+            f"ALEX-TD-106: empty assistant message should NOT be added to new_messages, "
+            f"but got: {new_messages}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_non_empty_llm_response_still_added(self):
+        """
+        LLM возвращает непустой текст → сообщение добавляется как обычно.
+        Убеждаемся что фикс TD-106 не ломает нормальный путь.
+        """
+        from agentco.orchestration.agent_node import agent_node
+        chunk1 = _make_text_chunk("Hello ", finish_reason=None)
+        chunk2 = _make_text_chunk("world", finish_reason="stop")
+        stream = _make_async_stream([chunk1, chunk2])
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        new_messages = result.get("messages", [])
+        assert len(new_messages) == 1
+        assert new_messages[0]["role"] == "assistant"
+        assert new_messages[0]["content"] == "Hello world"
