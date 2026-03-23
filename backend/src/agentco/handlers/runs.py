@@ -28,6 +28,8 @@ from ..core.rate_limiting import limiter
 _RATE_LIMIT_RUN = os.getenv("RATE_LIMIT_RUN", "10/minute")
 # ALEX-TD-065: separate limit for POST /runs (goal-based runs without task, still can trigger LLM)
 _RATE_LIMIT_CREATE_RUN = os.getenv("RATE_LIMIT_CREATE_RUN", "20/minute")
+# ALEX-TD-143: rate limit for GET endpoints (list + detail + events)
+_RATE_LIMIT_RUNS_READ = os.getenv("RATE_LIMIT_RUNS_READ", "120/minute")
 
 router = APIRouter(
     prefix="/api/companies/{company_id}",
@@ -141,7 +143,9 @@ VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "d
 
 
 @router.get("/runs", response_model=list[RunOut])
+@limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_runs(
+    request: Request,
     company_id: str,
     limit: int = Query(default=20, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -169,7 +173,9 @@ async def list_runs(
 
 
 @router.get("/runs/{run_id}", response_model=RunDetailOut)
+@limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def get_run(
+    request: Request,
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
@@ -231,7 +237,9 @@ async def stop_run(
 
 
 @router.get("/runs/{run_id}/events", response_model=list[RunEventOut])
+@limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_run_events(
+    request: Request,
     company_id: str,
     run_id: str,
     limit: int = Query(default=100, ge=1, le=1000),
@@ -279,7 +287,9 @@ async def run_task(
 
 
 @router.get("/tasks/{task_id}/runs", response_model=list[RunOut])
+@limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_task_runs(
+    request: Request,
     company_id: str,
     task_id: str,
     limit: int = Query(default=50, ge=1, le=500),
@@ -302,7 +312,9 @@ async def list_task_runs(
 
 
 @router.get("/tasks/{task_id}/runs/{run_id}", response_model=RunDetailOut)
+@limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def get_task_run(
+    request: Request,
     company_id: str,
     task_id: str,
     run_id: str,

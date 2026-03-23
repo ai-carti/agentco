@@ -14,6 +14,8 @@ from ..core.rate_limiting import limiter
 _RATE_LIMIT_AGENTS = os.getenv("RATE_LIMIT_AGENTS", "20/hour")
 # ALEX-TD-102: separate rate limit for tree endpoint — recursive tree build is O(N agents)
 _RATE_LIMIT_AGENTS_TREE = os.getenv("RATE_LIMIT_AGENTS_TREE", "30/minute")
+# ALEX-TD-142: rate limit for GET endpoints (list + get single)
+_RATE_LIMIT_AGENTS_READ = os.getenv("RATE_LIMIT_AGENTS_READ", "120/minute")
 
 router = APIRouter(prefix="/api/companies/{company_id}/agents", tags=["agents"])
 
@@ -114,13 +116,16 @@ def get_agents_tree(
 
 
 @router.get("", response_model=list[AgentOut])
+@limiter.limit(_RATE_LIMIT_AGENTS_READ)
 def list_agents(
+    request: Request,
     company_id: str,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    # ALEX-TD-142: added @limiter.limit — GET endpoints were unprotected
     try:
         return AgentService(session).list_by_company(
             company_id=company_id,
@@ -133,7 +138,9 @@ def list_agents(
 
 
 @router.get("/{agent_id}", response_model=AgentOut)
+@limiter.limit(_RATE_LIMIT_AGENTS_READ)
 def get_agent(
+    request: Request,
     company_id: str,
     agent_id: str,
     session: Session = Depends(get_session),

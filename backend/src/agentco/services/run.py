@@ -37,6 +37,10 @@ from ..repositories.company import CompanyRepository
 from ..repositories.task import TaskRepository
 from ..repositories.base import NotFoundError, ConflictError
 from ..core.event_bus import EventBus
+# ALEX-TD-144: module-level imports so tests can patch agentco.services.run.*
+from ..orchestration.graph import compile as compile_graph  # noqa: F401
+from ..orchestration.checkpointer import create_checkpointer  # noqa: F401
+from ..memory.service import MemoryService  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -222,7 +226,11 @@ class RunService:
         if _MAX_RETRIES < 1:
             _MAX_RETRIES = 1  # ALEX-TD-048: guard against range(1, 0+1) yielding no iterations
         _RETRY_BASE_DELAY = float(os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
-        _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded", "cancelled"}
+        # ALEX-TD-146: removed "cancelled" from _NO_RETRY_ERRORS — it was dead code.
+        # str(asyncio.CancelledError()) == '' → any("cancelled" in "" ...) == False → never matched.
+        # CancelledError inherits BaseException, not Exception → not caught by 'except Exception'.
+        # Explicit isinstance guard below handles CancelledError clearly.
+        _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded"}
 
         last_exc: Exception | None = None
         for attempt in range(1, _MAX_RETRIES + 1):
@@ -237,6 +245,10 @@ class RunService:
                 # str(asyncio.TimeoutError()) == '' → matches nothing in _NO_RETRY_ERRORS
                 # → without this guard, a timed-out run would be retried 3× = up to 30 min.
                 if isinstance(exc, asyncio.TimeoutError):
+                    raise
+                # ALEX-TD-146: explicit CancelledError guard for clarity.
+                # CancelledError is BaseException (not caught above), but guard makes intent clear.
+                if isinstance(exc, asyncio.CancelledError):  # noqa: SIM102
                     raise
                 error_code = getattr(exc, "error_code", None) or str(exc)
                 # Don't retry permanent/intentional errors
@@ -360,9 +372,14 @@ class RunService:
         ALEX-TD-025: session_factory должна быть plain callable () → Session (не contextmanager).
         Вызывающий код (handlers/runs.py:_session_ctx) переписан на обычную функцию.
         """
-        from ..orchestration.graph import compile as compile_graph
-        from ..orchestration.checkpointer import create_checkpointer
+        # Use module-level aliases (imported at top of file) so tests can patch them.
+        # compile_graph, create_checkpointer, MemoryService are already in scope via
+        # module-level imports added for ALEX-TD-144 (test patchability).
         from ..orchestration.state import AgentState
+        import agentco.services.run as _run_mod
+        _compile_graph = _run_mod.compile_graph
+        _create_checkpointer = _run_mod.create_checkpointer
+        _MemoryService = _run_mod.MemoryService
 
         bus = EventBus.get()
 
@@ -396,6 +413,13 @@ class RunService:
             "payload": {"status": "running"},
         })
 
+        # ALEX-TD-144: create MemoryService for this run so agent_node can
+        # inject past memories into system_prompt and save new memories.
+        # Previously memory_service was never set → memory injection silently skipped.
+        # Using AGENTCO_MEMORY_DB env var (mirrors handlers/memory.py convention).
+        _memory_db = os.getenv("AGENTCO_MEMORY_DB", os.getenv("AGENTCO_DB_PATH", "./agentco_memory.db"))
+        _memory_service = _MemoryService(_memory_db)
+
         # Строим начальный state
         initial_state: AgentState = {
             "run_id": run_id,
@@ -413,6 +437,8 @@ class RunService:
             "final_result": None,
             "agent_id": "ceo",
             "level": 0,
+            # ALEX-TD-144: inject MemoryService so agent_node.py uses memory
+            "memory_service": _memory_service,
         }
 
         def _get_session_for_update() -> Session:
@@ -424,8 +450,8 @@ class RunService:
         try:
             # ALEX-TD-063: use CHECKPOINT_DB_PATH (via get_checkpoint_db_path) instead of
             # AGENTCO_DB_PATH. Keeps checkpoints in a separate file from the main DB.
-            async with create_checkpointer() as checkpointer:
-                compiled = compile_graph(checkpointer=checkpointer)
+            async with _create_checkpointer() as checkpointer:
+                compiled = _compile_graph(checkpointer=checkpointer)
                 config = {"configurable": {"thread_id": run_id}}
                 # ALEX-TD-075: wrap ainvoke in wait_for to prevent zombie tasks.
                 # If LLM/network hangs indefinitely, asyncio.TimeoutError propagates
