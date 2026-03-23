@@ -22,6 +22,8 @@ from typing import Any, Callable, Coroutine
 import litellm
 
 from agentco.orchestration.state import AgentState
+# ALEX-TD-120: top-level import — avoid per-chunk lazy import in hot streaming path
+from agentco.core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +162,6 @@ async def _publish_chunk(state: AgentState, content: str) -> None:
     if not company_id:
         return
     try:
-        from agentco.eventbus import EventBus
         bus = EventBus.get()
         # ALEX-TD-068: оцениваем стоимость чанка по длине (1 char ≈ 0.25 токена)
         model = state.get("model", "gpt-4o")
@@ -184,7 +185,6 @@ async def _publish_completion(state: AgentState, full_text: str, cost_usd: float
     if not company_id:
         return
     try:
-        from agentco.eventbus import EventBus
         bus = EventBus.get()
         await bus.publish({
             "company_id": company_id,

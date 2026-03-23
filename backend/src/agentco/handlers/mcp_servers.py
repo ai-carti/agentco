@@ -1,6 +1,7 @@
+import os
 from datetime import datetime
 from enum import Enum
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -12,11 +13,16 @@ from ..orm.mcp_server import MCPServerORM
 from ..repositories.base import NotFoundError
 from ..repositories.agent import AgentRepository
 from ..repositories.company import CompanyRepository
+from ..core.rate_limiting import limiter
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/mcp-servers",
     tags=["mcp-servers"],
 )
+
+# ALEX-TD-118: rate limits for mutable MCP server endpoints
+_RATE_LIMIT_MCP_CREATE = os.getenv("RATE_LIMIT_MCP_CREATE", "20/minute")
+_RATE_LIMIT_MCP_DELETE = os.getenv("RATE_LIMIT_MCP_DELETE", "20/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -27,15 +33,21 @@ class TransportEnum(str, Enum):
 
 
 class MCPServerCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-    server_url: str = Field(..., min_length=1)
+    # ALEX-TD-121: max_length=200 prevents megabyte name payloads
+    name: str = Field(..., min_length=1, max_length=200)
+    # ALEX-TD-121: max_length + scheme validation prevents SSRF vectors
+    server_url: str = Field(..., min_length=1, max_length=2048)
     transport: TransportEnum
 
     @field_validator("server_url")
     @classmethod
     def url_not_blank(cls, v: str) -> str:
-        if not v.strip():
+        v = v.strip()
+        if not v:
             raise ValueError("server_url must not be empty or whitespace-only")
+        # ALEX-TD-121: only allow http/https to prevent SSRF (file://, ftp://, etc.)
+        if not (v.startswith("http://") or v.startswith("https://")):
+            raise ValueError("server_url must start with http:// or https://")
         return v
 
 
@@ -72,7 +84,9 @@ def _resolve_agent(session: Session, company_id: str, agent_id: str, owner_id: s
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=MCPServerResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_RATE_LIMIT_MCP_CREATE)
 def create_mcp_server(
+    request: Request,
     company_id: str,
     agent_id: str,
     body: MCPServerCreate,
@@ -124,7 +138,9 @@ def list_mcp_servers(
 
 
 @router.delete("/{server_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_RATE_LIMIT_MCP_DELETE)
 def delete_mcp_server(
+    request: Request,
     company_id: str,
     agent_id: str,
     server_id: str,

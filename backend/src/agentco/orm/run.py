@@ -1,12 +1,18 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Text, DateTime, Float, Integer, ForeignKey
+from sqlalchemy import Text, DateTime, Float, Integer, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 
 class RunORM(Base):
     __tablename__ = "runs"
+
+    # ALEX-TD-117: compound indexes for filtered queries (company_id + status, company_id + started_at)
+    __table_args__ = (
+        Index("ix_runs_company_status", "company_id", "status"),
+        Index("ix_runs_company_started", "company_id", "started_at"),
+    )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
     # ALEX-TD-004 fix: index on FK columns for list_by_company / find_active_by_task queries
