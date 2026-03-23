@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import AgentForm, { type AgentFormData } from './AgentForm'
 import { getStoredToken } from '../api/client'
@@ -24,6 +24,11 @@ export default function AgentEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  // SIRI-UX-191: AbortController ref to guard setState in handleSubmit on unmounted component
+  const saveAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { saveAbortRef.current?.abort() }
+  }, [])
 
   useEffect(() => {
     if (!companyId || !agentId) return
@@ -46,6 +51,11 @@ export default function AgentEditPage() {
   }, [companyId, agentId])
 
   const handleSubmit = async (data: AgentFormData) => {
+    // SIRI-UX-191: abort any previous in-flight save; guard setState on unmounted component
+    saveAbortRef.current?.abort()
+    const controller = new AbortController()
+    saveAbortRef.current = controller
+    const { signal } = controller
     setSaveError('')
     setSaving(true)
     try {
@@ -59,22 +69,31 @@ export default function AgentEditPage() {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(data),
+          signal,
         },
       )
-      if (!res.ok) {
-        const msg = `Failed to save agent (${res.status})`
+      if (!signal.aborted) {
+        if (!res.ok) {
+          const msg = `Failed to save agent (${res.status})`
+          setSaveError(msg)
+          toast.error(msg)
+        } else {
+          toast.success('Agent updated')
+          navigate(`/companies/${companyId}/agents/${agentId}`)
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      if (!signal.aborted) {
+        const msg = 'Network error — could not save agent'
         setSaveError(msg)
         toast.error(msg)
-        setSaving(false)
-        return
       }
-      toast.success('Agent updated')
-      navigate(`/companies/${companyId}/agents/${agentId}`)
-    } catch {
-      const msg = 'Network error — could not save agent'
-      setSaveError(msg)
-      toast.error(msg)
-      setSaving(false)
+    } finally {
+      if (!signal.aborted) {
+        setSaving(false)
+        saveAbortRef.current = null
+      }
     }
   }
 

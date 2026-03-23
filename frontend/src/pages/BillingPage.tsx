@@ -292,9 +292,10 @@ export default function BillingPage() {
               </tr>
             </thead>
             <tbody>
+              {/* SIRI-UX-195: use stable composite key instead of array index */}
               {USAGE_HISTORY.map((row, i) => (
                 <tr
-                  key={i}
+                  key={`${row.date}-${row.description}`}
                   style={{
                     borderBottom: i < USAGE_HISTORY.length - 1 ? '1px solid #1e293b' : undefined,
                   }}

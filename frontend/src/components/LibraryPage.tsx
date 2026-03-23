@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { Bot } from 'lucide-react'
@@ -35,6 +35,11 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   const toast = useToast()
   // SIRI-POST-006: focus trap
   const trapRef = useFocusTrap(true)
+  // SIRI-UX-193: AbortController ref to guard setState in handleFork on unmounted modal
+  const forkAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { forkAbortRef.current?.abort() }
+  }, [])
 
   // SIRI-UX-065: close on Escape key
   useEffect(() => {
@@ -65,6 +70,11 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   }, [])
 
   const handleFork = async (companyId: string) => {
+    // SIRI-UX-193: AbortController to guard setState on unmounted ForkModal
+    forkAbortRef.current?.abort()
+    const controller = new AbortController()
+    forkAbortRef.current = controller
+    const { signal } = controller
     setForking(companyId)
     setError('')
     try {
@@ -76,21 +86,31 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ library_agent_id: agentId }),
+        signal,
       })
-      if (!res.ok) {
-        setError(`Failed to fork (${res.status})`)
-        toast.error(`Failed to fork agent (${res.status})`)
-        setForking(null)
-        return
+      if (!signal.aborted) {
+        if (!res.ok) {
+          setError(`Failed to fork (${res.status})`)
+          toast.error(`Failed to fork agent (${res.status})`)
+          setForking(null)
+        } else {
+          const companyName = companies.find((c) => c.id === companyId)?.name ?? 'company'
+          toast.success(`Agent forked to ${companyName}`)
+          onForked()
+          onClose()
+        }
       }
-      const companyName = companies.find((c) => c.id === companyId)?.name ?? 'company'
-      toast.success(`Agent forked to ${companyName}`)
-      onForked()
-      onClose()
-    } catch {
-      setError('Network error')
-      toast.error('Network error — could not fork agent')
-      setForking(null)
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      if (!signal.aborted) {
+        setError('Network error')
+        toast.error('Network error — could not fork agent')
+        setForking(null)
+      }
+    } finally {
+      if (!signal.aborted) {
+        forkAbortRef.current = null
+      }
     }
   }
 

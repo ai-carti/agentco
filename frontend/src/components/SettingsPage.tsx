@@ -12,7 +12,7 @@
  *  2. Use the first company (or let user pick via selector if >1)
  *  3. Load/save/delete credentials scoped to that company
  */
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -84,6 +84,11 @@ export default function SettingsPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
 
   // ── Credentials state ────────────────────────────────────────────────────
+  // SIRI-UX-194: AbortController ref for handleDelete
+  const deleteAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { deleteAbortRef.current?.abort() }
+  }, [])
   const [provider, setProvider] = useState('openai')
   const [apiKey, setApiKey] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -208,22 +213,37 @@ export default function SettingsPage() {
 
   const handleDelete = async (id: string) => {
     if (!selectedCompanyId) return
+    // SIRI-UX-194: AbortController to guard setState on unmounted SettingsPage
+    deleteAbortRef.current?.abort()
+    const controller = new AbortController()
+    deleteAbortRef.current = controller
+    const { signal } = controller
     try {
       const res = await globalThis.fetch(
         `${BASE_URL}/api/companies/${selectedCompanyId}/credentials/${id}`,
         {
           method: 'DELETE',
           headers: authHeaders(),
+          signal,
         },
       )
-      if (!res.ok) {
-        toast.error(`Failed to delete credential (${res.status})`)
-        return
+      if (!signal.aborted) {
+        if (!res.ok) {
+          toast.error(`Failed to delete credential (${res.status})`)
+        } else {
+          setCredentials((prev) => prev.filter((c) => c.id !== id))
+          toast.success('Credential deleted')
+        }
       }
-      setCredentials((prev) => prev.filter((c) => c.id !== id))
-      toast.success('Credential deleted')
-    } catch {
-      toast.error('Network error — could not delete credential')
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      if (!signal.aborted) {
+        toast.error('Network error — could not delete credential')
+      }
+    } finally {
+      if (!signal.aborted) {
+        deleteAbortRef.current = null
+      }
     }
   }
 

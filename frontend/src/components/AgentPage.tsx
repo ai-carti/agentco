@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Button from './Button'
 import { getStoredToken } from '../api/client'
@@ -69,6 +69,11 @@ export default function AgentPage() {
   const [memoriesLoaded, setMemoriesLoaded] = useState(false)
   const [memoriesError, setMemoriesError] = useState(false)
   const [historyError, setHistoryError] = useState(false)
+  // SIRI-UX-192: AbortController ref for handleSaveToLibrary
+  const saveLibraryAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { saveLibraryAbortRef.current?.abort() }
+  }, [])
 
   useEffect(() => {
     if (!companyId || !agentId) return
@@ -132,6 +137,11 @@ export default function AgentPage() {
   }, [companyId, agentId])
 
   const handleSaveToLibrary = async () => {
+    // SIRI-UX-192: AbortController to guard setState on unmounted component
+    saveLibraryAbortRef.current?.abort()
+    const controller = new AbortController()
+    saveLibraryAbortRef.current = controller
+    const { signal } = controller
     setSavedToLibrary(false)
     setSaveToLibraryError('')
     try {
@@ -143,19 +153,29 @@ export default function AgentPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ agent_id: agentId }),
+        signal,
       })
-      if (!res.ok) {
-        const msg = `Failed to save to library (${res.status})`
+      if (!signal.aborted) {
+        if (!res.ok) {
+          const msg = `Failed to save to library (${res.status})`
+          setSaveToLibraryError(msg)
+          toast.error(msg)
+        } else {
+          setSavedToLibrary(true)
+          toast.success('Agent saved to library')
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      if (!signal.aborted) {
+        const msg = 'Network error — could not save to library'
         setSaveToLibraryError(msg)
         toast.error(msg)
-        return
       }
-      setSavedToLibrary(true)
-      toast.success('Agent saved to library')
-    } catch {
-      const msg = 'Network error — could not save to library'
-      setSaveToLibraryError(msg)
-      toast.error(msg)
+    } finally {
+      if (!signal.aborted) {
+        saveLibraryAbortRef.current = null
+      }
     }
   }
 
