@@ -699,7 +699,7 @@ function FilterBar({
           <button
             data-testid="filter-agent-btn"
             aria-expanded={agentDropdownOpen}
-            aria-haspopup="listbox"
+            aria-haspopup="menu"
             onClick={() => { setAgentDropdownOpen((v) => !v); setPriorityDropdownOpen(false) }}
             style={{
               padding: '0.4rem 0.75rem', background: selectedAgents.length > 0 ? '#1e3a5f' : '#1f2937',
@@ -745,7 +745,7 @@ function FilterBar({
           <button
             data-testid="filter-priority-btn"
             aria-expanded={priorityDropdownOpen}
-            aria-haspopup="listbox"
+            aria-haspopup="menu"
             onClick={() => { setPriorityDropdownOpen((v) => !v); setAgentDropdownOpen(false) }}
             style={{
               padding: '0.4rem 0.75rem', background: selectedPriorities.length > 0 ? '#1e3a5f' : '#1f2937',
@@ -1299,8 +1299,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               }}
             />
             {/* SIRI-UX-048: Priority selector */}
+            {/* SIRI-UX-204: aria-label for screen readers */}
             <select
               data-testid="create-task-priority-select"
+              aria-label="Task priority"
               value={newTaskPriority}
               onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority | '')}
               style={{

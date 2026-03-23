@@ -87,7 +87,13 @@ export default function WarRoom() {
     }
 
     ws.onmessage = (e) => {
-      const event = JSON.parse(e.data)
+      // SIRI-UX-202: guard against malformed JSON to prevent crashing the WS handler
+      let event: { type: string; run_id?: string; agent_name?: string; task_title?: string; started_at?: string }
+      try {
+        event = JSON.parse(e.data)
+      } catch {
+        return // silently ignore non-JSON frames
+      }
       const type: string = event.type
       if (type === 'run.started') {
         setRuns((prev) => {
