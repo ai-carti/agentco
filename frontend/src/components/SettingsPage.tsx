@@ -86,8 +86,13 @@ export default function SettingsPage() {
   // ── Credentials state ────────────────────────────────────────────────────
   // SIRI-UX-194: AbortController ref for handleDelete
   const deleteAbortRef = useRef<AbortController | null>(null)
+  // SIRI-UX-227: AbortController ref for handleSubmit (validate + save 2-step flow)
+  const submitAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
-    return () => { deleteAbortRef.current?.abort() }
+    return () => {
+      deleteAbortRef.current?.abort()
+      submitAbortRef.current?.abort()
+    }
   }, [])
   const [provider, setProvider] = useState('openai')
   const [apiKey, setApiKey] = useState('')
@@ -158,12 +163,19 @@ export default function SettingsPage() {
     setSubmitError('')
     setSubmitting(true)
 
+    // SIRI-UX-227: AbortController guards setState on unmounted component if user navigates away
+    submitAbortRef.current?.abort()
+    const controller = new AbortController()
+    submitAbortRef.current = controller
+    const { signal } = controller
+
     try {
       // Step 1: Validate key
       const validateRes = await globalThis.fetch(`${BASE_URL}/api/llm/validate-key`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ provider, api_key: trimmedKey }),
+        signal,
       })
 
       if (!validateRes.ok) {
@@ -172,8 +184,10 @@ export default function SettingsPage() {
           const body = await validateRes.json() as { detail?: string }
           if (body.detail) errMsg = body.detail
         } catch { /* ignore */ }
-        setSubmitError(errMsg)
-        toast.error(errMsg)
+        if (!signal.aborted) {
+          setSubmitError(errMsg)
+          toast.error(errMsg)
+        }
         return
       }
 
@@ -184,13 +198,16 @@ export default function SettingsPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ provider, api_key: trimmedKey }),
+          signal,
         },
       )
 
       if (!saveRes.ok) {
         const msg = `Failed to save credential (${saveRes.status})`
-        setSubmitError(msg)
-        toast.error(msg)
+        if (!signal.aborted) {
+          setSubmitError(msg)
+          toast.error(msg)
+        }
         return
       }
 
@@ -199,15 +216,23 @@ export default function SettingsPage() {
       if (!newCred.key_hint) {
         newCred.key_hint = maskKey(apiKey)
       }
-      setCredentials((prev) => [...prev, newCred])
-      setApiKey('')
-      toast.success('API key saved')
-    } catch {
+      if (!signal.aborted) {
+        setCredentials((prev) => [...prev, newCred])
+        setApiKey('')
+        toast.success('API key saved')
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       const msg = 'Network error — could not save credential'
-      setSubmitError(msg)
-      toast.error(msg)
+      if (!signal.aborted) {
+        setSubmitError(msg)
+        toast.error(msg)
+      }
     } finally {
-      setSubmitting(false)
+      if (!signal.aborted) {
+        setSubmitting(false)
+        submitAbortRef.current = null
+      }
     }
   }
 

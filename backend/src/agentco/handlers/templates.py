@@ -4,8 +4,9 @@ M3-003: Company Templates + Onboarding endpoints.
 GET  /api/templates                        → list all templates
 POST /api/companies/from-template          → create company + agents in one transaction
 """
+import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
@@ -15,6 +16,11 @@ from ..orm.user import UserORM
 from ..orm.company import CompanyORM
 from ..orm.agent import AgentORM
 from ..templates import TEMPLATES, get_template
+from ..core.rate_limiting import limiter
+
+# ALEX-TD-154: rate limit for template endpoints to prevent company creation abuse
+_RATE_LIMIT_TEMPLATES_READ = os.environ.get("RATE_LIMIT_TEMPLATES_READ", "60/minute")
+_RATE_LIMIT_TEMPLATES_CREATE = os.environ.get("RATE_LIMIT_TEMPLATES_CREATE", "5/hour")
 
 router = APIRouter(tags=["templates"])
 
