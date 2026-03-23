@@ -17,6 +17,9 @@ from ..orm.company import CompanyORM
 router = APIRouter(tags=["library"])
 
 _RATE_LIMIT_FORK = os.getenv("RATE_LIMIT_FORK", "20/minute")
+# ALEX-TD-113 fix: rate limit for POST /api/library — saves agent to shared library.
+# Without limit, attacker can flood shared library with garbage agents.
+_RATE_LIMIT_SAVE_LIBRARY = os.getenv("RATE_LIMIT_SAVE_LIBRARY", "10/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -69,7 +72,9 @@ class PortfolioOut(BaseModel):
 # ── POST /api/library ─────────────────────────────────────────────────────────
 
 @router.post("/api/library", response_model=LibraryAgentOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_RATE_LIMIT_SAVE_LIBRARY)
 def save_to_library(
+    request: Request,
     body: LibrarySaveRequest,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),

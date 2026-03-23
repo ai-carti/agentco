@@ -2,7 +2,7 @@
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -41,8 +41,10 @@ class RegisterResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    # ALEX-TD-112 fix: EmailStr for consistent validation + str on password with max_length
+    # to prevent bcrypt DoS (>72 bytes is truncated — sending 100KB strings is wasteful).
+    email: EmailStr
+    password: str = Field(max_length=128)
 
 
 class TokenResponse(BaseModel):

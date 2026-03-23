@@ -130,7 +130,9 @@ async def create_run(
     return RunOut(**run.model_dump())
 
 
-VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "done"}
+# ALEX-TD-107 fix: "error" is a valid terminal status (loop_detected/cost_limit_exceeded).
+# Previously missing → GET /runs?status=error returned 422. ALEX-TD-111: regression fix.
+VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "done", "error"}
 
 
 @router.get("/runs", response_model=list[RunOut])
