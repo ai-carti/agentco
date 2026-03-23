@@ -23,7 +23,7 @@ export default function Sidebar() {
   const warRoomTo = currentCompany ? `/companies/${currentCompany.id}` : '/'
 
   const NAV_ITEMS = [
-    { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies' },
+    { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies', end: true },
     { to: warRoomTo, label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom' },
     { to: '/library', label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library' },
     { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
@@ -92,6 +92,9 @@ export default function Sidebar() {
             <NavLink
               key={item.testId}
               to={item.to}
+              // SIRI-UX-214: pass `end` prop when item requires exact match (e.g., Companies at "/")
+              // Without `end`, NavLink to="/" is always isActive on every route
+              end={'end' in item ? item.end : undefined}
               data-testid={item.testId}
               title={item.label}
               onClick={() => { if (mobile) { setCollapsed(true); localStorage.setItem(STORAGE_KEY, 'true') } }}

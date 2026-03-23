@@ -993,7 +993,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     return tasks.filter((t) => {
       if (debouncedSearch && !t.title.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
       if (selectedAgents.length > 0 && !selectedAgents.includes(t.assignee_id ?? '')) return false
-      if (selectedPriorities.length > 0 && !selectedPriorities.includes(t.priority as TaskPriority)) return false
+      // SIRI-UX-213: guard null/undefined priority — unsafe cast replaced with explicit check
+      if (selectedPriorities.length > 0 && (!t.priority || !selectedPriorities.includes(t.priority))) return false
       return true
     })
   }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])

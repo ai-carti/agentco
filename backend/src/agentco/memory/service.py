@@ -90,8 +90,31 @@ class MemoryService:
         )
 
     def get_all(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
-        """Синхронно получить воспоминания агента с пагинацией (ALEX-TD-044)."""
+        """Синхронно получить воспоминания агента с пагинацией (ALEX-TD-044).
+
+        TECH DEBT (ALEX-TD-129): каждый вызов из handlers/memory.py открывает
+        новый sqlite3 connection + load sqlite_vec extension. При 100 RPS это
+        100 параллельных connections. Connection leak отсутствует (try/finally
+        закрывает корректно), но накладные расходы высоки.
+        Рефакторинг на application-level singleton MemoryService откладывается.
+        Для async контекста используй get_all_async() (run_in_executor).
+        """
         return self._store.get_all(agent_id, limit=limit, offset=offset)
+
+    async def get_all_async(self, agent_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        """Async обёртка для get_all через run_in_executor (ALEX-TD-129).
+
+        Запускает блокирующий SQLite вызов в thread executor чтобы не блокировать
+        asyncio event loop при 100+ RPS. Аналогично save_memory / get_relevant_memories.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._store.get_all,
+            agent_id,
+            limit,
+            offset,
+        )
 
     async def inject_memories(
         self,

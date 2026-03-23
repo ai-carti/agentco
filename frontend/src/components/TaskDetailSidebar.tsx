@@ -58,6 +58,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const trapRef = useFocusTrap(true)
   // SIRI-UX-190: AbortController ref to guard setState in finally on unmounted component
   const runAbortRef = useRef<AbortController | null>(null)
+  // SIRI-UX-210: abort in-flight run request on unmount to prevent wasted network + setState on dead component
+  useEffect(() => {
+    return () => { runAbortRef.current?.abort() }
+  }, [])
 
   // Fetch logs
   useEffect(() => {

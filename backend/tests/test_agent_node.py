@@ -440,17 +440,19 @@ class TestAgentNodeErrorHandling:
 
     @pytest.mark.asyncio
     async def test_agent_node_litellm_exception_sets_error(self):
-        """Если litellm.acompletion бросает исключение — state['status'] = 'error'."""
+        """ALEX-TD-130: agent_node должен re-raise исключение при LLM ошибке.
+
+        До фикса TD-130: возвращал {"status": "error"} без raise.
+        После фикса TD-130: re-raise гарантирует что outer except execute_run
+        всегда поймает ошибку и обновит run.status → "failed" в БД.
+        """
         from agentco.orchestration.agent_node import agent_node
 
         with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
             mock_acomp.side_effect = Exception("API error: rate limit")
             state = _make_base_state()
-            result = await agent_node(state)
-
-        assert result.get("status") == "error"
-        assert result.get("error") is not None
-        assert "API error" in result.get("error", "")
+            with pytest.raises(Exception, match="API error: rate limit"):
+                await agent_node(state)
 
 
 # ─── M2-003 missing AC tests ──────────────────────────────────────────────────

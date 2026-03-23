@@ -379,8 +379,12 @@ async def agent_node(state: AgentState) -> dict:
         }
 
     except Exception as e:
+        # ALEX-TD-130: re-raise вместо возврата {"status": "error"}.
+        # Если вернуть dict с status=error без исключения, LangGraph завершает граф
+        # корректно и execute_run обработает final_status через success path.
+        # Однако если LangGraph не propagate state update (checkpointer flush fail,
+        # CancelledError и т.п.) — Run навсегда зависнет в "running".
+        # Re-raise гарантирует: outer except в execute_run всегда поймает ошибку
+        # и обновит run.status → "failed" в БД.
         logger.error("agent_node LLM call failed: %s", e)
-        return {
-            "status": "error",
-            "error": str(e),
-        }
+        raise

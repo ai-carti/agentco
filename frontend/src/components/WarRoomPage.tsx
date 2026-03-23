@@ -45,7 +45,7 @@ export default function WarRoomPage() {
   const loadMockData = useWarRoomStore((s) => s.loadMockData)
   const addMessage = useWarRoomStore((s) => s.addMessage)
   const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
-  const addCost = useWarRoomStore((s) => s.addCost)
+  // SIRI-UX-212: addCost removed from mock interval — cost only accumulated from real WS llm_token events
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -166,7 +166,8 @@ export default function WarRoomPage() {
       const event = getNextMockEvent(store.agents)
 
       addMessage(event.message)
-      addCost(0.0012)
+      // SIRI-UX-212: do NOT call addCost in mock interval — cost must only come from real WS llm_token events
+      // (per SIRI-POST-004). Fake cost values confuse developers testing the real WS path.
 
       if (event.statusUpdate) {
         updateAgentStatus(event.statusUpdate.agentId, event.statusUpdate.status)

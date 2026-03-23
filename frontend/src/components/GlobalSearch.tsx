@@ -198,7 +198,7 @@ export default function GlobalSearch() {
             data-testid="global-search-input"
             role="combobox"
             aria-label="Search companies, agents, tasks"
-            aria-expanded={results.length > 0}
+            aria-expanded={debouncedQuery.length >= 2}
             aria-controls="global-search-listbox"
             aria-autocomplete="list"
             aria-activedescendant={activeIndex >= 0 ? `search-option-${activeIndex}` : undefined}
