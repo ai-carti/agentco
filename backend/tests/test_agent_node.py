@@ -580,12 +580,16 @@ class TestMemoryIntegration:
         )
         mock_memory_service.save_memory = AM(return_value="mem-001")
 
-        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
-            mock_acomp.return_value = stream
-            state = _make_base_state()
-            state["memory_service"] = mock_memory_service
-            state["agent_id"] = "ceo"
-            result = await agent_node(state)
+        from agentco.orchestration.agent_node import _memory_service_var
+        token = _memory_service_var.set(mock_memory_service)
+        try:
+            with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+                mock_acomp.return_value = stream
+                state = _make_base_state()
+                state["agent_id"] = "ceo"
+                result = await agent_node(state)
+        finally:
+            _memory_service_var.reset(token)
 
         # inject_memories должен быть вызван
         mock_memory_service.inject_memories.assert_called_once()
@@ -603,13 +607,17 @@ class TestMemoryIntegration:
         mock_memory_service.inject_memories = AM(return_value="You are a CEO.")
         mock_memory_service.save_memory = AM(return_value="mem-001")
 
-        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
-            mock_acomp.return_value = stream
-            state = _make_base_state()
-            state["memory_service"] = mock_memory_service
-            state["agent_id"] = "ceo"
-            state["run_id"] = "run-001"
-            result = await agent_node(state)
+        from agentco.orchestration.agent_node import _memory_service_var
+        token = _memory_service_var.set(mock_memory_service)
+        try:
+            with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+                mock_acomp.return_value = stream
+                state = _make_base_state()
+                state["agent_id"] = "ceo"
+                state["run_id"] = "run-001"
+                result = await agent_node(state)
+        finally:
+            _memory_service_var.reset(token)
 
         # save_memory должен быть вызван с результатом
         mock_memory_service.save_memory.assert_called_once()

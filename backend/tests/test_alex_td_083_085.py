@@ -171,8 +171,10 @@ async def test_execute_run_publishes_run_failed_on_graph_error_status(monkeypatc
         async def ainvoke(self, state, config=None):
             return await _mock_ainvoke(state, config)
 
+    # ALEX-TD-147 fix: patch agentco.services.run.compile_graph (the actual reference used
+    # in execute_run via _run_mod.compile_graph), not agentco.orchestration.graph.compile.
     monkeypatch.setattr(
-        "agentco.orchestration.graph.compile",
+        "agentco.services.run.compile_graph",
         lambda checkpointer=None: _MockGraph(),
     )
 
@@ -183,7 +185,7 @@ async def test_execute_run_publishes_run_failed_on_graph_error_status(monkeypatc
         yield MagicMock()
 
     monkeypatch.setattr(
-        "agentco.orchestration.checkpointer.create_checkpointer",
+        "agentco.services.run.create_checkpointer",
         _mock_checkpointer,
     )
 
@@ -228,7 +230,13 @@ async def test_execute_run_publishes_run_failed_on_graph_error_status(monkeypatc
     from agentco.repositories.run import RunRepository
     svc._repo = RunRepository(svc_session)
 
-    await svc.execute_run(run_id=run_id, session_factory=Session)
+    # ALEX-TD-147: patch MemoryService to avoid real sqlite-vec connection in test
+    from unittest.mock import MagicMock, patch
+    _fake_ms = MagicMock()
+    _fake_ms.close = MagicMock()
+
+    with patch("agentco.services.run.MemoryService", return_value=_fake_ms):
+        await svc.execute_run(run_id=run_id, session_factory=Session)
     svc_session.close()
 
     # Verify run.failed was published (not run.completed)

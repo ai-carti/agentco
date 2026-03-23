@@ -58,9 +58,18 @@ export default function WarRoom() {
         if (!res.ok) return
         return res.json()
       })
-      .then((data: Run[] | undefined) => {
+      .then((data: Array<Record<string, unknown>> | undefined) => {
         if (data && data.length > 0) {
-          setRuns(data)
+          // SIRI-UX-226: backend RunOut uses .id field, Run interface uses run_id
+          // Map id → run_id so WS events (which use run_id) can find and update these runs
+          const mapped: Run[] = data.map((r) => ({
+            run_id: (r['run_id'] ?? r['id'] ?? '') as string,
+            agent_name: (r['agent_name'] ?? '') as string,
+            task_title: (r['task_title'] ?? '') as string,
+            status: (r['status'] ?? 'running') as Run['status'],
+            started_at: (r['started_at'] ?? new Date().toISOString()) as string,
+          }))
+          setRuns(mapped)
         }
       })
       .catch((err) => {
@@ -113,11 +122,14 @@ export default function WarRoom() {
           return next.length > MAX_RUNS ? next.slice(next.length - MAX_RUNS) : next
         })
       } else if (
-        type === 'run.done' ||
+        // SIRI-UX-224: backend publishes "run.completed" (not "run.done") — fix event type mismatch
+        type === 'run.completed' ||
         type === 'run.failed' ||
         type === 'run.stopped'
       ) {
-        const newStatus = type.split('.')[1] as Run['status']
+        // Map "run.completed" → 'done' status for the Run interface
+        const newStatus: Run['status'] =
+          type === 'run.completed' ? 'done' : (type.split('.')[1] as Run['status'])
         setRuns((prev) =>
           prev.map((r) =>
             r.run_id === event.run_id ? { ...r, status: newStatus } : r,

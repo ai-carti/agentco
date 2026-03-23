@@ -48,8 +48,10 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
         async def ainvoke(self, state, config=None):
             return await _mock_ainvoke(state, config)
 
+    # ALEX-TD-147 fix: patch agentco.services.run.compile_graph (actual reference used
+    # in execute_run via _run_mod.compile_graph), not agentco.orchestration.graph.compile.
     monkeypatch.setattr(
-        "agentco.orchestration.graph.compile",
+        "agentco.services.run.compile_graph",
         lambda checkpointer=None: _MockGraph(),
     )
 
@@ -62,7 +64,7 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
             pass
         yield _FakeCheckpointer()
 
-    monkeypatch.setattr("agentco.orchestration.checkpointer.create_checkpointer", _mock_checkpointer)
+    monkeypatch.setattr("agentco.services.run.create_checkpointer", _mock_checkpointer)
 
     # Create a minimal Run ORM mock
     import uuid
@@ -97,10 +99,16 @@ async def test_execute_run_publishes_run_failed_on_graph_failed_status(monkeypat
 
     svc = RunService(_FakeSession())
 
-    try:
-        await svc.execute_run(_run_id, session_factory=_session_factory)
-    except Exception:
-        pass  # expected — re-raise from failed status
+    # ALEX-TD-147: patch MemoryService to avoid real sqlite connection in test
+    from unittest.mock import MagicMock, patch
+    _fake_ms = MagicMock()
+    _fake_ms.close = MagicMock()
+
+    with patch("agentco.services.run.MemoryService", return_value=_fake_ms):
+        try:
+            await svc.execute_run(_run_id, session_factory=_session_factory)
+        except Exception:
+            pass  # expected — re-raise from failed status
 
     event_types = [e["type"] for e in published_events]
 

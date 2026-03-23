@@ -94,12 +94,18 @@ def test_runs_handler_has_read_rate_limit_env_var():
     )
 
 
-# ── ALEX-TD-144: execute_run устанавливает memory_service в initial_state ─────
+# ── ALEX-TD-144 / ALEX-TD-147: execute_run MemoryService injection ────────────
 
 @pytest.mark.asyncio
-async def test_execute_run_sets_memory_service_in_state():
-    """execute_run должен передавать MemoryService в initial_state['memory_service']."""
+async def test_execute_run_memory_service_not_in_state_but_in_contextvar():
+    """ALEX-TD-147 fix for ALEX-TD-144: execute_run must NOT put memory_service
+    into initial_state (LangGraph serializes state via msgpack → MemoryService
+    is not serializable → TypeError at checkpoint).
+    Instead, MemoryService is available via _memory_service_var ContextVar
+    during ainvoke so agent_node can use it without touching serialized state.
+    """
     from agentco.services.run import RunService
+    from agentco.orchestration.agent_node import _memory_service_var
     from unittest.mock import MagicMock, AsyncMock, patch
 
     # Mock session factory
@@ -118,9 +124,12 @@ async def test_execute_run_sets_memory_service_in_state():
         return mock_session
 
     captured_state = {}
+    captured_contextvar_value = {}
 
     async def mock_compile_and_invoke(initial_state, config=None):
         captured_state.update(initial_state)
+        # Capture ContextVar value as seen during ainvoke
+        captured_contextvar_value["value"] = _memory_service_var.get()
         return {
             "final_result": "done",
             "status": "completed",
@@ -152,6 +161,7 @@ async def test_execute_run_sets_memory_service_in_state():
 
         # Setup MemoryService mock
         mock_memory_instance = MagicMock()
+        mock_memory_instance.close = MagicMock()
         mock_memory_cls.return_value = mock_memory_instance
 
         service = RunService.__new__(RunService)
@@ -163,11 +173,17 @@ async def test_execute_run_sets_memory_service_in_state():
 
         await service.execute_run("run-1", session_factory=mock_session_factory)
 
-    assert "memory_service" in captured_state, (
-        "execute_run must set memory_service in initial_state"
+    # ALEX-TD-147: memory_service must NOT be in LangGraph state (not msgpack serializable)
+    assert "memory_service" not in captured_state, (
+        "ALEX-TD-147: memory_service must not be in LangGraph initial_state — "
+        "LangGraph serializes state via msgpack at each checkpoint. "
+        "MemoryService (with sqlite3 connection) is not serializable → TypeError."
     )
-    assert captured_state["memory_service"] is mock_memory_instance, (
-        "execute_run must pass MemoryService instance to initial_state"
+
+    # ALEX-TD-144: MemoryService must be accessible via ContextVar during ainvoke
+    assert captured_contextvar_value.get("value") is mock_memory_instance, (
+        "ALEX-TD-144/147: MemoryService must be accessible via _memory_service_var "
+        "ContextVar during ainvoke, so agent_node can inject memories."
     )
 
 

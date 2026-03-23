@@ -121,6 +121,8 @@ export default function WarRoomPage() {
       safeReset()
       // SIRI-UX-128: clear stale expanded message IDs when switching companies
       setExpandedMessages(new Set())
+      // SIRI-UX-223: reset mobile agent panel open state when switching companies
+      setAgentPanelOpen(false)
     }
     prevCompanyIdRef.current = companyId
     return () => {
@@ -128,10 +130,11 @@ export default function WarRoomPage() {
     }
   }, [companyId])
 
-  // Load mock data on mount — only when no real WS is connected
+  // Load mock data on mount — only when no real WS is connected AND VITE_MOCK_WAR_ROOM is enabled
   // SIRI-UX-032: clear mock data when real WS connects so no flash of fake agents
+  // SIRI-UX-222: guard with VITE_MOCK_WAR_ROOM flag so production doesn't load fake agents
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected && import.meta.env.VITE_MOCK_WAR_ROOM === 'true') {
       loadMockData()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps

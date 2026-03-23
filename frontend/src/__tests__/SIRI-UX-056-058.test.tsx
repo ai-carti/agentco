@@ -19,10 +19,13 @@ describe('SIRI-UX-056: WarRoomPage feed messages keyboard accessibility', () => 
     vi.useFakeTimers()
     vi.clearAllMocks()
     useWarRoomStore.getState().reset()
+    // SIRI-UX-222: loadMockData requires VITE_MOCK_WAR_ROOM flag — enable for tests that need agents
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
   })
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllEnvs()
   })
 
   function renderWarRoom() {

@@ -58,7 +58,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const toast = useToast()
   const agents = useAgentStore((s) => s.agents)
   const setTasks = useAgentStore((s) => s.setTasks)
-  const tasks = useAgentStore((s) => s.tasks)
+  // SIRI-UX-225: tasks removed from destructure in TaskCard — all mutations now use getState().tasks
+  // to avoid stale closure overwriting concurrent store updates (like handleRun already does)
+  // tasks still used for reading in render — keep subscription to trigger re-renders
+  const tasks = useAgentStore((s) => s.tasks) // eslint-disable-line @typescript-eslint/no-unused-vars
   // SIRI-POST-006: focus trap refs for each modal
   const editTrapRef = useFocusTrap(editOpen)
   const deleteTrapRef = useFocusTrap(deleteOpen)
@@ -162,7 +165,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       })
       if (!signal.aborted) {
         if (res.ok) {
-          setTasks(tasks.map((t) => t.id === task.id ? { ...t, title: editTitle, description: editDesc } : t))
+          // SIRI-UX-225: use getState().tasks to avoid stale closure — same pattern as handleRun
+          setTasks(useAgentStore.getState().tasks.map((t) => t.id === task.id ? { ...t, title: editTitle, description: editDesc } : t))
           toast.success(`Task updated`)
           setEditOpen(false)
         } else {
@@ -196,7 +200,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       })
       if (!signal.aborted) {
         if (res.ok) {
-          setTasks(tasks.filter((t) => t.id !== task.id))
+          // SIRI-UX-225: use getState().tasks to avoid stale closure
+          setTasks(useAgentStore.getState().tasks.filter((t) => t.id !== task.id))
           toast.success(`Task "${task.title}" deleted`)
           setDeleteOpen(false)
         } else {
@@ -234,7 +239,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       })
       if (!signal.aborted) {
         if (res.ok) {
-          setTasks(tasks.map((t) => t.id === task.id ? { ...t, assignee_id: agentId, assignee_name: agentName } : t))
+          // SIRI-UX-225: use getState().tasks to avoid stale closure
+          setTasks(useAgentStore.getState().tasks.map((t) => t.id === task.id ? { ...t, assignee_id: agentId, assignee_name: agentName } : t))
           toast.success(`Task assigned to ${agentName}`)
           setAssignOpen(false)
         } else {

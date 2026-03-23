@@ -17,13 +17,26 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Callable, Coroutine
+from contextvars import ContextVar
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Optional
 
 import litellm
 
 from agentco.orchestration.state import AgentState
 # ALEX-TD-120: top-level import — avoid per-chunk lazy import in hot streaming path
 from agentco.core.event_bus import EventBus
+
+if TYPE_CHECKING:
+    from agentco.memory.service import MemoryService
+
+# ALEX-TD-147: ContextVar для передачи MemoryService в agent_node без попадания в
+# LangGraph state (LangGraph сериализует state через msgpack при каждом checkpoint;
+# MemoryService содержит sqlite3 connection → не сериализуем → TypeError).
+# execute_run устанавливает этот ContextVar перед ainvoke и сбрасывает в finally.
+# Все async tasks (включая LangGraph nodes) наследуют контекст вызывающего кода.
+_memory_service_var: ContextVar[Optional["MemoryService"]] = ContextVar(
+    "_memory_service_var", default=None
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +119,14 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
     1. Если есть memory_service — инжектирует top-5 воспоминаний в system_prompt
     2. Если system_prompt задан — добавляет как первый system message
     3. Добавляет историю messages из state
+
+    ALEX-TD-147: memory_service читается из ContextVar (_memory_service_var),
+    не из state. State не должен содержать non-serializable объекты (LangGraph
+    сериализует state через msgpack при checkpoint → MemoryService не сериализуем).
     """
     system_prompt = state.get("system_prompt", "")
-    memory_service = state.get("memory_service")
+    # ALEX-TD-147: get MemoryService from ContextVar, not from state
+    memory_service = _memory_service_var.get()
     agent_id = state.get("agent_id", "unknown")
     task = state.get("input", "")
 
@@ -199,8 +217,12 @@ async def _publish_completion(state: AgentState, full_text: str, cost_usd: float
 
 
 async def _save_result_to_memory(state: AgentState, result_text: str) -> None:
-    """Сохраняет результат выполнения в MemoryService."""
-    memory_service = state.get("memory_service")
+    """Сохраняет результат выполнения в MemoryService.
+
+    ALEX-TD-147: читает MemoryService из ContextVar (_memory_service_var).
+    """
+    # ALEX-TD-147: read from ContextVar, not from state
+    memory_service = _memory_service_var.get()
     if not memory_service:
         return
     try:

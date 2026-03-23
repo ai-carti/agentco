@@ -17,9 +17,9 @@ describe('SIRI-UX-219: CompanyPage.handleCreateAgent uses getState() not closure
     const { useAgentStore } = await import('../store/agentStore')
     const { default: CompanyPage } = await import('../components/CompanyPage')
 
-    const agent1 = { id: 'a1', name: 'Alice', role: 'CEO', model: 'gpt-4o', system_prompt: '' }
-    const newAgent = { id: 'a2', name: 'Bob', role: 'CTO', model: 'gpt-4o', system_prompt: '' }
-    const lateAgent = { id: 'a3', name: 'Charlie', role: 'SWE', model: 'gpt-4o', system_prompt: '' }
+    const agent1 = { id: 'a1', name: 'Alice', role: 'CEO', model: 'gpt-4o', system_prompt: '', status: 'idle' as const }
+    const newAgent = { id: 'a2', name: 'Bob', role: 'CTO', model: 'gpt-4o', system_prompt: '', status: 'idle' as const }
+    const lateAgent = { id: 'a3', name: 'Charlie', role: 'SWE', model: 'gpt-4o', system_prompt: '', status: 'idle' as const }
 
     useAgentStore.setState({
       agents: [agent1],

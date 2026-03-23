@@ -88,6 +88,8 @@ describe('SIRI-UX-067: OnboardingPage company name aria-label', () => {
 // ---- SIRI-UX-068: WarRoomPage activity feed has aria-live ----
 describe('SIRI-UX-068: WarRoomPage activity feed aria-live', () => {
   it('activity feed container has aria-live=polite', async () => {
+    // SIRI-UX-222: loadMockData now requires VITE_MOCK_WAR_ROOM='true'
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
     const { default: WarRoomPage } = await import('../components/WarRoomPage')
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }))
     vi.stubGlobal('WebSocket', class {
@@ -101,6 +103,7 @@ describe('SIRI-UX-068: WarRoomPage activity feed aria-live', () => {
     const feed = await screen.findByTestId('activity-feed')
     const liveRegion = feed.querySelector('[aria-live="polite"]')
     expect(liveRegion).not.toBeNull()
+    vi.unstubAllEnvs()
   })
 })
 

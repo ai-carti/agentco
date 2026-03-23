@@ -17,10 +17,14 @@ function renderWarRoom(companyId = 'comp-1') {
 beforeEach(() => {
   vi.useFakeTimers()
   useWarRoomStore.getState().reset()
+  // SIRI-UX-222: loadMockData is now gated by VITE_MOCK_WAR_ROOM flag.
+  // WarRoomPage tests rely on mock agents; enable the flag so they're loaded on mount.
+  vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
 })
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.unstubAllEnvs()
 })
 
 describe('WarRoomPage', () => {

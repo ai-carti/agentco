@@ -41,6 +41,7 @@ from ..core.event_bus import EventBus
 from ..orchestration.graph import compile as compile_graph  # noqa: F401
 from ..orchestration.checkpointer import create_checkpointer  # noqa: F401
 from ..memory.service import MemoryService  # noqa: F401
+from ..orchestration.agent_node import _memory_service_var  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -417,10 +418,29 @@ class RunService:
         # inject past memories into system_prompt and save new memories.
         # Previously memory_service was never set → memory injection silently skipped.
         # Using AGENTCO_MEMORY_DB env var (mirrors handlers/memory.py convention).
-        _memory_db = os.getenv("AGENTCO_MEMORY_DB", os.getenv("AGENTCO_DB_PATH", "./agentco_memory.db"))
+        # ALEX-TD-148 fix: parse sqlite:/// URL if AGENTCO_DB_PATH contains a SQLAlchemy URL
+        # (e.g. "sqlite:///./agentco.db"). sqlite3.connect() requires a plain file path,
+        # not a SQLAlchemy URL → OperationalError: unable to open database file.
+        _raw_memory_db = os.getenv("AGENTCO_MEMORY_DB", os.getenv("AGENTCO_MEMORY_DB_PATH", "./agentco_memory.db"))
+        if _raw_memory_db.startswith("sqlite:///"):
+            _memory_db = _raw_memory_db[len("sqlite:///"):]
+        else:
+            _memory_db = _raw_memory_db
         _memory_service = _MemoryService(_memory_db)
 
-        # Строим начальный state
+        # ALEX-TD-147 fix: do NOT put memory_service into initial_state.
+        # LangGraph serializes state via msgpack at each checkpoint — MemoryService
+        # (which holds a sqlite3 connection) is not msgpack serializable → TypeError
+        # in _checkpointer_put_after_previous → run always fails at first checkpoint.
+        # Fix: use contextvars.ContextVar (_memory_service_var) to make MemoryService
+        # available to agent_node nodes during ainvoke without it ever entering
+        # the serialized LangGraph state.
+        # All async tasks created inside ainvoke inherit the current context.
+        import agentco.services.run as _run_mod
+        _memory_service_var_ref = _run_mod._memory_service_var
+        _ms_token = _memory_service_var_ref.set(_memory_service)
+
+        # Строим начальный state (без memory_service)
         initial_state: AgentState = {
             "run_id": run_id,
             "company_id": str(company_id),
@@ -437,8 +457,6 @@ class RunService:
             "final_result": None,
             "agent_id": "ceo",
             "level": 0,
-            # ALEX-TD-144: inject MemoryService so agent_node.py uses memory
-            "memory_service": _memory_service,
         }
 
         def _get_session_for_update() -> Session:
@@ -544,6 +562,15 @@ class RunService:
                 "payload": {"error": str(exc)},
             })
             raise
+        finally:
+            # ALEX-TD-147: always reset ContextVar and close MemoryService after run.
+            # Prevents MemoryService leaking between concurrent runs (each run has its
+            # own sqlite connection and must be closed to avoid file descriptor leaks).
+            _memory_service_var_ref.reset(_ms_token)
+            try:
+                _memory_service.close()
+            except Exception:
+                pass
 
     def stop(self, company_id: str, run_id: str, owner_id: str | None = None) -> Run:
         """Останавливает running ран.

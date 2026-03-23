@@ -138,10 +138,14 @@ describe('FE-006: WarRoomPage mobile drawer', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     useWarRoomStore.getState().reset()
+    // SIRI-UX-222: loadMockData is now gated by VITE_MOCK_WAR_ROOM flag.
+    // Enable it for these tests that need mock agents to be present.
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
   })
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllEnvs()
     // Reset innerWidth to desktop default
     Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true })
   })

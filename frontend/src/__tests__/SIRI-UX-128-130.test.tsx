@@ -38,10 +38,13 @@ describe('SIRI-UX-128: expandedMessages reset on companyId change', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     useWarRoomStore.getState().reset()
+    // SIRI-UX-222: loadMockData requires VITE_MOCK_WAR_ROOM flag
+    vi.stubEnv('VITE_MOCK_WAR_ROOM', 'true')
   })
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllEnvs()
   })
 
   /**

@@ -54,9 +54,14 @@ class TestExecuteRunTimeout:
 
         svc = RunService(mock_session)
 
+        # Мок MemoryService чтобы не создавать реальный SQLite файл
+        mock_memory_svc = MagicMock()
+        mock_memory_svc.close = MagicMock()
+
         with patch.object(run_module, "_MAX_RUN_TIMEOUT_SEC", 1), \
-             patch("agentco.orchestration.graph.compile") as mock_compile, \
-             patch("agentco.orchestration.checkpointer.create_checkpointer") as mock_ckpt, \
+             patch.object(run_module, "compile_graph") as mock_compile, \
+             patch.object(run_module, "create_checkpointer") as mock_ckpt, \
+             patch.object(run_module, "MemoryService", return_value=mock_memory_svc), \
              patch.object(run_module.EventBus, "get") as mock_bus:
 
             mock_graph = AsyncMock()
