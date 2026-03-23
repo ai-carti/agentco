@@ -2,18 +2,8 @@ import { Link } from 'react-router-dom'
 import { type Agent } from '../store/agentStore'
 import Button from './Button'
 // SIRI-UX-106: use shared utilities from taskUtils instead of duplicating locally
-import { getAvatarColor, getInitials } from '../utils/taskUtils'
-
-function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const sec = Math.floor(diffMs / 1000)
-  if (sec < 60) return `${sec}s ago`
-  const min = Math.floor(sec / 60)
-  if (min < 60) return `${min}m ago`
-  const h = Math.floor(min / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
-}
+// SIRI-UX-196: use shared relativeTime from taskUtils (eliminates local duplicate)
+import { getAvatarColor, getInitials, relativeTime } from '../utils/taskUtils'
 
 const STATUS_COLORS: Record<string, string> = {
   idle:    '#6b7280',

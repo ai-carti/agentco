@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
+// SIRI-UX-198: use shared STATUS_COLORS from taskUtils instead of local statusColors
+import { STATUS_COLORS } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -18,13 +20,6 @@ interface PortfolioData {
   total_tasks: number
   success_rate: number
   tasks: PortfolioTask[]
-}
-
-const statusColors: Record<string, string> = {
-  done: '#4ade80',
-  running: '#60a5fa',
-  failed: '#f87171',
-  pending: '#fbbf24',
 }
 
 export default function LibraryPortfolioPage() {
@@ -196,8 +191,9 @@ export default function LibraryPortfolioPage() {
                     style={{
                       fontSize: '0.75rem',
                       fontWeight: 600,
-                      color: statusColors[task.status] ?? '#94a3b8',
-                      background: 'rgba(255,255,255,0.05)',
+                      // SIRI-UX-198: use shared STATUS_COLORS for consistency with Kanban
+                      color: STATUS_COLORS[task.status]?.text ?? '#94a3b8',
+                      background: STATUS_COLORS[task.status]?.bg ?? 'rgba(255,255,255,0.05)',
                       padding: '2px 8px',
                       borderRadius: 4,
                       flexShrink: 0,

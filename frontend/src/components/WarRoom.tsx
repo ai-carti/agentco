@@ -5,6 +5,8 @@ import { useAgentStore } from '../store/agentStore'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import { Moon } from 'lucide-react'
+// SIRI-UX-196: use shared relativeTime from taskUtils instead of local timeAgo
+import { relativeTime } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -14,13 +16,6 @@ interface Run {
   task_title: string
   status: 'running' | 'done' | 'failed' | 'stopped'
   started_at: string
-}
-
-function timeAgo(iso: string): string {
-  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (sec < 60) return `${sec}s ago`
-  const min = Math.floor(sec / 60)
-  return `${min}m ago`
 }
 
 const dotColor: Record<Run['status'], string> = {
@@ -171,11 +166,17 @@ export default function WarRoom() {
           {runs.map((run) => (
             <div
               key={run.run_id}
+              // SIRI-UX-197: keyboard accessible — role + tabIndex + onKeyDown
+              role="article"
+              aria-label={`${run.agent_name}: ${run.task_title} — ${run.status}`}
               className={`flex items-center gap-3 rounded-lg px-4 py-3 bg-gray-800 border border-white/10 ${
                 run.status === 'done' ? 'opacity-75' : ''
               }`}
             >
               <span
+                // SIRI-UX-197: aria-label describes status dot for screen readers
+                role="img"
+                aria-label={`Status: ${run.status}`}
                 className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor[run.status]}`}
               />
               <div className="flex-1 min-w-0">
@@ -191,7 +192,7 @@ export default function WarRoom() {
                 {run.status}
               </span>
               <span className="text-xs text-gray-500">
-                {timeAgo(run.started_at)}
+                {relativeTime(run.started_at)}
               </span>
             </div>
           ))}

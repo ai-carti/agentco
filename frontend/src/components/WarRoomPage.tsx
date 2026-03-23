@@ -524,6 +524,9 @@ export default function WarRoomPage() {
                   data-testid={`agent-card-${agent.id}`}
                   data-flash={isFlashing ? 'true' : 'false'}
                   className={isFlashing ? 'flash-green' : ''}
+                  // SIRI-UX-200: role + aria-label for screen reader accessibility
+                  role="article"
+                  aria-label={`${agent.name} — ${statusLabel[agent.status]}`}
                   style={{
                     marginLeft: `${agent.level * 24}px`,
                     background: isFlashing

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -7,6 +9,11 @@ from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import UserORM
 from ..models.task import TaskStatus
+from ..core.rate_limiting import limiter
+
+# ALEX-TD-122: rate limits for task mutable endpoints
+_RATE_LIMIT_TASKS_CREATE = os.getenv("RATE_LIMIT_TASKS_CREATE", "60/minute")
+_RATE_LIMIT_TASKS_MUTATE = os.getenv("RATE_LIMIT_TASKS_MUTATE", "120/minute")
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/tasks",
@@ -67,7 +74,9 @@ class TaskOut(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_RATE_LIMIT_TASKS_CREATE)
 def create_task(
+    request: Request,
     company_id: str,
     agent_id: str,
     body: TaskCreate,
@@ -126,7 +135,9 @@ def get_task(
 
 
 @router.put("/{task_id}", response_model=TaskOut)
+@limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def update_task(
+    request: Request,
     company_id: str,
     agent_id: str,
     task_id: str,
@@ -147,7 +158,9 @@ def update_task(
 
 
 @router.patch("/{task_id}/status", response_model=TaskOut)
+@limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def update_task_status(
+    request: Request,
     company_id: str,
     agent_id: str,
     task_id: str,

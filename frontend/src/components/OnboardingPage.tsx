@@ -224,6 +224,8 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           data-testid="onboarding-use-template-btn"
           onClick={handleUseTemplate}
           disabled={loading || !companyName.trim()}
+          // SIRI-UX-199: aria-busy announces loading state to screen readers
+          aria-busy={loading}
           style={{
             width: '100%',
             padding: '0.75rem',

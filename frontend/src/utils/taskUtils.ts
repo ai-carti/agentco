@@ -30,3 +30,15 @@ export function getInitials(name: string): string {
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
 }
+
+// SIRI-UX-196: shared relative-time formatter (eliminates timeAgo/relativeTime duplication)
+export function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const sec = Math.floor(diffMs / 1000)
+  if (sec < 60) return `${sec}s ago`
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
