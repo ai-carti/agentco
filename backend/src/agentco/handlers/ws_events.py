@@ -117,7 +117,11 @@ async def ws_company_events(
             while True:
                 await websocket.receive()  # blocks; raises WebSocketDisconnect on close
         except WebSocketDisconnect:
-            pass
+            pass  # expected — client closed connection normally
+        except Exception as exc:
+            # ALEX-TD-124: log unexpected errors (OOM, transport errors, etc.)
+            # instead of silently swallowing them.
+            logger.warning("_watch_disconnect: unexpected error for company %s: %s", company_id, exc)
 
     forward_task = asyncio.ensure_future(_forward_events())
     watch_task = asyncio.ensure_future(_watch_disconnect())
@@ -143,9 +147,10 @@ async def ws_company_events(
                 await task
             except (asyncio.CancelledError, Exception):
                 pass
-    except Exception:
+    except Exception as exc:
         # ALEX-TD-082: must await cancelled tasks to prevent "Task exception was never retrieved"
-        logger.debug("WebSocket closed for company %s", company_id)
+        # ALEX-TD-124: log unexpected exceptions (not just debug) so they're visible in prod logs.
+        logger.warning("WebSocket outer loop error for company %s: %s", company_id, exc)
         forward_task.cancel()
         watch_task.cancel()
         await asyncio.gather(forward_task, watch_task, return_exceptions=True)

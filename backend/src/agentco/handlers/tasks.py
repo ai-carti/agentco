@@ -183,7 +183,9 @@ def update_task_status(
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def delete_task(
+    request: Request,
     company_id: str,
     agent_id: str,
     task_id: str,

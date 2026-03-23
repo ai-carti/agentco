@@ -23,10 +23,13 @@ _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
 # ALEX-TD-003 fix: graceful shutdown — cancel all running background tasks on SIGTERM
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Auto-create tables on startup (fallback if Alembic migrations not run)
+    # ALEX-TD-125: auto-create tables only for SQLite (dev/default fallback).
+    # For Postgres, always use `alembic upgrade head` — create_all bypasses migrations
+    # and can cause schema drift when Alembic adds columns the ORM already knows about.
     from .orm import Base
-    from .db.session import engine
-    Base.metadata.create_all(bind=engine)
+    from .db.session import engine, _DB_URL, _is_postgres
+    if not _is_postgres(_DB_URL):
+        Base.metadata.create_all(bind=engine)
     yield
     # Shutdown: cancel any still-running agent background tasks
     from .services.run import RunService
