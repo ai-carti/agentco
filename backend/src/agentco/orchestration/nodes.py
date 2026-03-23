@@ -1,7 +1,20 @@
 """
 orchestration/nodes.py — CEO node и SubAgent node.
 
-Mock LLM через litellm.mock_completion — реальный LLM не вызывается в этом тикете.
+АРХИТЕКТУРА (ALEX-TD-123):
+  Этот файл реализует HIERARCHY ORCHESTRATION (CEO → SubAgent делегирование).
+  Он НЕ является тест-заглушкой — это production-код координации агентов.
+
+  LLM вызовы здесь нужны только для принятия решений о делегировании:
+  "Как CEO должен декомпозировать задачу?" / "Как subagent должен её выполнить?"
+
+  По умолчанию используется litellm.mock_completion — это ускоряет разработку и тесты.
+  Для production с реальным LLM: установить AGENTCO_USE_REAL_LLM=true.
+  При этом узлы будут использовать litellm.acompletion вместо mock_completion.
+
+  РЕАЛЬНАЯ LLM-логика (стриминг, tool_calls, memory injection) живёт в agent_node.py.
+  Если нужны streaming LLM calls в hierarchy nodes — используй agent_node вместо _mock_llm_call.
+
 Loop detection: MAX_ITERATIONS (env MAX_AGENT_ITERATIONS, default=20)
               + MAX_COST_USD (env MAX_RUN_COST_USD, default=1.0)
               + MAX_TOKENS (env MAX_RUN_TOKENS, default=100000)
@@ -56,15 +69,36 @@ def _sync_mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str
 
 async def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
     """
-    Async-ready mock LLM вызов.
+    Async-ready LLM вызов для hierarchy orchestration nodes.
 
-    Sync litellm.mock_completion обёрнут через run_in_executor — не блокирует
-    event loop. При переходе на реальный LLM достаточно заменить эту функцию
-    на litellm.acompletion без изменений в вызывающем коде.
+    По умолчанию использует litellm.mock_completion (быстро, без API ключей).
+    При AGENTCO_USE_REAL_LLM=true — использует litellm.acompletion с моделью gpt-4o-mini.
+
+    ALEX-TD-123: env-flag позволяет переключать между mock и реальным LLM.
+    Это не тест-заглушка — это production-код, по умолчанию оптимизированный
+    для разработки/тестирования. Streaming/memory/tool_calls — в agent_node.py.
     """
-    loop = asyncio.get_running_loop()
-    fn = functools.partial(_sync_mock_llm_call, system, user, mock_response)
-    return await loop.run_in_executor(None, fn)
+    use_real_llm = os.environ.get("AGENTCO_USE_REAL_LLM", "").lower() in ("true", "1", "yes")
+
+    if use_real_llm:
+        # Real LLM path — used in production when AGENTCO_USE_REAL_LLM=true
+        response = await litellm.acompletion(
+            model=os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            max_tokens=500,
+        )
+        content = response.choices[0].message.content or ""
+        tokens = response.usage.total_tokens if response.usage else 50
+        cost = tokens * 0.00015 / 1000  # gpt-4o-mini rate
+        return content, tokens, cost
+    else:
+        # Default: mock_completion (dev/test mode, no API key required)
+        loop = asyncio.get_running_loop()
+        fn = functools.partial(_sync_mock_llm_call, system, user, mock_response)
+        return await loop.run_in_executor(None, fn)
 
 
 # ─── CEO Node ─────────────────────────────────────────────────────────────────

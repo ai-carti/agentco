@@ -116,12 +116,17 @@ async def create_run(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Create a run with a goal."""
+    """Create a run with a goal and start it as a background task.
+
+    ALEX-TD-126: passes session_factory so the background execute_run() task
+    can open a fresh DB session (avoids detached-instance errors in async context).
+    """
     try:
         run = RunService(session).create_with_goal(
             company_id=company_id,
             goal=body.goal,
             owner_id=current_user.id,
+            session_factory=_session_ctx,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")

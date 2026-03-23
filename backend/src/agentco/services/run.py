@@ -56,8 +56,24 @@ class RunService:
         self._task_repo = TaskRepository(session)
         self._company_repo = CompanyRepository(session)
 
-    def create_with_goal(self, company_id: str, goal: str, owner_id: str) -> Run:
-        """Create a run with a goal. Validates company ownership."""
+    def create_with_goal(
+        self,
+        company_id: str,
+        goal: str,
+        owner_id: str,
+        session_factory: Optional[Callable[[], Session]] = None,
+    ) -> Run:
+        """Create a run with a goal and start it as a background task.
+
+        ALEX-TD-126 fix: previously this method only created the Run record and
+        returned — the run stayed in 'pending' forever because execute_run was
+        never called. Now it spawns an asyncio background task that calls
+        execute_run() after the DB commit, mirroring create_and_start().
+
+        The session_factory parameter allows the background task to use a fresh
+        DB session (required in async context to avoid detached-instance errors).
+        If not provided, falls back to creating sessions without factory.
+        """
         company = self._company_repo.get(company_id)
         if company.owner_id != owner_id:
             raise NotFoundError(f"Company {company_id!r} not found")
@@ -70,6 +86,33 @@ class RunService:
         )
         run = self._repo.add(run)
         self._session.commit()
+
+        # ALEX-TD-126: Spawn background task to actually start execution.
+        # Without this, run stays in 'pending' forever — agents never start.
+        try:
+            loop = asyncio.get_running_loop()
+            bg_task = loop.create_task(
+                self.execute_run(run.id, session_factory=session_factory)
+            )
+            RunService._active_tasks[run.id] = bg_task
+
+            def _on_done(fut: asyncio.Task) -> None:
+                RunService._active_tasks.pop(run.id, None)
+
+            bg_task.add_done_callback(_on_done)
+
+            # Publish run.started event
+            loop.create_task(EventBus.get().publish({
+                "type": "run.started",
+                "company_id": company_id,
+                "run_id": run.id,
+                "payload": {"status": "pending", "goal": goal.strip()},
+            }))
+        except RuntimeError:
+            # No running event loop (e.g. sync test context) — skip bg task.
+            # In this case the caller is responsible for starting execution.
+            logger.debug("create_with_goal: no running event loop, skipping bg task for run %s", run.id)
+
         return run
 
     def create_and_start(
