@@ -23,6 +23,8 @@ router = APIRouter(
 # ALEX-TD-118: rate limits for mutable MCP server endpoints
 _RATE_LIMIT_MCP_CREATE = os.getenv("RATE_LIMIT_MCP_CREATE", "20/minute")
 _RATE_LIMIT_MCP_DELETE = os.getenv("RATE_LIMIT_MCP_DELETE", "20/minute")
+# ALEX-TD-155: rate limit for GET list endpoint
+_RATE_LIMIT_MCP_READ = os.getenv("RATE_LIMIT_MCP_READ", "120/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -118,7 +120,9 @@ def create_mcp_server(
 
 
 @router.get("", response_model=list[MCPServerResponse])
+@limiter.limit(_RATE_LIMIT_MCP_READ)
 def list_mcp_servers(
+    request: Request,
     company_id: str,
     agent_id: str,
     limit: int = Query(default=50, ge=1, le=200),

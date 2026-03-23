@@ -11,6 +11,8 @@ from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
 
 _RATE_LIMIT_COMPANIES = os.getenv("RATE_LIMIT_COMPANIES", "5/hour")
+# ALEX-TD-156: separate rate limit for read endpoints (list + get)
+_RATE_LIMIT_COMPANIES_READ = os.getenv("RATE_LIMIT_COMPANIES_READ", "120/minute")
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 
@@ -54,7 +56,9 @@ def _to_out(company) -> CompanyOut:
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=list[CompanyOut])
+@limiter.limit(_RATE_LIMIT_COMPANIES_READ)
 def list_companies(
+    request: Request,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
@@ -76,7 +80,9 @@ def create_company(
 
 
 @router.get("/{company_id}", response_model=CompanyOut)
+@limiter.limit(_RATE_LIMIT_COMPANIES_READ)
 def get_company(
+    request: Request,
     company_id: str,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
