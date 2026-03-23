@@ -6,7 +6,7 @@ TDD: тест написан для проверки pagination behavior.
 import pytest
 
 
-def _register_and_login(client, email="td040@example.com", password="pass123"):
+def _register_and_login(client, email="td040@example.com", password="pass1234"):
     client.post("/auth/register", json={"email": email, "password": password})
     r = client.post("/auth/login", json={"email": email, "password": password})
     return r.json()["access_token"]

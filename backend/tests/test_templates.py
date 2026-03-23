@@ -11,7 +11,7 @@ Run: uv run pytest tests/test_templates.py -v
 import pytest
 
 
-def _register_and_login(client, email="user@example.com", password="pass123"):
+def _register_and_login(client, email="user@example.com", password="pass1234"):
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})
     return resp.json()["access_token"]

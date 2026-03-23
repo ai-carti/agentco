@@ -60,12 +60,12 @@ def _setup_user_and_run(client: TestClient):
     """Helper: создаёт пользователя, компанию, таск и ран."""
     client.post("/auth/register", json={
         "email": "pagtest@example.com",
-        "password": "pass123",
+        "password": "pass1234",
         "name": "Pag Test",
     })
     login = client.post("/auth/login", json={
         "email": "pagtest@example.com",
-        "password": "pass123",
+        "password": "pass1234",
     })
     token = login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}

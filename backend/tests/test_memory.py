@@ -231,12 +231,12 @@ class TestMemoryAPI:
         # Register user + company + agent
         client.post("/auth/register", json={
             "email": "memory@test.com",
-            "password": "pass123",
+            "password": "pass1234",
             "name": "Memory Test",
         })
         login_resp = client.post("/auth/login", json={
             "email": "memory@test.com",
-            "password": "pass123",
+            "password": "pass1234",
         })
         token = login_resp.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
@@ -273,10 +273,10 @@ class TestMemoryAPI:
         client, _ = auth_client
 
         client.post("/auth/register", json={
-            "email": "mem404@test.com", "password": "pass123", "name": "Test",
+            "email": "mem404@test.com", "password": "pass1234", "name": "Test",
         })
         login_resp = client.post("/auth/login", json={
-            "email": "mem404@test.com", "password": "pass123",
+            "email": "mem404@test.com", "password": "pass1234",
         })
         token = login_resp.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}

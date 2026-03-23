@@ -10,7 +10,7 @@ import pytest
 
 # ── Helper ───────────────────────────────────────────────────────────────────
 
-def _register_and_login(client, email="user@example.com", password="pass123"):
+def _register_and_login(client, email="user@example.com", password="pass1234"):
     """Register user and return Bearer token."""
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})

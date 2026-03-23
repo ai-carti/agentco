@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from agentco.main import app
 
 
-def _register_and_login(client, email="buguser@example.com", password="pass123"):
+def _register_and_login(client, email="buguser@example.com", password="pass1234"):
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})
     return resp.json()["access_token"]

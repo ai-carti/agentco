@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _register_and_login(client, email="llm_user@example.com", password="pass123"):
+def _register_and_login(client, email="llm_user@example.com", password="pass1234"):
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})
     return resp.json()["access_token"]

@@ -92,12 +92,12 @@ class TestALEXTD044MemoryPagination:
         """Вспомогательный метод — создать юзера, компанию, агента."""
         client.post("/auth/register", json={
             "email": email,
-            "password": "pass123",
+            "password": "pass1234",
             "name": "TD044 Test",
         })
         login_resp = client.post("/auth/login", json={
             "email": email,
-            "password": "pass123",
+            "password": "pass1234",
         })
         token = login_resp.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}

@@ -49,7 +49,7 @@ def test_mcp_server_agent_id_has_index():
 
 # ── ALEX-TD-062: list_library ORDER BY ────────────────────────────────────────
 
-def _register_and_login_062(client, email="lib062@example.com", password="pass123"):
+def _register_and_login_062(client, email="lib062@example.com", password="pass1234"):
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})
     return resp.json()["access_token"]
