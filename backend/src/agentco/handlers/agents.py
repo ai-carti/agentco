@@ -150,7 +150,9 @@ def get_agent(
 
 
 @router.put("/{agent_id}", response_model=AgentOut)
+@limiter.limit(_RATE_LIMIT_AGENTS)
 def update_agent(
+    request: Request,
     company_id: str,
     agent_id: str,
     body: AgentUpdate,
@@ -169,7 +171,9 @@ def update_agent(
 
 
 @router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_RATE_LIMIT_AGENTS)
 def delete_agent(
+    request: Request,
     company_id: str,
     agent_id: str,
     session: Session = Depends(get_session),

@@ -208,3 +208,9 @@ class TestAlexTD126CreateWithGoalStarts:
             assert mock_loop.create_task.called, (
                 "ALEX-TD-126: create_with_goal must call loop.create_task(execute_run(...))"
             )
+
+        # ALEX-TD-126 test cleanup: remove the MagicMock task from the class-level
+        # _active_tasks registry. If left in place, the lifespan shutdown in subsequent
+        # tests calls asyncio.gather(mock_task) → TypeError: awaitable required, breaking
+        # all tests that start a TestClient after this one.
+        RunService._active_tasks.pop("run-new-1", None)

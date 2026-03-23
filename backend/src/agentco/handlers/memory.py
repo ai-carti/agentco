@@ -8,10 +8,11 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from agentco.auth.dependencies import get_current_user
+from agentco.core.rate_limiting import limiter
 from agentco.db.session import get_session
 from agentco.memory.service import MemoryService
 from agentco.orm.user import UserORM
@@ -25,10 +26,14 @@ router = APIRouter(
 )
 
 _MEMORY_DB = os.environ.get("AGENTCO_MEMORY_DB", "./agentco_memory.db")
+# ALEX-TD-128: rate limit for memory endpoint — SQLite IO per request
+_RATE_LIMIT_MEMORY = os.environ.get("RATE_LIMIT_MEMORY", "60/minute")
 
 
 @router.get("", response_model=list[dict])
+@limiter.limit(_RATE_LIMIT_MEMORY)
 def get_agent_memory(
+    request: Request,
     company_id: str,
     agent_id: str,
     limit: int = Query(default=50, ge=1, le=500),

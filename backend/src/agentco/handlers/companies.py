@@ -90,7 +90,9 @@ def get_company(
 
 
 @router.put("/{company_id}", response_model=CompanyOut)
+@limiter.limit(_RATE_LIMIT_COMPANIES)
 def update_company(
+    request: Request,
     company_id: str,
     body: CompanyUpdate,
     session: Session = Depends(get_session),
@@ -106,7 +108,9 @@ def update_company(
 
 
 @router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_RATE_LIMIT_COMPANIES)
 def delete_company(
+    request: Request,
     company_id: str,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
