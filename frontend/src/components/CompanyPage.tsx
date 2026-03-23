@@ -125,6 +125,11 @@ export default function CompanyPage() {
   useEffect(() => {
     return () => { loadMoreAbortRef.current?.abort() }
   }, [])
+  // SIRI-UX-186: abort controller for handleCreateAgent POST
+  const createAgentAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { createAgentAbortRef.current?.abort() }
+  }, [])
 
   // SIRI-UX-091: close modal on Escape key
   const handleModalEscape = useCallback((e: KeyboardEvent) => {
@@ -255,6 +260,11 @@ export default function CompanyPage() {
 
   const handleCreateAgent = async (data: AgentFormData) => {
     if (!id) return
+    // SIRI-UX-186: abort any previous in-flight request; guard setState on unmounted component
+    createAgentAbortRef.current?.abort()
+    const controller = new AbortController()
+    createAgentAbortRef.current = controller
+    const { signal } = controller
     const token = getStoredToken()
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
@@ -263,6 +273,7 @@ export default function CompanyPage() {
         method: 'POST',
         headers,
         body: JSON.stringify(data),
+        signal,
       })
       if (res.ok) {
         const newAgent = await res.json()
@@ -272,8 +283,13 @@ export default function CompanyPage() {
       } else {
         toast.error('Failed to create agent. Try again.')
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Network error — could not create agent')
+    } finally {
+      if (!signal.aborted) {
+        createAgentAbortRef.current = null
+      }
     }
   }
 

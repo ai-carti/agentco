@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -49,9 +49,19 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
   const [companyName, setCompanyName] = useState('My Startup')
 
   const template = COMPANY_TEMPLATES[0]
+  // SIRI-UX-187: abort controller for handleUseTemplate multi-fetch flow
+  const launchAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { launchAbortRef.current?.abort() }
+  }, [])
 
   const handleUseTemplate = async () => {
     if (!companyName.trim()) return
+    // SIRI-UX-187: abort any previous in-flight launch; guard setState on unmounted component
+    launchAbortRef.current?.abort()
+    const controller = new AbortController()
+    launchAbortRef.current = controller
+    const { signal } = controller
     setLoading(true)
     try {
       const token = getStoredToken()
@@ -64,6 +74,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         method: 'POST',
         headers,
         body: JSON.stringify({ template_id: template.id, name: companyName.trim() }),
+        signal,
       }).catch(() => null)
 
       if (templateRes?.ok) {
@@ -77,6 +88,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           method: 'POST',
           headers,
           body: JSON.stringify({ name: companyName.trim() }),
+          signal,
         })
         if (!coRes.ok) {
           toast.error('Failed to create company. Try again.')
@@ -92,6 +104,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
               method: 'POST',
               headers,
               body: JSON.stringify(agent),
+              signal,
             }),
           ),
         )
@@ -105,10 +118,14 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
       } else {
         navigate('/')
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Something went wrong. Try again.')
     } finally {
-      setLoading(false)
+      if (!signal.aborted) {
+        setLoading(false)
+        launchAbortRef.current = null
+      }
     }
   }
 

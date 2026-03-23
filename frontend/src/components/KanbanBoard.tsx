@@ -832,6 +832,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   const toast = useToast()
   // SIRI-POST-006: focus trap for Create Task modal
   const createModalTrapRef = useFocusTrap(showCreateModal)
+  // SIRI-UX-185: abort controller for handleCreateTask POST
+  const createTaskAbortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { createTaskAbortRef.current?.abort() }
+  }, [])
 
   const handleCreateTask = async () => {
     if (!newTaskTitle.trim()) {
@@ -839,6 +844,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
       setTitleTouched(true)
       return
     }
+    // SIRI-UX-185: abort any previous in-flight request
+    createTaskAbortRef.current?.abort()
+    const controller = new AbortController()
+    createTaskAbortRef.current = controller
+    const { signal } = controller
     setCreating(true)
     try {
       const token = getStoredToken()
@@ -854,6 +864,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           status: 'todo',
           ...(newTaskPriority ? { priority: newTaskPriority } : {}),
         }),
+        signal,
       })
       if (res.ok) {
         const newTask = await res.json()
@@ -866,10 +877,14 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
       } else {
         toast.error('Failed to create task. Try again.')
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Failed to create task. Try again.')
     } finally {
-      setCreating(false)
+      if (!signal.aborted) {
+        setCreating(false)
+        createTaskAbortRef.current = null
+      }
     }
   }
 

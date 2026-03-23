@@ -52,12 +52,16 @@ export default function CompaniesPage() {
         // SIRI-UX-148: surface API errors to user
         setLoadError('Failed to load companies. Please try again.')
       }
+      // BUG-073: moved out of finally — must NOT run when aborted (unmounted component)
+      setLoading(false)
+      setHasLoadedOnce(true)
     } catch (err) {
       // SIRI-UX-179: ignore AbortError when component unmounts
+      // BUG-073: return early — do NOT call setLoading/setHasLoadedOnce on unmounted component
       if (err instanceof Error && err.name === 'AbortError') return
       // SIRI-UX-148: surface network errors to user
       setLoadError('Failed to load companies. Please try again.')
-    } finally {
+      // BUG-073: only update state on non-abort errors (component still mounted)
       setLoading(false)
       setHasLoadedOnce(true)
     }
