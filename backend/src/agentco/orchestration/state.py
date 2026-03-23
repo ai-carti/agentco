@@ -72,3 +72,11 @@ class AgentState(TypedDict):
     status: Literal["running", "completed", "failed", "error"]
     error: str | None
     final_result: str | None
+
+    # ALEX-TD-135: поля используемые agent_node.py — добавлены как NotRequired
+    # для type safety (mypy/pyright видит эти поля, а не только state.get(...))
+    system_prompt: NotRequired[str]              # системный промпт агента
+    model: NotRequired[str]                      # модель LiteLLM (default "gpt-4o")
+    tools: NotRequired[list]                     # tool definitions для LLM
+    tool_handlers: NotRequired[dict]             # dict[str, ToolHandler] — обработчики
+    memory_service: NotRequired[object | None]   # MemoryService | None

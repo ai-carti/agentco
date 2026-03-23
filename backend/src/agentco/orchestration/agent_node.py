@@ -304,6 +304,17 @@ async def agent_node(state: AgentState) -> dict:
         # ── Cost tracking ──────────────────────────────────────────────────
         cost_usd = _estimate_cost(model, total_tokens)
 
+        # ALEX-TD-139: warn when finish_reason=length with pending tool_calls.
+        # Truncated responses mean tool args JSON is incomplete — json.loads will
+        # silently return {} for partial JSON, causing handlers to run with empty
+        # args and producing wrong behavior with no diagnostic.
+        if finish_reason == "length" and tool_calls_acc:
+            logger.warning(
+                "agent_node: finish_reason=length with tool_calls — args may be truncated. "
+                "run_id=%s agent_id=%s tool_count=%d",
+                state.get("run_id"), state.get("agent_id"), len(tool_calls_acc),
+            )
+
         # ── Публикуем completion event ─────────────────────────────────────
         await _publish_completion(state, full_text, cost_usd)
 
@@ -326,7 +337,10 @@ async def agent_node(state: AgentState) -> dict:
 
             assistant_msg: dict = {
                 "role": "assistant",
-                "content": full_text or None,
+                # ALEX-TD-141: use "" instead of None — Anthropic API rejects content=null
+                # when tool_calls are present ("content" must be string or absent).
+                # `full_text or None` → None when full_text="" → 400 Bad Request on Claude-3.x.
+                "content": full_text or "",
                 "tool_calls": assistant_tool_calls,
             }
             new_messages.append(assistant_msg)
@@ -339,6 +353,12 @@ async def agent_node(state: AgentState) -> dict:
                     args_str = tc["function"]["arguments"]
                     args = json.loads(args_str) if args_str else {}
                 except json.JSONDecodeError:
+                    # ALEX-TD-139: log truncated/malformed JSON so it's diagnosable
+                    logger.warning(
+                        "agent_node: JSONDecodeError parsing tool args for '%s'. "
+                        "Possible truncation (finish_reason=%s). args_str=%r run_id=%s",
+                        tool_name, finish_reason, args_str[:200] if args_str else "", state.get("run_id"),
+                    )
                     args = {}
 
                 handler = tool_handlers.get(tool_name)

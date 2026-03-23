@@ -14,6 +14,8 @@ from ..core.rate_limiting import limiter
 # ALEX-TD-122: rate limits for task mutable endpoints
 _RATE_LIMIT_TASKS_CREATE = os.getenv("RATE_LIMIT_TASKS_CREATE", "60/minute")
 _RATE_LIMIT_TASKS_MUTATE = os.getenv("RATE_LIMIT_TASKS_MUTATE", "120/minute")
+# ALEX-TD-140: rate limit for read endpoints (list + get)
+_RATE_LIMIT_TASKS_READ = os.getenv("RATE_LIMIT_TASKS_READ", "120/minute")
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/tasks",
@@ -95,7 +97,9 @@ def create_task(
 
 
 @router.get("", response_model=list[TaskOut])
+@limiter.limit(_RATE_LIMIT_TASKS_READ)
 def list_tasks(
+    request: Request,
     company_id: str,
     agent_id: str,
     limit: int = Query(default=50, ge=1, le=500),
@@ -116,7 +120,9 @@ def list_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskOut)
+@limiter.limit(_RATE_LIMIT_TASKS_READ)
 def get_task(
+    request: Request,
     company_id: str,
     agent_id: str,
     task_id: str,

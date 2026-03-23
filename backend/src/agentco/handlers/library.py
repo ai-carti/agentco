@@ -20,6 +20,10 @@ _RATE_LIMIT_FORK = os.getenv("RATE_LIMIT_FORK", "20/minute")
 # ALEX-TD-113 fix: rate limit for POST /api/library — saves agent to shared library.
 # Without limit, attacker can flood shared library with garbage agents.
 _RATE_LIMIT_SAVE_LIBRARY = os.getenv("RATE_LIMIT_SAVE_LIBRARY", "10/minute")
+# ALEX-TD-137: rate limit for GET /api/library and GET /api/library/{id}/portfolio.
+# Both endpoints trigger DB reads (potentially large result sets). Without limit,
+# they can be hammered to cause DB load. Default 60/minute is generous for read ops.
+_RATE_LIMIT_LIBRARY_READ = os.getenv("RATE_LIMIT_LIBRARY_READ", "60/minute")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -106,7 +110,9 @@ def save_to_library(
 # ── GET /api/library ──────────────────────────────────────────────────────────
 
 @router.get("/api/library", response_model=list[LibraryAgentOut])
+@limiter.limit(_RATE_LIMIT_LIBRARY_READ)
 def list_library(
+    request: Request,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
@@ -127,7 +133,9 @@ def list_library(
 # ── GET /api/library/{id}/portfolio ───────────────────────────────────────────
 
 @router.get("/api/library/{library_id}/portfolio", response_model=PortfolioOut)
+@limiter.limit(_RATE_LIMIT_LIBRARY_READ)
 def get_portfolio(
+    request: Request,
     library_id: str,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),

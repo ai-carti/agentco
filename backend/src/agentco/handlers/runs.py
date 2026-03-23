@@ -197,24 +197,36 @@ async def _do_stop_run(company_id: str, run_id: str, session: Session, current_u
 
 
 @router.patch("/runs/{run_id}/stop", response_model=RunOut)
+@limiter.limit(_RATE_LIMIT_RUN)
 async def patch_stop_run(
+    request: Request,
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Stop a running run (PATCH — per M2-004 spec)."""
+    """Stop a running run (PATCH — per M2-004 spec).
+
+    ALEX-TD-136 fix: added @limiter.limit — stop endpoints were unprotected,
+    allowing rapid-fire stop requests that cause DB churn (repeated status reads,
+    CancelledError storms on asyncio tasks). Rate limit mirrors POST /tasks/{id}/run.
+    """
     return await _do_stop_run(company_id, run_id, session, current_user)
 
 
 @router.post("/runs/{run_id}/stop", response_model=RunOut)
+@limiter.limit(_RATE_LIMIT_RUN)
 async def stop_run(
+    request: Request,
     company_id: str,
     run_id: str,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Stop a running run (POST — backward compat)."""
+    """Stop a running run (POST — backward compat).
+
+    ALEX-TD-136 fix: added @limiter.limit — see patch_stop_run.
+    """
     return await _do_stop_run(company_id, run_id, session, current_user)
 
 

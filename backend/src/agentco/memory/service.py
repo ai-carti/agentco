@@ -162,10 +162,27 @@ class MemoryService:
         ALEX-TD-100: timeout=30.0 prevents indefinite hang when LLM API is unavailable.
         Without a timeout, save_memory()/get_relevant_memories() would block the event loop
         (via run_in_executor caller) indefinitely on LLM downtime.
+
+        ALEX-TD-138: guard against empty response.data — some providers (mock, error paths)
+        can return response.data as an empty list. Without guard:
+            response.data[0].embedding → IndexError → unhandled crash in save_memory()
+        Fix: raise ValueError with context if data is empty or embedding is missing.
         """
         response = await litellm.aembedding(
             model=_EMBEDDING_MODEL,
             input=text,
             timeout=30.0,
         )
-        return response.data[0].embedding
+        # ALEX-TD-138: validate response structure before accessing .embedding
+        if not response.data:
+            raise ValueError(
+                f"_get_embedding: LiteLLM returned empty data list for model={_EMBEDDING_MODEL!r}. "
+                "Check that the embedding model is configured and the API key is valid."
+            )
+        embedding = response.data[0].embedding
+        if embedding is None:
+            raise ValueError(
+                f"_get_embedding: LiteLLM returned None embedding for model={_EMBEDDING_MODEL!r}. "
+                "Provider may not support embeddings or returned an error object."
+            )
+        return embedding
