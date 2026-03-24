@@ -211,6 +211,109 @@
   background: #4b5563;
 }
 
+/* SIRI-UX-258: LibraryPage — Portfolio link & Fork button CSS hover */
+.library-portfolio-link {
+  padding: 0.4rem 0.875rem;
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.library-portfolio-link:hover {
+  border-color: #6b7280;
+  color: #e2e8f0;
+}
+
+.library-fork-btn {
+  padding: 0.4rem 0.875rem;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.library-fork-btn:hover {
+  background: #1d4ed8;
+}
+
+/* SIRI-UX-259: Navbar Logout button CSS hover */
+.navbar-logout-btn {
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.navbar-logout-btn:hover {
+  border-color: #6b7280;
+  color: #e5e7eb;
+}
+
+/* SIRI-UX-260: OnboardingPage buttons CSS hover */
+.onboarding-launch-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.onboarding-launch-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.onboarding-launch-btn:disabled {
+  cursor: not-allowed;
+  background: #1d4ed8;
+}
+
+.onboarding-skip-btn {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+.onboarding-skip-btn:hover {
+  color: #9ca3af;
+}
+
+/* SIRI-UX-261: AgentEditPage Cancel button CSS hover */
+.agent-edit-cancel-btn {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.agent-edit-cancel-btn:hover {
+  border-color: #6b7280;
+  color: #e5e7eb;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

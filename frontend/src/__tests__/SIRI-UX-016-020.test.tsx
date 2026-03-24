@@ -124,7 +124,8 @@ describe('SIRI-UX-018: CompanyPage tab hover states', () => {
 })
 
 describe('SIRI-UX-019: LibraryPage Fork/Portfolio hover states', () => {
-  it('Fork button has hover transitions', async () => {
+  // SIRI-UX-258: JS hover replaced with CSS class — test updated to verify CSS class
+  it('Fork button uses library-fork-btn CSS class for hover (no JS hover handlers)', async () => {
     // Mock fetch for library agents
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -138,13 +139,11 @@ describe('SIRI-UX-019: LibraryPage Fork/Portfolio hover states', () => {
     )
     const forkBtn = await findByTestId('fork-btn-la1')
     expect(forkBtn).toBeInTheDocument()
-    // Has transition style
-    expect(forkBtn.style.transition).toContain('background')
-    // Hover doesn't throw
+    // Has CSS class instead of JS hover
+    expect(forkBtn.className).toContain('library-fork-btn')
+    // Hover doesn't throw (no JS handlers, purely CSS)
     fireEvent.mouseEnter(forkBtn)
-    expect(forkBtn.style.background).toBe('rgb(29, 78, 216)')
     fireEvent.mouseLeave(forkBtn)
-    expect(forkBtn.style.background).toBe('rgb(37, 99, 235)')
   })
 })
 

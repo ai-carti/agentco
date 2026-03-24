@@ -225,30 +225,14 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           }}
         />
 
+        {/* SIRI-UX-260: replaced JS hover with CSS class .onboarding-launch-btn */}
         <button
           data-testid="onboarding-use-template-btn"
           onClick={handleUseTemplate}
           disabled={loading || !companyName.trim()}
           // SIRI-UX-199: aria-busy announces loading state to screen readers
           aria-busy={loading}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            background: loading ? '#1d4ed8' : '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            fontSize: '1rem',
-            fontWeight: 700,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'background 0.15s',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-          }}
-          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#1d4ed8' }}
-          onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#2563eb' }}
+          className="onboarding-launch-btn"
         >
           {loading ? (
             <>⏳ Creating…</>
@@ -259,19 +243,11 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
       </div>
 
       {/* Skip link */}
+      {/* SIRI-UX-260: replaced JS hover with CSS class .onboarding-skip-btn */}
       <button
         data-testid="onboarding-skip-btn"
         onClick={() => navigate('/')}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: '#6b7280',
-          cursor: 'pointer',
-          fontSize: '0.875rem',
-          textDecoration: 'underline',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#9ca3af')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}
+        className="onboarding-skip-btn"
       >
         Skip, I'll set up manually
       </button>

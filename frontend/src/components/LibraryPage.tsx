@@ -314,46 +314,23 @@ export default function LibraryPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                {/* SIRI-UX-258: replaced JS hover with CSS class .library-portfolio-link */}
                 <Link
                   to={`/library/${agent.id}/portfolio`}
                   data-testid={`portfolio-link-${agent.id}`}
                   // SIRI-UX-220: agent-specific aria-label so screen readers can distinguish between multiple Portfolio links
                   aria-label={`View ${agent.name} portfolio`}
-                  style={{
-                    padding: '0.4rem 0.875rem',
-                    background: '#0f172a',
-                    border: '1px solid #334155',
-                    borderRadius: 6,
-                    color: '#94a3b8',
-                    fontSize: '0.8rem',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s, color 0.15s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6b7280'; e.currentTarget.style.color = '#e2e8f0' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.color = '#94a3b8' }}
+                  className="library-portfolio-link"
                 >
                   Portfolio
                 </Link>
+                {/* SIRI-UX-258: replaced JS hover with CSS class .library-fork-btn */}
                 <button
                   data-testid={`fork-btn-${agent.id}`}
                   // SIRI-UX-220: agent-specific aria-label so screen readers can distinguish between multiple Fork buttons
                   aria-label={`Fork ${agent.name} to a company`}
                   onClick={() => setForkTarget(agent.id)}
-                  style={{
-                    padding: '0.4rem 0.875rem',
-                    background: '#2563eb',
-                    border: 'none',
-                    borderRadius: 6,
-                    color: '#fff',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1d4ed8' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb' }}
+                  className="library-fork-btn"
                 >
                   Fork
                 </button>

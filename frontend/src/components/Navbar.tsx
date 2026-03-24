@@ -35,26 +35,10 @@ export default function Navbar() {
             {user.email}
           </span>
         )}
+        {/* SIRI-UX-259: replaced JS hover with CSS class .navbar-logout-btn */}
         <button
           onClick={logout}
-          style={{
-            padding: '0.35rem 0.9rem',
-            background: 'transparent',
-            border: '1px solid #374151',
-            borderRadius: 6,
-            color: '#9ca3af',
-            fontSize: '0.8rem',
-            cursor: 'pointer',
-            transition: 'border-color 0.15s, color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#6b7280'
-            e.currentTarget.style.color = '#e5e7eb'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#374151'
-            e.currentTarget.style.color = '#9ca3af'
-          }}
+          className="navbar-logout-btn"
         >
           Logout
         </button>
