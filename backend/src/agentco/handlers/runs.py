@@ -9,9 +9,12 @@ Endpoints:
     GET   /api/companies/{company_id}/runs/{run_id}/events  → list run events
     POST  /api/companies/{company_id}/tasks/{task_id}/run   → legacy: run from task (rate limited)
 """
+import logging
 import os
 from datetime import datetime
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator

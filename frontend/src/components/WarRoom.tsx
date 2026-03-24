@@ -160,6 +160,9 @@ export default function WarRoom() {
   }, [token, companyId])
 
   useEffect(() => {
+    // SIRI-UX-254: reset mountedRef to true on every effect run (guards StrictMode double-invoke
+    // and dep-change re-runs where cleanup already set it false)
+    mountedRef.current = true
     connect()
     return () => {
       // SIRI-UX-232: mark unmounted BEFORE close() so onclose doesn't schedule reconnect

@@ -186,6 +186,8 @@ export default function CompaniesPage() {
               role="button"
               tabIndex={0}
               aria-label={co.name}
+              // SIRI-UX-255: CSS class for hover instead of JS onMouseEnter/onMouseLeave
+              className="companies-item"
               onClick={() => navigate(`/companies/${co.id}`)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -203,8 +205,6 @@ export default function CompaniesPage() {
                 transition: 'border-color 0.15s',
                 outline: 'none',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6b7280')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#374151')}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
               onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
             >

@@ -166,6 +166,11 @@
   outline-offset: 2px;
 }
 
+/* SIRI-UX-255: CompaniesPage company list items — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.companies-item:hover {
+  border-color: #6b7280 !important;
+}
+
 /* SIRI-UX-249: Button component CSS classes — base + hover, replaces JS onMouseEnter/onMouseLeave */
 .btn-primary {
   background: #2563eb;
