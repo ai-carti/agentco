@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAgentStore } from '../store/agentStore'
+// SIRI-UX-270: focus trap for dialog — matches pattern used in KanbanBoard, CompanyPage, TaskDetailSidebar
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 interface SearchResult {
   id: string
@@ -18,6 +20,8 @@ export default function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const navigate = useNavigate()
+  // SIRI-UX-270: focus trap — prevents Tab/Shift+Tab from leaving the dialog
+  const dialogTrapRef = useFocusTrap(open)
 
   const agents = useAgentStore((s) => s.agents)
   const tasks = useAgentStore((s) => s.tasks)
@@ -188,7 +192,9 @@ export default function GlobalSearch() {
         }}
       >
         {/* SIRI-UX-235: role="dialog" + aria-modal="true" so screen readers treat this as a modal dialog */}
+        {/* SIRI-UX-270: dialogTrapRef traps focus inside dialog (Tab/Shift+Tab stay within) */}
         <div
+          ref={dialogTrapRef}
           role="dialog"
           aria-modal="true"
           aria-label="Search"

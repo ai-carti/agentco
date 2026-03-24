@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
@@ -213,7 +213,8 @@ export default function WarRoomPage() {
     return () => { stopAbortRef.current?.abort() }
   }, [])
 
-  const handleStop = async () => {
+  // SIRI-UX-273: useCallback prevents handleStop recreation on every render
+  const handleStop = useCallback(async () => {
     if (!companyId || stopping) return
     setStopping(true)
     // SIRI-UX-173/175: AbortController stored in ref so unmount can abort it
@@ -269,7 +270,7 @@ export default function WarRoomPage() {
         stopAbortRef.current = null
       }
     }
-  }
+  }, [companyId, stopping, runStatus, toast]) // SIRI-UX-273
 
   // SIRI-UX-266: useMemo MUST be before any early returns (Rules of Hooks)
   // Sort agents: level 0 (CEO) first, then by level

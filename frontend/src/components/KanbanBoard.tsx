@@ -1158,6 +1158,9 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           <div
             key={col.id}
             data-testid={`kanban-column-${col.id}`}
+            // SIRI-UX-271: region landmark + aria-label so screen readers can navigate by column
+            role="region"
+            aria-label={col.label}
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}

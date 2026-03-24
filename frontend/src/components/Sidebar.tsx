@@ -15,18 +15,27 @@ function getInitialCollapsed(): boolean {
   return window.innerWidth < TABLET_BREAKPOINT
 }
 
+// SIRI-UX-272: static nav items at module-level — no object recreation on each render
+// War Room `to` is dynamic (depends on currentCompany), computed inside the component
+const STATIC_NAV_ITEMS = [
+  { label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies', to: '/', end: true },
+  { label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library', to: '/library', end: false },
+  { label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings', to: '/settings', end: false },
+] as const
+
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(getInitialCollapsed)
   const mobile = useIsMobile()
   const currentCompany = useAgentStore((s) => s.currentCompany)
 
+  // SIRI-UX-272: only War Room `to` is dynamic — avoid re-declaring all 4 items per render
   const warRoomTo = currentCompany ? `/companies/${currentCompany.id}` : '/'
 
   const NAV_ITEMS = [
-    { to: '/', label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies', end: true },
-    { to: warRoomTo, label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom' },
-    { to: '/library', label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library' },
-    { to: '/settings', label: 'Settings', icon: '\u{2699}\u{FE0F}', testId: 'sidebar-nav-settings' },
+    STATIC_NAV_ITEMS[0], // Companies
+    { to: warRoomTo, label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom', end: false } as const,
+    STATIC_NAV_ITEMS[1], // Library
+    STATIC_NAV_ITEMS[2], // Settings
   ]
 
   const toggle = useCallback(() => {
