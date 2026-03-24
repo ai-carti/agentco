@@ -172,17 +172,77 @@ describe('WarRoom', () => {
 
   it('reconnects after onclose with delay', () => {
     vi.useFakeTimers()
-    renderWarRoom()
-    expect(MockWebSocket.instances.length).toBe(1)
-    act(() => {
-      lastWs().onclose?.()
-    })
-    expect(MockWebSocket.instances.length).toBe(1)
-    act(() => {
-      vi.advanceTimersByTime(3000)
-    })
-    expect(MockWebSocket.instances.length).toBe(2)
-    vi.useRealTimers()
+    try {
+      renderWarRoom()
+      expect(MockWebSocket.instances.length).toBe(1)
+      act(() => {
+        lastWs().onclose?.()
+      })
+      expect(MockWebSocket.instances.length).toBe(1)
+      // SIRI-UX-292: initial backoff delay is 1000ms
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(MockWebSocket.instances.length).toBe(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // SIRI-UX-292: exponential backoff — delay doubles on each failure, caps at MAX_BACKOFF_MS
+  it('uses exponential backoff on repeated reconnect failures', () => {
+    vi.useFakeTimers()
+    try {
+      renderWarRoom()
+
+      // First close — reconnect after 1000ms
+      act(() => { lastWs().onclose?.() })
+      act(() => { vi.advanceTimersByTime(999) })
+      expect(MockWebSocket.instances.length).toBe(1) // not yet
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(MockWebSocket.instances.length).toBe(2) // reconnected at 1000ms
+
+      // Second close — delay doubled to 2000ms
+      act(() => { lastWs().onclose?.() })
+      act(() => { vi.advanceTimersByTime(1999) })
+      expect(MockWebSocket.instances.length).toBe(2) // not yet
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(MockWebSocket.instances.length).toBe(3) // reconnected at 2000ms
+
+      // Third close — delay doubled to 4000ms
+      act(() => { lastWs().onclose?.() })
+      act(() => { vi.advanceTimersByTime(3999) })
+      expect(MockWebSocket.instances.length).toBe(3) // not yet
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(MockWebSocket.instances.length).toBe(4) // reconnected at 4000ms
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // SIRI-UX-292: successful reconnect resets backoff delay
+  it('resets backoff delay to 1000ms after successful connection', () => {
+    vi.useFakeTimers()
+    try {
+      renderWarRoom()
+
+      // Fail once — delay goes to 2000ms
+      act(() => { lastWs().onclose?.() })
+      act(() => { vi.advanceTimersByTime(1000) })
+      expect(MockWebSocket.instances.length).toBe(2)
+
+      // Successful open — resets backoff
+      act(() => { lastWs().onopen?.() })
+
+      // Fail again — should use reset delay of 1000ms, not 2000ms
+      act(() => { lastWs().onclose?.() })
+      act(() => { vi.advanceTimersByTime(999) })
+      expect(MockWebSocket.instances.length).toBe(2) // not yet
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(MockWebSocket.instances.length).toBe(3) // reconnected at 1000ms
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // BUG-043: loading guard — no empty state until WS connected or timed out

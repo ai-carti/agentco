@@ -10,6 +10,10 @@ import { relativeTime } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+// SIRI-UX-292: exponential backoff cap — mirrors useWarRoomSocket.ts
+const MAX_BACKOFF_MS = 30_000
+const INITIAL_BACKOFF_MS = 1_000
+
 interface Run {
   run_id: string
   agent_name: string
@@ -44,6 +48,8 @@ export default function WarRoom() {
   const [, setTick] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // SIRI-UX-292: exponential backoff delay — mirrors useWarRoomSocket.ts retryDelayRef
+  const retryDelayRef = useRef<number>(INITIAL_BACKOFF_MS)
   // SIRI-UX-232: track mounted state so onclose doesn't schedule reconnect after cleanup runs
   const mountedRef = useRef(true)
   const navigate = useNavigate()
@@ -98,6 +104,8 @@ export default function WarRoom() {
     // BUG-043: track connecting state — hide empty state until WS is open
     ws.onopen = () => {
       setIsConnecting(false)
+      // SIRI-UX-292: reset backoff on successful connect — mirrors useWarRoomSocket.ts
+      retryDelayRef.current = INITIAL_BACKOFF_MS
     }
 
     ws.onmessage = (e) => {
@@ -153,9 +161,14 @@ export default function WarRoom() {
       if (event?.wasClean && event?.code === 1000) return
       // SIRI-UX-147: do NOT reconnect on auth/permission errors — would loop forever
       if (event?.code === 4001 || event?.code === 4003) return
+      // SIRI-UX-292: exponential backoff reconnect — mirrors useWarRoomSocket.ts pattern
+      const delay = Math.min(retryDelayRef.current, MAX_BACKOFF_MS)
       reconnectTimer.current = setTimeout(() => {
-        connect()
-      }, 3000)
+        if (mountedRef.current) {
+          retryDelayRef.current = Math.min(retryDelayRef.current * 2, MAX_BACKOFF_MS)
+          connect()
+        }
+      }, delay)
     }
 
     wsRef.current = ws
@@ -165,6 +178,8 @@ export default function WarRoom() {
     // SIRI-UX-254: reset mountedRef to true on every effect run (guards StrictMode double-invoke
     // and dep-change re-runs where cleanup already set it false)
     mountedRef.current = true
+    // SIRI-UX-292: reset backoff on reconnect effect re-run (e.g. token/company change)
+    retryDelayRef.current = INITIAL_BACKOFF_MS
     connect()
     return () => {
       // SIRI-UX-232: mark unmounted BEFORE close() so onclose doesn't schedule reconnect
