@@ -212,3 +212,65 @@ def test_list_mcp_servers_order_is_stable(auth_client):
     assert returned_ids == created_ids, (
         f"ALEX-TD-069: ожидали порядок по created_at asc: {created_ids}, получили: {returned_ids}"
     )
+
+
+# ── ALEX-TD-164: SSRF protection tests ────────────────────────────────────────
+
+@pytest.mark.parametrize("blocked_url,label", [
+    ("http://localhost/tool",           "localhost hostname"),
+    ("http://localhost:8080/api",       "localhost with port"),
+    ("http://LOCALHOST/tool",           "LOCALHOST uppercase"),
+    ("http://127.0.0.1/cmd",           "loopback IPv4"),
+    ("http://127.0.0.1:3000/api",      "loopback IPv4 with port"),
+    ("http://127.255.255.255/",        "loopback IPv4 range end"),
+    ("http://[::1]/cmd",               "loopback IPv6"),
+    ("http://192.168.1.1/internal",    "private class-C IPv4"),
+    ("http://192.168.0.1:9090/",       "private class-C with port"),
+    ("http://10.0.0.1/secret",         "private class-A IPv4"),
+    ("http://10.255.255.255/",         "private class-A range end"),
+    ("http://172.16.0.1/admin",        "private class-B IPv4"),
+    ("http://172.31.255.255/",         "private class-B range end"),
+    ("http://169.254.1.1/metadata",    "link-local IPv4 (AWS metadata)"),
+    ("http://169.254.169.254/latest",  "AWS IMDSv1 metadata endpoint"),
+    ("http://0.0.0.0/",               "unspecified address"),
+])
+def test_ssrf_blocked_urls_return_422(auth_client, blocked_url, label):
+    """ALEX-TD-164: SSRF-векторы должны блокироваться validator'ом с 422."""
+    client, _ = auth_client
+    token = _register_and_login(client, f"ssrf_block_{abs(hash(label)) % 100000}@example.com")
+    company_id = _create_company(client, token, f"SSRF Corp {label[:10]}")
+    agent_id = _create_agent(client, token, company_id)
+
+    resp = client.post(
+        _mcp_url(company_id, agent_id),
+        json={"name": "ssrf-probe", "server_url": blocked_url, "transport": "sse"},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 422, (
+        f"ALEX-TD-164 SSRF: URL '{blocked_url}' ({label}) должен возвращать 422, "
+        f"получили {resp.status_code}: {resp.text}"
+    )
+
+
+@pytest.mark.parametrize("allowed_url,label", [
+    ("https://mcp.example.com/tools",       "public HTTPS domain"),
+    ("http://mcp.example.com:8080/api",     "public HTTP with port"),
+    ("https://api.openai.com/v1/tools",     "OpenAI API URL"),
+    ("https://93.184.216.34/mcp",           "public routable IP (example.com)"),
+])
+def test_ssrf_allowed_urls_return_201(auth_client, allowed_url, label):
+    """ALEX-TD-164: легитимные внешние URL должны проходить validator (201)."""
+    client, _ = auth_client
+    token = _register_and_login(client, f"ssrf_allow_{abs(hash(label)) % 100000}@example.com")
+    company_id = _create_company(client, token, f"Allow Corp {label[:10]}")
+    agent_id = _create_agent(client, token, company_id)
+
+    resp = client.post(
+        _mcp_url(company_id, agent_id),
+        json={"name": "ext-server", "server_url": allowed_url, "transport": "sse"},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 201, (
+        f"ALEX-TD-164 SSRF: URL '{allowed_url}' ({label}) должен пропускаться (201), "
+        f"получили {resp.status_code}: {resp.text}"
+    )

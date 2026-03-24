@@ -1,6 +1,5 @@
 import ipaddress
 import os
-import socket
 from datetime import datetime
 from enum import Enum
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
