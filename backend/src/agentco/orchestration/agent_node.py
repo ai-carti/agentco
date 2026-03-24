@@ -441,5 +441,7 @@ async def agent_node(state: AgentState) -> dict:
         # CancelledError и т.п.) — Run навсегда зависнет в "running".
         # Re-raise гарантирует: outer except в execute_run всегда поймает ошибку
         # и обновит run.status → "failed" в БД.
-        logger.error("agent_node LLM call failed: %s", e)
+        # ALEX-TD-191: exc_info=True ensures full traceback appears in logs,
+        # not just the exception message — critical for diagnosing LLM failures.
+        logger.error("agent_node LLM call failed: %s", e, exc_info=True)
         raise
