@@ -31,8 +31,13 @@ export default function CompaniesPage() {
   const newModalTrapRef = useFocusTrap(showNewModal)
   // SIRI-UX-183: abort controller for handleCreate POST
   const createAbortRef = useRef<AbortController | null>(null)
+  // SIRI-UX-251: abort controller for the post-create reload — prevents setState on unmount
+  const reloadAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
-    return () => { createAbortRef.current?.abort() }
+    return () => {
+      createAbortRef.current?.abort()
+      reloadAbortRef.current?.abort()
+    }
   }, [])
 
   // SIRI-UX-179: accept optional AbortSignal so fetch is cancellable from useEffect cleanup
@@ -96,7 +101,11 @@ export default function CompaniesPage() {
         toast.success(`Company ${newName.trim()} created`)
         setNewName('')
         setShowNewModal(false)
-        await load()
+        // SIRI-UX-251: pass AbortSignal to load() so it's cancellable when component unmounts
+        reloadAbortRef.current?.abort()
+        const reloadController = new AbortController()
+        reloadAbortRef.current = reloadController
+        await load(reloadController.signal)
       } else {
         toast.error('Something went wrong. Try again.')
       }

@@ -361,11 +361,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               <span style={{ fontSize: '0.8rem', color: '#475569' }}>No status changes yet</span>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem', borderLeft: '2px solid #1e293b' }}>
-                {statusHistory.map((entry) => {
+                {statusHistory.map((entry, idx) => {
                   const sc = STATUS_COLORS[entry.status] ?? STATUS_COLORS.todo
                   return (
                     <div
-                      key={`${entry.status}-${entry.changed_at}`}
+                      // SIRI-UX-252: index prefix prevents key collision when same status appears
+                      // multiple times (same root cause as SIRI-UX-217 for log entries)
+                      key={`${idx}-${entry.status}-${entry.changed_at}`}
                       data-testid={`status-history-${entry.status}`}
                       style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >

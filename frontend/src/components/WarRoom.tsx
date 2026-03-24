@@ -18,6 +18,9 @@ interface Run {
   started_at: string
 }
 
+// SIRI-UX-253: module-level constant — was inside component body (recreated on every render)
+const MAX_RUNS = 100
+
 const dotColor: Record<Run['status'], string> = {
   running: 'bg-green-500 animate-pulse',
   done: 'bg-blue-500',
@@ -35,8 +38,6 @@ const badgeStyle: Record<Run['status'], string> = {
 export default function WarRoom() {
   const token = useAuthStore((s) => s.token)
   const companyId = useAgentStore((s) => s.currentCompany?.id)
-  // SIRI-UX-146: cap runs to prevent unbounded memory growth in long sessions
-  const MAX_RUNS = 100
   const [runs, setRuns] = useState<Run[]>([])
   const [isConnecting, setIsConnecting] = useState(true)
   // SIRI-UX-110: tick state forces re-render every 30s so timeAgo stays fresh
