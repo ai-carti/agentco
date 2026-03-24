@@ -137,12 +137,15 @@ export default function AuthPage() {
           Your AI team, working 24/7
         </p>
 
+        {/* SIRI-UX-282: roving tabindex — active tab gets tabIndex=0, inactive gets tabIndex=-1
+            so Tab key doesn't visit both tabs; Arrow keys move between them (APG tabs pattern) */}
         <div role="tablist" style={styles.tabs}>
           <button
             id="tab-signin"
             role="tab"
             aria-selected={tab === 'signin'}
             aria-controls="tabpanel-auth"
+            tabIndex={tab === 'signin' ? 0 : -1}
             style={styles.tab(tab === 'signin')}
             onClick={() => setTab('signin')}
             type="button"
@@ -154,6 +157,7 @@ export default function AuthPage() {
             role="tab"
             aria-selected={tab === 'signup'}
             aria-controls="tabpanel-auth"
+            tabIndex={tab === 'signup' ? 0 : -1}
             style={styles.tab(tab === 'signup')}
             onClick={() => setTab('signup')}
             type="button"
@@ -168,7 +172,8 @@ export default function AuthPage() {
           role="tabpanel"
           aria-labelledby={tab === 'signin' ? 'tab-signin' : 'tab-signup'}
         >
-        {error && <div style={styles.error}>{error}</div>}
+        {/* SIRI-UX-283: role="alert" ensures screen readers auto-announce auth errors (wrong password etc.) */}
+        {error && <div role="alert" style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <input

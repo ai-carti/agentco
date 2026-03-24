@@ -4,6 +4,12 @@ import { useAgentStore } from '../store/agentStore'
 // SIRI-UX-270: focus trap for dialog — matches pattern used in KanbanBoard, CompanyPage, TaskDetailSidebar
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
+// SIRI-UX-285: detect macOS to show ⌘K instead of Ctrl+K in the trigger button
+// Evaluated at call time so test environments that override navigator.platform work correctly.
+function getIsMac(): boolean {
+  return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+}
+
 interface SearchResult {
   id: string
   type: 'company' | 'agent' | 'task'
@@ -179,7 +185,8 @@ export default function GlobalSearch() {
       >
         <span style={{ fontSize: '0.85rem' }}>&#x1F50D;</span>
         <span>Search</span>
-        <kbd style={{ fontSize: '0.65rem', color: '#6b7280', marginLeft: '0.25rem' }}>Ctrl+K</kbd>
+        {/* SIRI-UX-285: platform-adaptive shortcut hint — ⌘K on Mac, Ctrl+K elsewhere */}
+        <kbd style={{ fontSize: '0.65rem', color: '#6b7280', marginLeft: '0.25rem' }}>{getIsMac() ? '⌘K' : 'Ctrl+K'}</kbd>
       </button>
     )
   }

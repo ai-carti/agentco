@@ -270,7 +270,9 @@ export default function WarRoomPage() {
         stopAbortRef.current = null
       }
     }
-  }, [companyId, stopping, runStatus, toast]) // SIRI-UX-273
+  // SIRI-UX-284: removed `runStatus` from deps — it's not read inside handleStop.
+  // Including it caused handleStop to be recreated on every status change unnecessarily.
+  }, [companyId, stopping, toast]) // SIRI-UX-273
 
   // SIRI-UX-266: useMemo MUST be before any early returns (Rules of Hooks)
   // Sort agents: level 0 (CEO) first, then by level
