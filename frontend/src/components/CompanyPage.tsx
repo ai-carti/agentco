@@ -101,6 +101,9 @@ const TAB_LABELS: { id: TabId; label: string }[] = [
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+// SIRI-UX-290: module-level constant — was inside component body (recreated on every render, same bug as SIRI-UX-253)
+const TASK_LIMIT = 50
+
 export default function CompanyPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -115,7 +118,6 @@ export default function CompanyPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [taskOffset, setTaskOffset] = useState(0)
   const [hasMoreTasks, setHasMoreTasks] = useState(false)
-  const TASK_LIMIT = 50
   const [isAgentFormOpen, setIsAgentFormOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('war-room')
   // SIRI-UX-155: focus trap for agent creation modal
@@ -261,7 +263,8 @@ export default function CompanyPage() {
     }
   }, [id, hasMoreTasks, taskOffset, toast])
 
-  const handleCreateAgent = async (data: AgentFormData) => {
+  // SIRI-UX-291: memoize to avoid unnecessary AgentForm re-renders on each CompanyPage render (same pattern as handleLoadMoreTasks/SIRI-UX-277)
+  const handleCreateAgent = useCallback(async (data: AgentFormData) => {
     if (!id) return
     // SIRI-UX-186: abort any previous in-flight request; guard setState on unmounted component
     createAgentAbortRef.current?.abort()
@@ -296,7 +299,7 @@ export default function CompanyPage() {
         createAgentAbortRef.current = null
       }
     }
-  }
+  }, [id, toast])
 
   return (
     <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

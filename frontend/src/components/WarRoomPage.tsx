@@ -445,6 +445,7 @@ export default function WarRoomPage() {
       {wsError && (
         <div
           data-testid="ws-error-banner"
+          role="alert"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -465,6 +466,7 @@ export default function WarRoomPage() {
       {(runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') && (
         <div
           data-testid="run-status-banner"
+          role="alert"
           style={{
             display: 'flex',
             alignItems: 'center',
