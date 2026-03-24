@@ -225,7 +225,8 @@ export default function CompanyPage() {
     }
   }, [id, setCurrentCompany, setTasks, setAgents, setActiveCompanyTab])
 
-  const handleLoadMoreTasks = async () => {
+  // SIRI-UX-277: memoize to avoid unnecessary KanbanBoard re-renders on each CompanyPage render
+  const handleLoadMoreTasks = useCallback(async () => {
     if (!id || !hasMoreTasks) return
     // SIRI-UX-176: abort any previous in-flight load-more request
     loadMoreAbortRef.current?.abort()
@@ -258,7 +259,7 @@ export default function CompanyPage() {
     } finally {
       if (!signal.aborted) loadMoreAbortRef.current = null
     }
-  }
+  }, [id, hasMoreTasks, taskOffset, toast])
 
   const handleCreateAgent = async (data: AgentFormData) => {
     if (!id) return
@@ -361,6 +362,7 @@ export default function CompanyPage() {
           return (
             <button
               key={tab.id}
+              id={`tab-${tab.id}`}
               role="tab"
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
@@ -393,6 +395,7 @@ export default function CompanyPage() {
         <div
           role="tabpanel"
           id="tabpanel-war-room"
+          aria-labelledby="tab-war-room"
           hidden={activeTab !== 'war-room'}
           style={{ height: '100%' }}
         >
@@ -416,6 +419,7 @@ export default function CompanyPage() {
         <div
           role="tabpanel"
           id="tabpanel-board"
+          aria-labelledby="tab-board"
           hidden={activeTab !== 'board'}
           style={{ height: '100%', overflowY: 'auto' }}
         >
@@ -433,6 +437,7 @@ export default function CompanyPage() {
         <div
           role="tabpanel"
           id="tabpanel-agents"
+          aria-labelledby="tab-agents"
           hidden={activeTab !== 'agents'}
           style={{ height: '100%', overflowY: 'auto', padding: '1.25rem' }}
         >

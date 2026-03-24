@@ -571,8 +571,8 @@ class RunService:
             _memory_service_var_ref.reset(_ms_token)
             try:
                 _memory_service.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("MemoryService.close() failed for run %s: %s", run_id, e)
 
     def stop(self, company_id: str, run_id: str, owner_id: str | None = None) -> Run:
         """Останавливает running ран.

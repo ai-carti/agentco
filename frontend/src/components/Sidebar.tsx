@@ -53,7 +53,16 @@ export default function Sidebar() {
       {showBackdrop && (
         <div
           data-testid="sidebar-backdrop"
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
           onClick={() => { setCollapsed(true); localStorage.setItem(STORAGE_KEY, 'true') }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+              setCollapsed(true)
+              localStorage.setItem(STORAGE_KEY, 'true')
+            }
+          }}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 39,
           }}

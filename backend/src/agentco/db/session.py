@@ -20,9 +20,12 @@ Async engine (ALEX-POST-010):
   - AsyncSession re-exported for type hints
   - install sqlalchemy[asyncio] + asyncpg via extras [async]
 """
+import logging
 import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
+
+_log = logging.getLogger(__name__)
 
 # Async SQLAlchemy imports — only available with sqlalchemy[asyncio] + asyncpg
 from sqlalchemy.ext.asyncio import (
@@ -138,9 +141,9 @@ if _is_postgres(_DB_URL):
         _AsyncSessionLocal = async_sessionmaker(
             _async_engine, class_=AsyncSession, expire_on_commit=False
         )
-    except Exception:
+    except Exception as e:
         # asyncpg not installed — async engine unavailable
-        pass
+        _log.debug("async engine unavailable: %s", e)
 
 
 async def get_async_session():
