@@ -1,5 +1,13 @@
 // SIRI-UX-049: shared utilities extracted from KanbanBoard.tsx and TaskDetailSidebar.tsx
 // SIRI-UX-172: unified PRIORITY_COLORS (was duplicated in KanbanBoard and TaskDetailSidebar)
+// SIRI-UX-239: agent status dot colors (moved from AgentCard.tsx local STATUS_COLORS to avoid naming collision)
+export const AGENT_STATUS_DOT_COLORS: Record<string, string> = {
+  idle:    '#6b7280',
+  running: '#22c55e',
+  done:    '#3b82f6',
+  error:   '#ef4444',
+}
+
 export const PRIORITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   high:   { bg: '#7f1d1d', text: '#fca5a5', label: 'High' },
   medium: { bg: '#78350f', text: '#fcd34d', label: 'Medium' },

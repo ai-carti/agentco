@@ -3,14 +3,8 @@ import { type Agent } from '../store/agentStore'
 import Button from './Button'
 // SIRI-UX-106: use shared utilities from taskUtils instead of duplicating locally
 // SIRI-UX-196: use shared relativeTime from taskUtils (eliminates local duplicate)
-import { getAvatarColor, getInitials, relativeTime } from '../utils/taskUtils'
-
-const STATUS_COLORS: Record<string, string> = {
-  idle:    '#6b7280',
-  running: '#22c55e',
-  done:    '#3b82f6',
-  error:   '#ef4444',
-}
+// SIRI-UX-239: use AGENT_STATUS_DOT_COLORS from taskUtils (eliminates local STATUS_COLORS naming collision)
+import { getAvatarColor, getInitials, relativeTime, AGENT_STATUS_DOT_COLORS } from '../utils/taskUtils'
 
 interface AgentCardProps {
   agent: Agent
@@ -22,7 +16,7 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
   const avatarColor = getAvatarColor(agent.name)
   const initials = getInitials(agent.name)
   const isRunning = agent.status === 'running'
-  const statusColor = STATUS_COLORS[agent.status] ?? STATUS_COLORS.idle
+  const statusColor = AGENT_STATUS_DOT_COLORS[agent.status] ?? AGENT_STATUS_DOT_COLORS.idle
 
   return (
     <div
@@ -37,6 +31,9 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+      // SIRI-UX-241: mirror hover highlight on keyboard focus so keyboard users get visual feedback
+      onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
+      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
     >
       {/* Avatar + name + status dot */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
