@@ -171,6 +171,11 @@ async def list_runs(
             status_filter=status_filter,
         )
     except NotFoundError:
+        logger.info(
+            "Access denied: user %s tried to list runs for company %s",
+            current_user.id,
+            company_id,
+        )
         raise HTTPException(status_code=404, detail="Company not found")
     return [RunOut(**r.model_dump()) for r in runs]
 
