@@ -75,12 +75,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
     outline: 'none',
   }
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    e.currentTarget.style.borderColor = '#6c47ff'
-  }
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    e.currentTarget.style.borderColor = '#374151'
-  }
+  // SIRI-UX-265: focus ring via CSS class input-focus-ring, no JS handlers needed
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
@@ -102,8 +97,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          className="input-focus-ring"
           placeholder="Agent name"
           style={inputStyle}
           required
@@ -119,8 +113,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           type="text"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          className="input-focus-ring"
           placeholder="e.g. Frontend Engineer"
           style={inputStyle}
         />
@@ -134,8 +127,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           data-testid="model-select"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          className="input-focus-ring"
           disabled={loadingModels}
           required
           style={{

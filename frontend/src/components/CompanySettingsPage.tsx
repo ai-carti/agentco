@@ -128,8 +128,7 @@ export default function CompanySettingsPage() {
             id="company-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+            className="input-focus-ring"
             style={{
               width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
               border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
@@ -146,8 +145,7 @@ export default function CompanySettingsPage() {
             id="company-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+            className="input-focus-ring"
             rows={3}
             style={{
               width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
@@ -216,8 +214,7 @@ export default function CompanySettingsPage() {
               data-testid="confirm-delete-company-input"
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#f87171' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              className="input-focus-ring-red"
               placeholder={company?.name}
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',

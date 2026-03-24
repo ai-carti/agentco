@@ -187,7 +187,8 @@ export default function CompaniesPage() {
               tabIndex={0}
               aria-label={co.name}
               // SIRI-UX-255: CSS class for hover instead of JS onMouseEnter/onMouseLeave
-              className="companies-item"
+              // SIRI-UX-265: input-focus-ring-blue for focus ring via CSS
+              className="companies-item input-focus-ring-blue"
               onClick={() => navigate(`/companies/${co.id}`)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -205,8 +206,6 @@ export default function CompaniesPage() {
                 transition: 'border-color 0.15s',
                 outline: 'none',
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
             >
               {co.name}
             </div>
@@ -238,8 +237,7 @@ export default function CompaniesPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.outline = 'none' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              className="input-focus-ring-blue"
               placeholder="Company name"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',

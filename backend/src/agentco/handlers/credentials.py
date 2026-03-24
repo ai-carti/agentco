@@ -53,7 +53,9 @@ PROVIDER_TEST_MODEL: dict[str, str] = {
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class CredentialCreate(BaseModel):
-    provider: str
+    # ALEX-TD-182: max_length=50 consistent with ValidateKeyRequest.provider (ALEX-TD-115).
+    # Pydantic allocates the full string before field_validator runs — max_length rejects early.
+    provider: str = Field(max_length=50)
     # ALEX-TD-093: max_length=512 prevents multi-MB payloads.
     # Real API keys (OpenAI sk-..., Anthropic sk-ant-..., Gemini AIza...) are ≤ 200 chars.
     api_key: str = Field(max_length=512)

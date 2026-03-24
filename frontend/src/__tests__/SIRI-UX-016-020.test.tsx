@@ -148,7 +148,7 @@ describe('SIRI-UX-019: LibraryPage Fork/Portfolio hover states', () => {
 })
 
 describe('SIRI-UX-020: AuthPage input focus rings', () => {
-  it('email input shows focus border on focus', async () => {
+  it('email input has CSS focus ring class (not JS inline style)', async () => {
     const { default: AuthPage } = await import('../components/AuthPage')
     render(
       <MemoryRouter>
@@ -156,13 +156,11 @@ describe('SIRI-UX-020: AuthPage input focus rings', () => {
       </MemoryRouter>
     )
     const emailInput = screen.getByLabelText('Email address') as HTMLInputElement
-    fireEvent.focus(emailInput)
-    expect(emailInput.style.borderColor).toBe('rgb(108, 71, 255)')
-    fireEvent.blur(emailInput)
-    expect(emailInput.style.borderColor).toBe('rgb(30, 30, 46)')
+    // Focus ring is now applied via CSS class, not JS onFocus/onBlur handlers
+    expect(emailInput.className).toContain('input-focus-ring')
   })
 
-  it('password input shows focus border on focus', async () => {
+  it('password input has CSS focus ring class (not JS inline style)', async () => {
     const { default: AuthPage } = await import('../components/AuthPage')
     render(
       <MemoryRouter>
@@ -170,9 +168,7 @@ describe('SIRI-UX-020: AuthPage input focus rings', () => {
       </MemoryRouter>
     )
     const passwordInput = screen.getByLabelText('Password') as HTMLInputElement
-    fireEvent.focus(passwordInput)
-    expect(passwordInput.style.borderColor).toBe('rgb(108, 71, 255)')
-    fireEvent.blur(passwordInput)
-    expect(passwordInput.style.borderColor).toBe('rgb(30, 30, 46)')
+    // Focus ring is now applied via CSS class, not JS onFocus/onBlur handlers
+    expect(passwordInput.className).toContain('input-focus-ring')
   })
 })

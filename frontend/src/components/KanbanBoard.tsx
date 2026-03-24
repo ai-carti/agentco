@@ -289,7 +289,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       aria-label={`Task: ${task.title}`}
       // SIRI-UX-246: apply task-grabbed CSS class while dragging for visual feedback
       // SIRI-UX-262: use task-card CSS class for hover (no JS onMouseEnter/onMouseLeave)
-      className={isGrabbed ? 'task-card task-grabbed' : 'task-card'}
+      // SIRI-UX-265: input-focus-ring-blue for focus ring via CSS
+      className={isGrabbed ? 'task-card task-grabbed input-focus-ring-blue' : 'task-card input-focus-ring-blue'}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}
@@ -308,8 +309,6 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         position: 'relative',
         outline: 'none',
       }}
-      onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
-      onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
     >
       {/* Header: title + menu */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
@@ -477,8 +476,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
               autoFocus
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              className="input-focus-ring-blue"
               placeholder="Task title"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
@@ -490,8 +488,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
             <textarea
               value={editDesc}
               onChange={(e) => setEditDesc(e.target.value)}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              className="input-focus-ring-blue"
               placeholder="Description"
               rows={3}
               style={{
@@ -1257,8 +1254,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               value={newTaskTitle}
               onChange={(e) => { setNewTaskTitle(e.target.value); if (titleTouched) setTitleTouched(false) }}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-              onFocus={(e) => { e.currentTarget.style.borderColor = titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#3b82f6' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#374151' }}
+              className="input-focus-ring-blue"
               placeholder="Task title"
               style={{
                 width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
@@ -1279,8 +1275,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               aria-label="Task description"
               value={newTaskDesc}
               onChange={(e) => setNewTaskDesc(e.target.value)}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+              className="input-focus-ring-blue"
               placeholder="Description (optional)"
               rows={3}
               style={{

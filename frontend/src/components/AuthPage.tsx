@@ -175,12 +175,11 @@ export default function AuthPage() {
             id="auth-email"
             aria-label="Email address"
             style={styles.input}
+            className="input-focus-ring"
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#1e1e2e' }}
             required
             autoComplete="email"
           />
@@ -189,12 +188,11 @@ export default function AuthPage() {
             id="auth-password"
             aria-label="Password"
             style={styles.input}
+            className="input-focus-ring"
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#6c47ff' }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#1e1e2e' }}
             required
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           />

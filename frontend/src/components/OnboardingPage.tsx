@@ -208,8 +208,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleUseTemplate()}
-          onFocus={(e) => { e.currentTarget.style.borderColor = '#2563eb' }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = '#374151' }}
+          className="input-focus-ring-blue"
           placeholder="Your company name"
           style={{
             width: '100%',

@@ -47,33 +47,26 @@ describe('SIRI-UX-027: index.css has @keyframes spin defined', () => {
 
 // ─── SIRI-UX-028: AgentForm inputs missing focus ring ──────────────────────
 describe('SIRI-UX-028: AgentForm - inputs have focus ring on focus', () => {
-  it('name input border changes on focus then restores on blur', async () => {
+  it('name input has CSS focus ring class (not JS inline style)', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o'] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     const nameInput = screen.getByTestId('agent-name-input')
-    const initialBorderColor = nameInput.style.borderColor
-    fireEvent.focus(nameInput)
-    const focusedBorderColor = nameInput.style.borderColor
-    // Border color should change on focus (jsdom normalizes hex to rgb)
-    expect(focusedBorderColor).not.toBe('')
-    expect(focusedBorderColor).not.toBe(initialBorderColor)
-    fireEvent.blur(nameInput)
-    expect(nameInput.style.borderColor).toBe(initialBorderColor)
+    // Focus ring is now applied via CSS class, not JS onFocus/onBlur handlers
+    expect(nameInput.className).toContain('input-focus-ring')
   })
 
-  it('role input border changes on focus', async () => {
+  it('role input has CSS focus ring class (not JS inline style)', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ models: ['gpt-4o'] }),
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     const roleInput = screen.getByTestId('agent-role-input')
-    const initialBorderColor = roleInput.style.borderColor
-    fireEvent.focus(roleInput)
-    expect(roleInput.style.borderColor).not.toBe(initialBorderColor)
+    // Focus ring is now applied via CSS class, not JS onFocus/onBlur handlers
+    expect(roleInput.className).toContain('input-focus-ring')
   })
 
   it('name input has outline:none (custom focus ring, not browser default)', async () => {

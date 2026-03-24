@@ -18,12 +18,15 @@ ALEX-POST-012: Redis-backed storage for multi-replica Railway deployments.
 - If REDIS_URL env var is set → slowapi uses Redis storage (storage_uri=REDIS_URL)
 - If REDIS_URL is not set → fallback to in-memory (single-process, resets on restart)
 """
+import logging
 import os
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+
+logger = logging.getLogger(__name__)
 
 
 def _get_rate_limit_key(request: Request) -> str:
@@ -41,8 +44,11 @@ def _get_rate_limit_key(request: Request) -> str:
         try:
             user_id = decode_access_token(token)
             return f"user:{user_id}"
-        except Exception:
-            pass
+        except Exception as exc:
+            # ALEX-TD-183: log unexpected JWT library errors (e.g. API changes after upgrade).
+            # Expected pyjwt.PyJWTError (invalid/expired token) falls through here too,
+            # which is fine — we degrade to IP-based rate limiting gracefully.
+            logger.debug("Unexpected JWT error in _get_rate_limit_key: %s", exc)
     return get_remote_address(request)
 
 

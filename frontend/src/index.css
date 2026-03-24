@@ -336,6 +336,28 @@
   color: #94a3b8;
 }
 
+/* SIRI-UX-264: GlobalSearch result items — CSS hover/active instead of JS background mutation */
+.search-result-item {
+  background: transparent;
+}
+.search-result-item:hover {
+  background: #2d3748;
+}
+.search-result-item--active {
+  background: #374151;
+}
+
+/* SIRI-UX-265: Input focus ring via CSS instead of JS onFocus/onBlur borderColor mutation */
+.input-focus-ring:focus {
+  border-color: #6c47ff !important;
+}
+.input-focus-ring-blue:focus {
+  border-color: #3b82f6 !important;
+}
+.input-focus-ring-red:focus {
+  border-color: #f87171 !important;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

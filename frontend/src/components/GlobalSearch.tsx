@@ -256,9 +256,9 @@ export default function GlobalSearch() {
                           aria-selected={isActive}
                           data-testid={isActive ? 'search-result-active' : undefined}
                           onClick={() => handleSelect(result)}
+                          className={`search-result-item${isActive ? ' search-result-item--active' : ''}`}
                           style={{
                             padding: '0.5rem 1rem', cursor: 'pointer',
-                            background: isActive ? '#374151' : 'transparent',
                             display: 'flex', flexDirection: 'column', gap: '0.1rem',
                           }}
                           onMouseEnter={() => setActiveIndex(flatIdx)}

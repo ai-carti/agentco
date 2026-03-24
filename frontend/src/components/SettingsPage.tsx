@@ -55,12 +55,7 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
-  e.currentTarget.style.borderColor = '#6c47ff'
-}
-const handleInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
-  e.currentTarget.style.borderColor = '#374151'
-}
+// SIRI-UX-265: focus ring via CSS class input-focus-ring, no JS handlers needed
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -312,8 +307,7 @@ export default function SettingsPage() {
               data-testid="settings-company-select"
               value={selectedCompanyId ?? ''}
               onChange={(e) => setSelectedCompanyId(e.target.value)}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
+              className="input-focus-ring"
               style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
             >
               {companies.map((c) => (
@@ -336,8 +330,7 @@ export default function SettingsPage() {
                   data-testid="llm-provider-select"
                   value={provider}
                   onChange={(e) => setProvider(e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
+                  className="input-focus-ring"
                   style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
                   required
                 >
@@ -354,8 +347,7 @@ export default function SettingsPage() {
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value.trim())}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
+                  className="input-focus-ring"
                   placeholder="sk-..."
                   style={inputStyle}
                   required
