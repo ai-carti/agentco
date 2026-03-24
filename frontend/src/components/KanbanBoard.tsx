@@ -9,7 +9,8 @@ import SkeletonCard from './SkeletonCard'
 import { ClipboardList } from 'lucide-react'
 // SIRI-UX-049: import shared utilities to eliminate duplication
 // SIRI-UX-172: PRIORITY_COLORS now imported from taskUtils (was duplicated)
-import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
+// SIRI-UX-268: formatDueDate moved to taskUtils to enable reuse
+import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials as _getInitials, formatDueDate } from '../utils/taskUtils'
 // SIRI-POST-006: focus trap hook for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -24,14 +25,6 @@ const COLUMNS: { id: TaskStatus; label: string }[] = [
 
 // SIRI-UX-049: getInitials imported from taskUtils (alias to avoid breaking existing usages)
 const getInitials = _getInitials
-
-function formatDueDate(dateStr: string): { label: string; overdue: boolean } {
-  const due = new Date(dateStr)
-  const now = new Date()
-  const overdue = due < now
-  const label = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  return { label, overdue }
-}
 
 interface TaskCardProps {
   task: Task

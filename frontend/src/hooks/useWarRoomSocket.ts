@@ -32,10 +32,10 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unmountedRef = useRef(false)
 
-  const addMessage = useWarRoomStore((s) => s.addMessage)
-  const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
-  const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
-  const addCost = useWarRoomStore((s) => s.addCost)
+  // SIRI-UX-267: use getState() inside callback instead of subscribing to action refs
+  // Zustand actions are stable but including them in useCallback deps is semantically incorrect
+  // and causes WS to reconnect if the store is ever rebuilt (e.g. in tests).
+  // Only companyId is a real dep — store actions are always the same functions.
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return
@@ -65,11 +65,15 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
           return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next
         })
 
+        // SIRI-UX-267: access store actions via getState() — avoids stale closure issues
+        // and keeps connect() deps array minimal ([companyId] only)
+        const store = useWarRoomStore.getState()
+
         // Update warRoomStore based on event type
         if (data.type === 'llm_token') {
           // SIRI-POST-004: aggregate real cost from WS events
           if (typeof data.cost === 'number') {
-            addCost(data.cost)
+            store.addCost(data.cost)
           }
         } else if (data.type === 'message') {
           // SIRI-UX-126: validate payload shape before addMessage to avoid undefined fields in Activity Feed
@@ -77,7 +81,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
             // silently skip malformed message event
           } else {
             // SIRI-UX-135: FeedMessage now has optional senderId/targetId — no cast needed
-            addMessage({
+            store.addMessage({
               id: data.id as string,
               senderName: (data.senderName ?? data.sender_name ?? '') as string,
               targetName: (data.targetName ?? data.target_name ?? '') as string,
@@ -89,13 +93,13 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
           }
         } else if (data.type === 'run.completed') {
           // SIRI-UX-079: handle run lifecycle events
-          setRunStatus('done')
+          store.setRunStatus('done')
         } else if (data.type === 'run.failed') {
-          setRunStatus('failed')
+          store.setRunStatus('failed')
         } else if (data.type === 'run.stopped') {
-          setRunStatus('stopped')
+          store.setRunStatus('stopped')
         } else if (data.type === 'run.started' || data.type === 'run.status_changed') {
-          setRunStatus('active')
+          store.setRunStatus('active')
         } else if (data.type === 'agent_status') {
           const VALID_STATUSES: WarRoomAgentStatus[] = ['idle', 'thinking', 'running', 'done']
           const agentId = data.agentId
@@ -107,7 +111,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
           } else if (typeof status !== 'string' || !VALID_STATUSES.includes(status as WarRoomAgentStatus)) {
             // silently skip unknown status
           } else {
-            updateAgentStatus(agentId, status as WarRoomAgentStatus)
+            store.updateAgentStatus(agentId, status as WarRoomAgentStatus)
           }
         }
       } catch {
@@ -144,7 +148,8 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         }
       }, delay)
     }
-  }, [companyId, addMessage, updateAgentStatus, setRunStatus, addCost])
+  // SIRI-UX-267: only companyId is a real dep — store actions accessed via getState() inside callback
+  }, [companyId])
 
   useEffect(() => {
     unmountedRef.current = false

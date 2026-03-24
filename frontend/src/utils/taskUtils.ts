@@ -51,6 +51,16 @@ export function truncate(text: string, max: number): string {
   return text.slice(0, max) + '...'
 }
 
+// SIRI-UX-268: formatDueDate extracted from KanbanBoard.tsx into shared taskUtils
+// so any component (e.g. TaskDetailSidebar) can display due date without duplicating logic
+export function formatDueDate(dateStr: string): { label: string; overdue: boolean } {
+  const due = new Date(dateStr)
+  const now = new Date()
+  const overdue = due < now
+  const label = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return { label, overdue }
+}
+
 // SIRI-UX-196: shared relative-time formatter (eliminates timeAgo/relativeTime duplication)
 export function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()

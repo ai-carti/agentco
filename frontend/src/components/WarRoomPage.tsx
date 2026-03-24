@@ -271,6 +271,10 @@ export default function WarRoomPage() {
     }
   }
 
+  // SIRI-UX-266: useMemo MUST be before any early returns (Rules of Hooks)
+  // Sort agents: level 0 (CEO) first, then by level
+  const sortedAgents = useMemo(() => [...agents].sort((a, b) => a.level - b.level), [agents])
+
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
   if (agents.length === 0 && isConnecting) {
     return (
@@ -342,8 +346,7 @@ export default function WarRoomPage() {
     )
   }
 
-  // Sort agents: level 0 (CEO) first, then by level
-  const sortedAgents = [...agents].sort((a, b) => a.level - b.level)
+
 
   return (
     <div
@@ -503,6 +506,8 @@ export default function WarRoomPage() {
         {/* Agent cards sidebar */}
         <div
           data-testid="agent-panel"
+          // BUG-074: CSS class provides transition with prefers-reduced-motion support
+          className={isMobile ? 'war-room-agent-panel' : undefined}
           style={{
             width: 280,
             borderRight: '1px solid rgba(255,255,255,0.08)',
@@ -510,13 +515,13 @@ export default function WarRoomPage() {
             overflowY: 'auto',
             background: '#0d1321',
             // Mobile: slide-in drawer (SIRI-UX-017)
+            // BUG-074: use CSS class for transition so prefers-reduced-motion can override it
             ...(isMobile ? {
               position: 'absolute',
               top: 0,
               left: agentPanelOpen ? 0 : -290,
               bottom: 0,
               zIndex: 10,
-              transition: 'left 0.25s ease',
               boxShadow: agentPanelOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none',
             } : {}),
           }}

@@ -23,6 +23,17 @@
   animation: spin 0.8s linear infinite;
 }
 
+/* BUG-074: mobile agent drawer transition as CSS class so prefers-reduced-motion can override */
+/* CSS transition (not animation) needs its own reduced-motion rule */
+.war-room-agent-panel {
+  transition: left 0.25s ease, box-shadow 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .war-room-agent-panel {
+    transition: none;
+  }
+}
+
 /* SIRI-UX-228: CSS class for App-level Suspense fallback spinner — same pattern as war-room-connecting-spinner */
 .app-suspense-spinner {
   animation: spin 0.8s linear infinite;
