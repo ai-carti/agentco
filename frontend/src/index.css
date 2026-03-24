@@ -33,6 +33,64 @@
   transition: width 0.3s;
 }
 
+/* SIRI-UX-250: KanbanBoard buttons — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.kanban-new-task-btn {
+  padding: 0.35rem 0.85rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.kanban-new-task-btn:hover {
+  background: #1d4ed8;
+}
+.kanban-menu-item-btn {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  text-align: left;
+}
+.kanban-menu-item-btn:hover {
+  background: #374151;
+}
+.kanban-assign-agent-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #f8fafc;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-align: left;
+  width: 100%;
+}
+.kanban-assign-agent-btn:hover:not(:disabled) {
+  background: #374151;
+}
+.kanban-load-more-btn {
+  padding: 0.4rem 0.75rem;
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.kanban-load-more-btn:hover {
+  background: #374151;
+}
+
 /* SIRI-UX-248: EmptyState CTA button — CSS hover instead of JS onMouseEnter/onMouseLeave */
 .empty-state-cta-btn {
   margin-top: 0.5rem;

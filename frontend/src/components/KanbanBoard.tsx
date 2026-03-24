@@ -354,13 +354,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
               <button
                 key={item}
                 role="menuitem"
-                style={{
-                  display: 'block', width: '100%', padding: '0.4rem 0.75rem',
-                  cursor: 'pointer', fontSize: '0.8rem', background: 'transparent',
-                  border: 'none', color: '#e5e7eb', textAlign: 'left',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                className="kanban-menu-item-btn"
                 onClick={() => handleMenuAction(item)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleMenuAction(item) }}
               >
@@ -614,15 +608,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
                     data-testid={`assign-agent-${agent.id}`}
                     onClick={() => handleAssign(agent.id, agent.name)}
                     disabled={assigning}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      padding: '0.5rem 0.75rem', background: 'transparent',
-                      border: 'none', borderRadius: 6, color: '#f8fafc',
-                      cursor: assigning ? 'not-allowed' : 'pointer', fontSize: '0.8rem', textAlign: 'left',
-                      width: '100%',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    className="kanban-assign-agent-btn"
+                    style={{ cursor: assigning ? 'not-allowed' : 'pointer' }}
                   >
                     <div style={{
                       width: 24, height: 24, borderRadius: '50%',
@@ -1147,19 +1134,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1rem 0' }}>
           <button
             data-testid="kanban-new-task-btn"
+            className="kanban-new-task-btn"
             onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: '0.35rem 0.85rem',
-              background: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
           >
             + New Task
           </button>
@@ -1252,17 +1228,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           <button
             data-testid="kanban-load-more-btn"
             onClick={onLoadMore}
-            style={{
-              padding: '0.45rem 1.5rem',
-              background: '#1f2937',
-              color: '#e5e7eb',
-              border: '1px solid #374151',
-              borderRadius: 6,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#1f2937')}
+            className="kanban-load-more-btn"
           >
             Load more tasks
           </button>
