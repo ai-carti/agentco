@@ -5,6 +5,7 @@ M3-001: Endpoint для получения списка воспоминаний
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
 
@@ -19,6 +20,8 @@ from agentco.orm.user import UserORM
 from agentco.repositories.agent import AgentRepository
 from agentco.repositories.base import NotFoundError
 from agentco.repositories.company import CompanyRepository
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/memory",

@@ -192,6 +192,25 @@
   background: #b91c1c;
 }
 
+/* SIRI-UX-256: AgentCard wrapper — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.agent-card:hover {
+  border-color: rgba(255,255,255,0.3) !important;
+}
+
+/* SIRI-UX-257: SystemPromptEditor template quick-fill buttons — CSS hover instead of JS */
+.system-prompt-tpl-btn {
+  background: #374151;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  color: #d1d5db;
+  border: none;
+  cursor: pointer;
+}
+.system-prompt-tpl-btn:hover {
+  background: #4b5563;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

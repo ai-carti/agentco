@@ -1,4 +1,5 @@
 import ipaddress
+import logging
 import os
 from datetime import datetime
 from enum import Enum
@@ -15,6 +16,8 @@ from ..repositories.base import NotFoundError
 from ..repositories.agent import AgentRepository
 from ..repositories.company import CompanyRepository
 from ..core.rate_limiting import limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/companies/{company_id}/agents/{agent_id}/mcp-servers",

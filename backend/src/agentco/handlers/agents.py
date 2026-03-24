@@ -31,7 +31,9 @@ class AgentCreate(BaseModel):
     role: str | None = Field(default=None, max_length=200)
     system_prompt: str | None = Field(default=None, max_length=10000)
     model: str = Field(default="gpt-4o-mini", max_length=100)
-    parent_agent_id: str | None = None  # POST-006
+    # ALEX-TD-179: max_length=100 prevents oversized parent_agent_id strings reaching
+    # session.get(AgentORM, parent_agent_id). UUIDs are 36 chars; 100 is generous headroom.
+    parent_agent_id: str | None = Field(default=None, max_length=100)  # POST-006
 
     @field_validator("name")
     @classmethod

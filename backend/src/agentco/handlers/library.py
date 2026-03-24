@@ -1,4 +1,5 @@
 """M3-002: Agent Library + Portfolio endpoints."""
+import logging
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -13,6 +14,8 @@ from ..orm.user import UserORM
 from ..orm.agent_library import AgentLibraryORM
 from ..orm.agent import AgentORM
 from ..orm.company import CompanyORM
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["library"])
 

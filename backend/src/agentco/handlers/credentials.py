@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from datetime import datetime
 from typing import Optional
@@ -14,6 +15,8 @@ from ..llm.client import acompletion  # module-level import for testability
 from ..orm.user import UserORM
 from ..repositories.base import NotFoundError, ConflictError
 from ..services.credential import CredentialService
+
+logger = logging.getLogger(__name__)
 
 # ALEX-TD-050: rate limit for validate-key endpoint — each call makes a real LLM request
 _RATE_LIMIT_VALIDATE_KEY = os.getenv("RATE_LIMIT_VALIDATE_KEY", "5/minute")

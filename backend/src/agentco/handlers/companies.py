@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -9,6 +10,8 @@ from ..repositories.base import NotFoundError
 from ..auth.dependencies import get_current_user
 from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
+
+logger = logging.getLogger(__name__)
 
 _RATE_LIMIT_COMPANIES = os.getenv("RATE_LIMIT_COMPANIES", "5/hour")
 # ALEX-TD-156: separate rate limit for read endpoints (list + get)

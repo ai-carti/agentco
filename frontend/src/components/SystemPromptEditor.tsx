@@ -46,22 +46,8 @@ export default function SystemPromptEditor({ value, onChange, id }: SystemPrompt
             type="button"
             data-testid={`template-btn-${tpl.key}`}
             onClick={() => handleTemplateClick(tpl.text)}
-            className="bg-gray-700 hover:bg-gray-600 rounded-full px-3 py-1 text-sm"
-            style={{
-              background: '#374151',
-              borderRadius: '9999px',
-              padding: '0.25rem 0.75rem',
-              fontSize: '0.875rem',
-              color: '#d1d5db',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background = '#4b5563'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.background = '#374151'
-            }}
+            // SIRI-UX-257: CSS class replaces inline styles + JS onMouseEnter/onMouseLeave
+            className="system-prompt-tpl-btn"
           >
             {tpl.label}
           </button>

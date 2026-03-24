@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -10,6 +11,8 @@ from ..auth.dependencies import get_current_user
 from ..orm.user import UserORM
 from ..models.task import TaskStatus
 from ..core.rate_limiting import limiter
+
+logger = logging.getLogger(__name__)
 
 # ALEX-TD-122: rate limits for task mutable endpoints
 _RATE_LIMIT_TASKS_CREATE = os.getenv("RATE_LIMIT_TASKS_CREATE", "60/minute")

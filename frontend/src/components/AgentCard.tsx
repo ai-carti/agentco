@@ -21,6 +21,8 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
   return (
     <div
       data-testid={`agent-card-${agent.id}`}
+      // SIRI-UX-256: use CSS class for hover (replaces JS onMouseEnter/onMouseLeave)
+      className="agent-card"
       style={{
         background: '#1f2937',
         border: '1px solid rgba(255,255,255,0.1)',
@@ -29,8 +31,6 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
         position: 'relative',
         transition: 'border-color 0.15s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
       // SIRI-UX-241: mirror hover highlight on keyboard focus so keyboard users get visual feedback
       onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
       onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
