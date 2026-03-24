@@ -30,7 +30,12 @@ class RegisterRequest(BaseModel):
     # pydantic EmailStr already enforces this at runtime, but adding max_length makes the
     # constraint visible in OpenAPI schema — important for client-side validation and docs.
     email: EmailStr = Field(max_length=254)
-    password: str
+    # ALEX-TD-170: max_length=128 as an early-rejection guard.
+    # Without it, Pydantic allocates the full string (e.g. 100MB) before the custom
+    # validator can check byte length. With max_length=128, Pydantic rejects at field
+    # validation — before the custom validator runs and before the string is hashed.
+    # 128 > 72 (bcrypt limit) so the custom validator still enforces the bcrypt guard.
+    password: str = Field(max_length=128)
 
     @field_validator("password")
     @classmethod

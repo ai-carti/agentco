@@ -2,7 +2,7 @@
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -29,7 +29,9 @@ _RATE_LIMIT_LIBRARY_READ = os.getenv("RATE_LIMIT_LIBRARY_READ", "60/minute")
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class LibrarySaveRequest(BaseModel):
-    agent_id: str
+    # ALEX-TD-172: max_length prevents 10KB+ agent_id strings reaching the DB lookup.
+    # UUIDs are 36 chars; set 100 to allow future ID formats with generous headroom.
+    agent_id: str = Field(max_length=100)
 
 
 class LibraryAgentOut(BaseModel):
@@ -44,7 +46,8 @@ class LibraryAgentOut(BaseModel):
 
 
 class ForkRequest(BaseModel):
-    library_agent_id: str
+    # ALEX-TD-172: max_length guard — consistent with LibrarySaveRequest.agent_id
+    library_agent_id: str = Field(max_length=100)
 
 
 class AgentOut(BaseModel):
