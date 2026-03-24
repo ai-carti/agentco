@@ -497,6 +497,10 @@ class RunService:
                     # ALEX-TD-088: persist accumulated token/cost metrics from LangGraph state
                     run_orm.total_tokens = final_state.get("total_tokens", 0)
                     run_orm.total_cost_usd = final_state.get("total_cost_usd", 0.0)
+                    # ALEX-TD-193: persist error field when graph returns status=failed/error
+                    # (loop_detected, cost_limit_exceeded, token_limit_exceeded).
+                    # Without this, run_orm.error stays None in DB → frontend shows empty error field.
+                    run_orm.error = final_state.get("error")
                     update_session.commit()
                 else:
                     # BUG-068: run was deleted while graph was running — metrics are lost

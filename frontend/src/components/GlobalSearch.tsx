@@ -25,6 +25,8 @@ export default function GlobalSearch() {
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // SIRI-UX-288: scroll active item into view when navigating with arrow keys
+  const listboxRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   // SIRI-UX-270: focus trap — prevents Tab/Shift+Tab from leaving the dialog
   const dialogTrapRef = useFocusTrap(open)
@@ -166,6 +168,15 @@ export default function GlobalSearch() {
     }
   }, [activeIndex, flatResults, handleSelect])
 
+  // SIRI-UX-288: scroll the active search option into the visible listbox area when activeIndex changes
+  useEffect(() => {
+    if (activeIndex < 0) return
+    const el = document.getElementById(`search-option-${activeIndex}`)
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' })
+    }
+  }, [activeIndex])
+
   const groupLabels: Record<string, string> = {
     company: 'Companies',
     agent: 'Agents',
@@ -254,6 +265,7 @@ export default function GlobalSearch() {
           {results.length > 0 && (
             <div
               id="global-search-listbox"
+              ref={listboxRef}
               data-testid="search-results"
               role="listbox"
               aria-label="Search results"

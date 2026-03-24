@@ -53,7 +53,9 @@ async def test_execute_run_persists_error_field_on_loop_detected(tmp_path, monke
     run_orm.error must be persisted to DB (previously stayed None)."""
     from agentco.services.run import RunService
     from agentco.orm.run import RunORM
-    from agentco.core.event_bus import EventBus, InProcessEventBus
+    from agentco.orm.company import CompanyORM
+    from agentco.orm.user import UserORM
+    from agentco.core.event_bus import InProcessEventBus
 
     bus = InProcessEventBus()
     monkeypatch.setattr("agentco.core.event_bus.EventBus._instance", bus)
@@ -62,9 +64,17 @@ async def test_execute_run_persists_error_field_on_loop_detected(tmp_path, monke
     Session = sessionmaker(bind=engine)
     run_id = str(uuid.uuid4())
     company_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())
 
-    # Create run in DB
+    # Create required entities (user → company → run)
+    # NOTE: insert user first and flush before company (FK: companies.owner_id → users.id)
     with Session() as s:
+        user = UserORM(id=user_id, email=f"{user_id}@test.com", hashed_password="x")
+        s.add(user)
+        s.flush()
+        company = CompanyORM(id=company_id, name="Test Co", owner_id=user_id)
+        s.add(company)
+        s.flush()
         run_orm = RunORM(id=run_id, company_id=company_id, goal="test goal", status="pending")
         s.add(run_orm)
         s.commit()
@@ -120,7 +130,9 @@ async def test_execute_run_persists_error_field_on_cost_limit_exceeded(monkeypat
     """ALEX-TD-193: cost_limit_exceeded error also must be persisted to run_orm.error."""
     from agentco.services.run import RunService
     from agentco.orm.run import RunORM
-    from agentco.core.event_bus import EventBus, InProcessEventBus
+    from agentco.orm.company import CompanyORM
+    from agentco.orm.user import UserORM
+    from agentco.core.event_bus import InProcessEventBus
 
     bus = InProcessEventBus()
     monkeypatch.setattr("agentco.core.event_bus.EventBus._instance", bus)
@@ -129,8 +141,15 @@ async def test_execute_run_persists_error_field_on_cost_limit_exceeded(monkeypat
     Session = sessionmaker(bind=engine)
     run_id = str(uuid.uuid4())
     company_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())
 
     with Session() as s:
+        user = UserORM(id=user_id, email=f"{user_id}@test.com", hashed_password="x")
+        s.add(user)
+        s.flush()
+        company = CompanyORM(id=company_id, name="Test Co", owner_id=user_id)
+        s.add(company)
+        s.flush()
         run_orm = RunORM(id=run_id, company_id=company_id, goal="cost test", status="pending")
         s.add(run_orm)
         s.commit()
@@ -198,9 +217,13 @@ def test_delete_agent_nullifies_tasks_correctly(monkeypatch):
 
     with Session() as s:
         user = UserORM(id=user_id, email=f"{user_id}@test.com", hashed_password="x")
+        s.add(user)
+        s.flush()
         company = CompanyORM(id=company_id, name="Test Co", owner_id=user_id)
+        s.add(company)
+        s.flush()
         agent = AgentORM(id=agent_id, company_id=company_id, name="Test Agent", model="gpt-4o-mini")
-        s.add_all([user, company, agent])
+        s.add(agent)
         s.flush()
 
         task_ids = [str(uuid.uuid4()) for _ in range(3)]

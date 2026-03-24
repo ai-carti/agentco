@@ -1,3 +1,4 @@
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 from ..models.agent import Agent
 from ..repositories.agent import AgentRepository
@@ -118,9 +119,16 @@ class AgentService:
         agent_orm = self._session.get(self._repo.orm_model, agent_id)
         if agent_orm is None or agent_orm.company_id != company_id:
             raise NotFoundError(f"Agent {agent_id!r} not found")
-        # Nullify FK references in tasks to avoid IntegrityError on DELETE
-        for task_orm in list(agent_orm.tasks):
-            task_orm.agent_id = None
+        # ALEX-TD-194: bulk UPDATE instead of N+1 per-task UPDATE.
+        # Previously: `for task_orm in list(agent_orm.tasks): task_orm.agent_id = None`
+        # issued N separate UPDATEs — one per task. With 100s of tasks → 100s of round-trips.
+        # Fix: single SQL UPDATE covering all tasks of this agent atomically.
+        from ..orm.task import TaskORM
+        self._session.execute(
+            update(TaskORM)
+            .where(TaskORM.agent_id == agent_id)
+            .values(agent_id=None)
+        )
         self._session.flush()
         self._session.delete(agent_orm)
         self._session.commit()

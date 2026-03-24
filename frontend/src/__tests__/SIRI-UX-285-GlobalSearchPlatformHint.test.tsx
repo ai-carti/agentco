@@ -4,7 +4,7 @@
  * Fix: detect navigator.platform/userAgentData and show ⌘K on Mac, Ctrl+K otherwise.
  */
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import GlobalSearch from '../components/GlobalSearch'
 import { useAgentStore } from '../store/agentStore'
