@@ -31,6 +31,18 @@ export function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
+// SIRI-UX-238: formatTimeHMS (moved from WarRoomPage.tsx local formatTime)
+export function formatTimeHMS(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+// SIRI-UX-238: truncate (moved from WarRoomPage.tsx local truncate)
+export function truncate(text: string, max: number): string {
+  if (text.length <= max) return text
+  return text.slice(0, max) + '...'
+}
+
 // SIRI-UX-196: shared relative-time formatter (eliminates timeAgo/relativeTime duplication)
 export function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()

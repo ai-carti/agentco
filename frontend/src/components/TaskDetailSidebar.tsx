@@ -5,7 +5,7 @@ import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
 // SIRI-UX-172: PRIORITY_COLORS now imported from taskUtils (was duplicated)
-import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials } from '../utils/taskUtils'
+import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials, formatTimeHMS } from '../utils/taskUtils'
 // SIRI-UX-150: focus trap for accessibility
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -23,13 +23,9 @@ interface StatusHistoryEntry {
   changed_at: string
 }
 
+// SIRI-UX-238: formatTimestamp replaced with formatTimeHMS from taskUtils
 function formatTimestamp(iso: string): string {
-  try {
-    const d = new Date(iso)
-    return d.toLocaleTimeString('en-US', { hour12: false })
-  } catch {
-    return iso
-  }
+  return formatTimeHMS(iso)
 }
 
 function formatDate(iso: string): string {
