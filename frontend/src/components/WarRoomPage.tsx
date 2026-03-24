@@ -6,18 +6,9 @@ import { useToast } from '../context/ToastContext'
 import { getStoredToken } from '../api/client'
 import Button from './Button'
 import { Moon } from 'lucide-react'
+import { formatTimeHMS, truncate } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
-
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text
-  return text.slice(0, max) + '...'
-}
 
 const statusDotStyle: Record<WarRoomAgentStatus, string> = {
   idle: 'bg-gray-500',
@@ -603,13 +594,14 @@ export default function WarRoomPage() {
                         {[0, 1, 2].map((i) => (
                           <span
                             key={i}
+                            className="war-room-thinking-dot"
                             style={{
                               width: 3,
                               height: 3,
                               borderRadius: '50%',
                               background: '#4ade80',
                               display: 'inline-block',
-                              animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                              animationDelay: `${i * 0.2}s`,
                             }}
                           />
                         ))}
@@ -664,12 +656,12 @@ export default function WarRoomPage() {
               }}
             >
               <span
+                className="war-room-live-dot"
                 style={{
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
                   background: '#4ade80',
-                  animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
                   display: 'inline-block',
                 }}
               />
@@ -742,7 +734,7 @@ export default function WarRoomPage() {
                         data-testid="message-timestamp"
                         style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#475569', fontFamily: 'monospace' }}
                       >
-                        {formatTime(msg.timestamp)}
+                        {formatTimeHMS(msg.timestamp)}
                       </span>
                     </div>
                     <div

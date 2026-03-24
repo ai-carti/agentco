@@ -40,6 +40,15 @@
   50%       { opacity: 0.4; }
 }
 
+/* SIRI-UX-237: CSS classes for thinking-dots and LIVE-dot so prefers-reduced-motion media query applies */
+.war-room-thinking-dot {
+  animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.war-room-live-dot {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* SIRI-UX-085: TaskDetailSidebar slide-in animation (moved from inline <style> tag) */
 @keyframes slideInRight {
   from { transform: translateX(100%); }
