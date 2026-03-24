@@ -176,6 +176,7 @@ export default function CompaniesPage() {
               data-testid={`company-item-${co.id}`}
               role="button"
               tabIndex={0}
+              aria-label={co.name}
               onClick={() => navigate(`/companies/${co.id}`)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {

@@ -41,19 +41,7 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
         <button
           data-testid={ctaTestId}
           onClick={onCTA}
-          style={{
-            marginTop: '0.5rem',
-            padding: '0.5rem 1.25rem',
-            background: '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#1d4ed8')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#2563eb')}
+          className="empty-state-cta-btn"
         >
           {ctaLabel}
         </button>

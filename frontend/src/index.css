@@ -33,6 +33,23 @@
   transition: width 0.3s;
 }
 
+/* SIRI-UX-248: EmptyState CTA button — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.empty-state-cta-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.empty-state-cta-btn:hover {
+  background: #1d4ed8;
+}
+
 /* PRE-DEMO-POLISH: thinking dots bounce animation */
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
