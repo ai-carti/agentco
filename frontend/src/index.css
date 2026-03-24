@@ -28,6 +28,11 @@
   animation: spin 0.8s linear infinite;
 }
 
+/* SIRI-UX-242: CSS class for billing progress fill — same pattern as other CSS-extracted animations */
+.billing-progress-fill {
+  transition: width 0.3s;
+}
+
 /* PRE-DEMO-POLISH: thinking dots bounce animation */
 @keyframes bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }

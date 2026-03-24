@@ -62,3 +62,21 @@ describe('BillingPage (POST-005)', () => {
     expect(rows.length).toBeGreaterThanOrEqual(4)
   })
 })
+
+// ─── SIRI-UX-242: progress fill uses CSS class, not inline transition ─────────
+
+describe('SIRI-UX-242: billing-progress-fill CSS class applied, no inline transition', () => {
+  it('progress fill divs have billing-progress-fill class', () => {
+    wrap(<BillingPage />)
+    const fills = document.querySelectorAll('.billing-progress-fill')
+    expect(fills.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('progress fill divs do NOT have inline transition style', () => {
+    wrap(<BillingPage />)
+    const fills = document.querySelectorAll('.billing-progress-fill')
+    fills.forEach((el) => {
+      expect((el as HTMLElement).style.transition).toBe('')
+    })
+  })
+})

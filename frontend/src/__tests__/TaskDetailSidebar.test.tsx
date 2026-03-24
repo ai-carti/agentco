@@ -316,3 +316,31 @@ describe('BUG-061: stable keys in logs and status history', () => {
     consoleError.mockRestore()
   })
 })
+
+// ─── SIRI-UX-240: formatTimestamp wrapper removed ────────────────────────────
+
+describe('SIRI-UX-240: no formatTimestamp wrapper — calls formatTimeHMS directly', () => {
+  it('renders log timestamp via formatTimeHMS (not a local wrapper)', async () => {
+    // The component must not define a local formatTimestamp function.
+    // We verify that log timestamps still render correctly (formatTimeHMS does the work).
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        logs: [
+          { timestamp: '2026-03-16T10:05:30Z', message: 'direct formatTimeHMS call' },
+        ],
+        status_history: [],
+      }),
+    })
+
+    render(<TaskDetailSidebar {...defaultProps} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('direct formatTimeHMS call')).toBeInTheDocument()
+    })
+
+    // The timestamp bracket text should appear (formatTimeHMS produces HH:MM:SS)
+    const logContainer = screen.getByTestId('task-logs-container')
+    expect(logContainer.textContent).toMatch(/\[.*\]/)
+  })
+})

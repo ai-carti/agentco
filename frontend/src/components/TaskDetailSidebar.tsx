@@ -23,10 +23,7 @@ interface StatusHistoryEntry {
   changed_at: string
 }
 
-// SIRI-UX-238: formatTimestamp replaced with formatTimeHMS from taskUtils
-function formatTimestamp(iso: string): string {
-  return formatTimeHMS(iso)
-}
+// SIRI-UX-240: formatTimestamp wrapper removed — call formatTimeHMS directly
 
 function formatDate(iso: string): string {
   try {
@@ -321,6 +318,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               Execution Log
             </div>
             <div
+              data-testid="task-logs-container"
               style={{
                 background: 'rgba(0,0,0,0.4)',
                 borderRadius: 6,
@@ -345,7 +343,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                   // two log entries share identical timestamp + message strings
                   <div key={`${idx}-${entry.timestamp}-${entry.message}`} style={{ marginBottom: '0.25rem' }}>
                     <span style={{ color: '#64748b', marginRight: '0.5rem' }}>
-                      [{formatTimestamp(entry.timestamp)}]
+                      [{formatTimeHMS(entry.timestamp)}]
                     </span>
                     {entry.message}
                   </div>

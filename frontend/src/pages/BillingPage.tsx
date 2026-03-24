@@ -150,7 +150,7 @@ export default function BillingPage() {
               aria-label="API calls usage"
               style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
             >
-              <div style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.apiCalls / 1000) * 100, 100)}%`, background: '#3b82f6', borderRadius: 2, transition: 'width 0.3s' }} />
+              <div className="billing-progress-fill" style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.apiCalls / 1000) * 100, 100)}%`, background: '#3b82f6', borderRadius: 2 }} />
             </div>
           </div>
           <div style={{ ...cardStyle, flex: 1, minWidth: 160 }}>
@@ -168,7 +168,7 @@ export default function BillingPage() {
               aria-label="Tokens used"
               style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
             >
-              <div style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.tokensUsed / 100000) * 100, 100)}%`, background: '#8b5cf6', borderRadius: 2, transition: 'width 0.3s' }} />
+              <div className="billing-progress-fill" style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.tokensUsed / 100000) * 100, 100)}%`, background: '#8b5cf6', borderRadius: 2 }} />
             </div>
           </div>
         </div>
