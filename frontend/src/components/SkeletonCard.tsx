@@ -1,34 +1,22 @@
 import { useState, useEffect } from 'react'
+import type { CSSProperties } from 'react'
 
-const SHIMMER_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(90deg, rgba(55,65,81,0.5) 25%, rgba(75,85,99,0.5) 50%, rgba(55,65,81,0.5) 75%)',
-  backgroundSize: '200% 100%',
-  animation: 'shimmer 1.5s infinite',
-  borderRadius: 4,
-}
+// SIRI-UX-244: shimmer animation moved to index.css .skeleton-shimmer class
+// (eliminates runtime JS-injected <style> tag — same pattern as SIRI-UX-237/242/243)
 
-const CARD_STYLE: React.CSSProperties = {
+const CARD_STYLE: CSSProperties = {
   background: '#1f2937',
   borderRadius: 8,
   padding: '0.75rem',
   border: '1px solid #374151',
 }
 
-// Inject shimmer keyframes into document once
-let injected = false
-function injectShimmerKeyframes() {
-  if (injected || typeof document === 'undefined') return
-  const style = document.createElement('style')
-  style.textContent = `@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`
-  document.head.appendChild(style)
-  injected = true
-}
-
 function ShimmerLine({ width = '100%', height = 12 }: { width?: string | number; height?: number }) {
   return (
     <div
       data-testid="skeleton-line"
-      style={{ ...SHIMMER_STYLE, width, height }}
+      className="skeleton-shimmer"
+      style={{ width, height }}
     />
   )
 }
@@ -37,7 +25,8 @@ function ShimmerCircle({ size, testId = 'skeleton-avatar' }: { size: number; tes
   return (
     <div
       data-testid={testId}
-      style={{ ...SHIMMER_STYLE, width: size, height: size, borderRadius: '50%', flexShrink: 0 }}
+      className="skeleton-shimmer"
+      style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0 }}
     />
   )
 }
@@ -95,7 +84,7 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
   const [timedOut, setTimedOut] = useState(false)
 
   useEffect(() => {
-    injectShimmerKeyframes()
+    // SIRI-UX-244: shimmer is now in index.css — no JS injection needed
     const timer = setTimeout(() => setTimedOut(true), 5000)
     return () => clearTimeout(timer)
   }, [])

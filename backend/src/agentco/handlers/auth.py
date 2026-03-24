@@ -26,7 +26,10 @@ _RATE_LIMIT_ME = os.getenv("RATE_LIMIT_AUTH_ME", "120/minute")
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    # ALEX-TD-167: explicit max_length=254 (RFC 5321 max email length).
+    # pydantic EmailStr already enforces this at runtime, but adding max_length makes the
+    # constraint visible in OpenAPI schema — important for client-side validation and docs.
+    email: EmailStr = Field(max_length=254)
     password: str
 
     @field_validator("password")

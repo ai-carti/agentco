@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 interface EmptyStateProps {
   /** @deprecated Use icon instead. Kept for backward compat. */
@@ -15,6 +15,7 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
   return (
     <div
       data-testid="empty-state"
+      className="empty-state-fadein"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -23,7 +24,6 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
         gap: '0.75rem',
         padding: '4rem 1rem',
         textAlign: 'center',
-        animation: 'fadeIn 0.3s ease-in',
       }}
     >
       {icon ? (
@@ -58,7 +58,7 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
           {ctaLabel}
         </button>
       )}
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      {/* SIRI-UX-243: fadeIn @keyframes moved to index.css .empty-state-fadein class */}
     </div>
   )
 }

@@ -48,13 +48,14 @@ describe('UX-016: SkeletonCard', () => {
   })
 
   // --- Shimmer animation ---
-  it('has shimmer animation style on skeleton elements', () => {
+  // SIRI-UX-244: shimmer moved from inline style to skeleton-shimmer CSS class
+  it('has skeleton-shimmer CSS class on shimmer elements', () => {
     render(<SkeletonCard variant="agent" />)
     const card = screen.getByTestId('skeleton-agent')
     const shimmerEl = card.querySelector('[data-testid="skeleton-line"]') as HTMLElement
     expect(shimmerEl).toBeInTheDocument()
-    // Check animation property is set
-    expect(shimmerEl.style.animation).toContain('shimmer')
+    // Animation is defined in .skeleton-shimmer CSS class (index.css), not inline style
+    expect(shimmerEl.className).toContain('skeleton-shimmer')
   })
 
   // --- Count prop ---

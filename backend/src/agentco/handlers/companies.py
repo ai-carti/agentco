@@ -28,7 +28,9 @@ def _validate_company_name(v: str) -> str:
 
 
 class CompanyCreate(BaseModel):
-    name: str = Field(..., min_length=1)
+    # ALEX-TD-166: max_length=200 mirrors CompanyFromTemplateRequest and prevents megabyte payloads.
+    # Regression fix: ALEX-TD-109 was marked "fixed" in ROADMAP but max_length was never added.
+    name: str = Field(..., min_length=1, max_length=200)
 
     @field_validator("name")
     @classmethod
@@ -37,7 +39,8 @@ class CompanyCreate(BaseModel):
 
 
 class CompanyUpdate(BaseModel):
-    name: str = Field(..., min_length=1)
+    # ALEX-TD-166: max_length=200 mirrors CompanyCreate (see above).
+    name: str = Field(..., min_length=1, max_length=200)
 
     @field_validator("name")
     @classmethod

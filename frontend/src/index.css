@@ -66,6 +66,24 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* SIRI-UX-243: EmptyState fade-in — moved from inline <style> tag to CSS class */
+.empty-state-fadein {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* SIRI-UX-244: SkeletonCard shimmer — moved from JS-injected keyframes to CSS class */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(55,65,81,0.5) 25%, rgba(75,85,99,0.5) 50%, rgba(55,65,81,0.5) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
