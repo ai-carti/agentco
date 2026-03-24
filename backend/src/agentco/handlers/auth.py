@@ -51,7 +51,9 @@ class RegisterResponse(BaseModel):
 class LoginRequest(BaseModel):
     # ALEX-TD-112 fix: EmailStr for consistent validation + str on password with max_length
     # to prevent bcrypt DoS (>72 bytes is truncated — sending 100KB strings is wasteful).
-    email: EmailStr
+    # ALEX-TD-169: max_length=254 mirrors RegisterRequest (RFC 5321 max email length).
+    # Without this, POST /auth/login accepts 10KB+ email strings → DB query with large buffer.
+    email: EmailStr = Field(max_length=254)
     password: str = Field(max_length=128)
 
 

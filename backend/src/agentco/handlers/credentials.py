@@ -158,18 +158,27 @@ def delete_credential(
 # ── LLM providers endpoints ───────────────────────────────────────────────────
 
 @router.get("/api/llm/providers", response_model=list[str])
+@limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def list_llm_providers(
+    request: Request,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    # ALEX-TD-168: rate limit added — list_providers_for_user does JOIN across all
+    # user's companies; without limit an authenticated user can hammer this O(N) query.
     return CredentialService(session).list_providers_for_user(owner_id=current_user.id)
 
 
 @router.get("/api/llm/providers/available")
+@limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def list_available_providers(
+    request: Request,
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Return all supported providers with their model lists (no key required)."""
+    """Return all supported providers with their model lists (no key required).
+
+    ALEX-TD-168: rate limit added — authenticated endpoint, DB read on every request.
+    """
     return {
         "providers": [
             {"provider": provider, "models": models}
