@@ -49,14 +49,14 @@ def test_create_mcp_server_201(auth_client):
 
     resp = client.post(
         _mcp_url(company_id, agent_id),
-        json={"name": "filesystem", "server_url": "http://localhost:3000", "transport": "sse"},
+        json={"name": "filesystem", "server_url": "https://mcp.example.com:3000", "transport": "sse"},
         headers=_auth(token),
     )
     assert resp.status_code == 201
     data = resp.json()
     assert "id" in data
     assert data["name"] == "filesystem"
-    assert data["server_url"] == "http://localhost:3000"
+    assert data["server_url"] == "https://mcp.example.com:3000"
     assert data["transport"] == "sse"
     assert data["enabled"] is True
 
