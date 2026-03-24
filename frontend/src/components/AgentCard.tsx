@@ -31,9 +31,7 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
         position: 'relative',
         transition: 'border-color 0.15s',
       }}
-      // SIRI-UX-241: mirror hover highlight on keyboard focus so keyboard users get visual feedback
-      onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)')}
-      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+      // SIRI-UX-265: keyboard focus highlight handled by CSS .agent-card:focus (replaces JS onFocus/onBlur)
     >
       {/* Avatar + name + status dot */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>

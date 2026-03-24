@@ -60,21 +60,21 @@ describe('SIRI-UX-239: AGENT_STATUS_DOT_COLORS in taskUtils', () => {
 })
 
 describe('SIRI-UX-241: AgentCard card wrapper responds to keyboard focus', () => {
-  it('card wrapper changes border color on focus (keyboard nav)', () => {
+  it('card wrapper has .agent-card CSS class (focus ring handled via CSS :focus, not JS)', () => {
+    // SIRI-UX-265: replaced JS onFocus/onBlur borderColor mutation with CSS .agent-card:focus rule
+    // jsdom cannot compute CSS pseudo-class styles, so we verify the CSS class is present
     renderCard()
     const card = screen.getByTestId('agent-card-a1')
-    const initialBorder = card.style.borderColor
-    fireEvent.focus(card)
-    // After focus, border should change to highlight color (same as hover)
-    expect(card.style.borderColor).not.toBe(initialBorder)
+    expect(card.classList.contains('agent-card')).toBe(true)
   })
 
-  it('card wrapper restores border color on blur', () => {
+  it('card wrapper does not have JS onFocus handler that mutates inline style', () => {
+    // SIRI-UX-265: focus highlight is CSS-only; no inline borderColor mutation on focus
     renderCard()
     const card = screen.getByTestId('agent-card-a1')
     const initialBorder = card.style.borderColor
     fireEvent.focus(card)
-    fireEvent.blur(card)
+    // CSS pseudo-classes don't set inline styles in jsdom — border stays the same
     expect(card.style.borderColor).toBe(initialBorder)
   })
 })

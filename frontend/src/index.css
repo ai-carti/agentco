@@ -207,7 +207,9 @@
 }
 
 /* SIRI-UX-256: AgentCard wrapper — CSS hover instead of JS onMouseEnter/onMouseLeave */
-.agent-card:hover {
+/* SIRI-UX-265: AgentCard keyboard focus — CSS :focus instead of JS onFocus/onBlur */
+.agent-card:hover,
+.agent-card:focus {
   border-color: rgba(255,255,255,0.3) !important;
 }
 
