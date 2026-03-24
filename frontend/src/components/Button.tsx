@@ -7,6 +7,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
 }
 
+// SIRI-UX-249: hover handled by CSS classes in index.css (.btn-primary:hover, etc.)
+// Inline style sets base colors; CSS :hover overrides them — prefers-reduced-motion friendly
 const BASE_STYLES: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -23,26 +25,17 @@ const BASE_STYLES: React.CSSProperties = {
 
 const VARIANT_STYLES: Record<ButtonVariant, React.CSSProperties> = {
   primary: {
-    background: '#2563eb',
     color: '#ffffff',
     border: 'none',
   },
   secondary: {
-    background: 'transparent',
     color: '#e2e8f0',
     border: '1px solid rgba(255,255,255,0.2)',
   },
   danger: {
-    background: '#dc2626',
     color: '#ffffff',
     border: 'none',
   },
-}
-
-const VARIANT_HOVER: Record<ButtonVariant, React.CSSProperties> = {
-  primary: { background: '#1d4ed8' },
-  secondary: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)' },
-  danger: { background: '#b91c1c' },
 }
 
 export default function Button({
@@ -50,8 +43,6 @@ export default function Button({
   children,
   style,
   disabled,
-  onMouseEnter,
-  onMouseLeave,
   className,
   ...props
 }: ButtonProps) {
@@ -64,27 +55,11 @@ export default function Button({
     ...style,
   }
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!disabled) {
-      Object.assign(e.currentTarget.style, VARIANT_HOVER[variant])
-    }
-    onMouseEnter?.(e)
-  }
-
-  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!disabled) {
-      Object.assign(e.currentTarget.style, VARIANT_STYLES[variant])
-    }
-    onMouseLeave?.(e)
-  }
-
   return (
     <button
       className={[variantClass, 'btn', className].filter(Boolean).join(' ')}
       style={mergedStyle}
       disabled={disabled}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...props}
     >
       {children}

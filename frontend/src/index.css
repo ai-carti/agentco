@@ -108,6 +108,27 @@
   outline-offset: 2px;
 }
 
+/* SIRI-UX-249: Button component CSS classes — base + hover, replaces JS onMouseEnter/onMouseLeave */
+.btn-primary {
+  background: #2563eb;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.btn-secondary {
+  background: transparent;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.35) !important;
+}
+.btn-danger {
+  background: #dc2626;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
