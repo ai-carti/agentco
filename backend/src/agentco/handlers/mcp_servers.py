@@ -1,4 +1,6 @@
+import ipaddress
 import os
+import socket
 from datetime import datetime
 from enum import Enum
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -50,6 +52,30 @@ class MCPServerCreate(BaseModel):
         # ALEX-TD-121: only allow http/https to prevent SSRF (file://, ftp://, etc.)
         if not (v.startswith("http://") or v.startswith("https://")):
             raise ValueError("server_url must start with http:// or https://")
+        # ALEX-TD-162: block localhost and private IP ranges to prevent SSRF.
+        # Attackers can use MCP server URLs to probe internal network / cloud metadata.
+        from urllib.parse import urlparse
+        try:
+            parsed = urlparse(v)
+            hostname = parsed.hostname or ""
+        except Exception:
+            raise ValueError("server_url is not a valid URL")
+        # Block by hostname string
+        _blocked_names = {"localhost", "localhost."}
+        if hostname.lower() in _blocked_names or hostname.lower().endswith(".localhost"):
+            raise ValueError("server_url hostname is not allowed (localhost is not allowed for SSRF prevention)")
+        # Block by IP address ranges
+        try:
+            addr = ipaddress.ip_address(hostname)
+            if addr.is_loopback or addr.is_private or addr.is_link_local or addr.is_unspecified:
+                raise ValueError(
+                    f"server_url hostname '{hostname}' is a private/internal IP — not allowed for SSRF prevention"
+                )
+        except ValueError as ip_exc:
+            # If it's already a ValueError from our SSRF check, re-raise
+            if "not allowed" in str(ip_exc) or "private" in str(ip_exc) or "SSRF" in str(ip_exc):
+                raise
+            # hostname is a domain name, not an IP — that's fine
         return v
 
 

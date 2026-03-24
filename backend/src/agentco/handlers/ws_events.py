@@ -203,5 +203,8 @@ async def ws_company_events(
         remaining = _active_ws_connections.get(user_id, 1) - 1
         if remaining <= 0:
             _active_ws_connections.pop(user_id, None)
+            # ALEX-TD-161: clean up per-user lock when last connection closes.
+            # Without this, _ws_connection_locks grows unboundedly with each unique user.
+            _ws_connection_locks.pop(user_id, None)
         else:
             _active_ws_connections[user_id] = remaining

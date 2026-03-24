@@ -1,15 +1,19 @@
+import asyncio
+import os
 from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
 from sqlalchemy.orm import Session
-from ..db.session import get_session
-from ..services.credential import CredentialService
-from ..repositories.base import NotFoundError
+
 from ..auth.dependencies import get_current_user
-from ..orm.user import UserORM
 from ..core.rate_limiting import limiter
-import os
+from ..db.session import get_session
+from ..llm.client import acompletion  # module-level import for testability
+from ..orm.user import UserORM
+from ..repositories.base import NotFoundError
+from ..services.credential import CredentialService
 
 # ALEX-TD-050: rate limit for validate-key endpoint — each call makes a real LLM request
 _RATE_LIMIT_VALIDATE_KEY = os.getenv("RATE_LIMIT_VALIDATE_KEY", "5/minute")
@@ -202,8 +206,7 @@ async def validate_llm_key(
     current_user: UserORM = Depends(get_current_user),
 ):
     """Validate an LLM API key by making a minimal test request."""
-    import os
-    from ..llm.client import acompletion
+    # ALEX-TD-163: `import os` and `from ..llm.client import acompletion` moved to module level
 
     provider = body.provider.lower()
     if provider not in PROVIDER_TEST_MODEL:
@@ -222,8 +225,13 @@ async def validate_llm_key(
         "api_key": body.api_key,
     }
 
+    # ALEX-TD-160: wrap acompletion in wait_for to prevent hung LLM requests from
+    # exhausting server threads. 30s is plenty for a "Hi" / max_tokens=1 test call.
+    _VALIDATE_TIMEOUT = float(os.getenv("VALIDATE_KEY_TIMEOUT_SEC", "30"))
     try:
-        await acompletion(**litellm_kwargs)
+        await asyncio.wait_for(acompletion(**litellm_kwargs), timeout=_VALIDATE_TIMEOUT)
         return ValidateKeyResponse(valid=True)
+    except asyncio.TimeoutError:
+        return ValidateKeyResponse(valid=False, error="Request timed out — LLM API did not respond")
     except Exception as e:
         return ValidateKeyResponse(valid=False, error=str(e))
