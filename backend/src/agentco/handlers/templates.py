@@ -42,7 +42,10 @@ class TemplateOut(BaseModel):
 
 
 class CreateFromTemplateRequest(BaseModel):
-    template_id: str
+    # ALEX-TD-180: max_length=100 prevents 10KB+ template_id strings reaching get_template()
+    # dict-lookup. Template IDs are short slugs ("startup-team" = 12 chars); 100 is generous.
+    # Consistent with other ID fields in the project (max_length=100).
+    template_id: str = Field(max_length=100)
     # ALEX-TD-153: max_length=200 consistent with CompanyCreate (handlers/companies.py)
     name: str = Field(min_length=1, max_length=200)
 
