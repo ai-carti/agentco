@@ -42,7 +42,7 @@ interface TaskCardProps {
   isGrabbed?: boolean
 }
 
-function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd }: TaskCardProps) {
+function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrabbed }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -287,6 +287,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd }: Task
       role="button"
       tabIndex={0}
       aria-label={`Task: ${task.title}`}
+      // SIRI-UX-246: apply task-grabbed CSS class while dragging for visual feedback
+      className={isGrabbed ? 'task-grabbed' : undefined}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}

@@ -1,6 +1,6 @@
 // SIRI-UX-243: EmptyState inline <style> tag duplicates @keyframes fadeIn already in index.css
 // SIRI-UX-244: SkeletonCard injects shimmer keyframes via JS at runtime — should be in index.css CSS class
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import EmptyState from '../components/EmptyState'
 import SkeletonCard from '../components/SkeletonCard'

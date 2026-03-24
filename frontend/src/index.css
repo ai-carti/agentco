@@ -84,6 +84,13 @@
   border-radius: 4px;
 }
 
+/* SIRI-UX-246: visual feedback for grabbed/dragging task card */
+.task-grabbed {
+  opacity: 0.6;
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
