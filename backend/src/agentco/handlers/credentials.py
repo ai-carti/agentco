@@ -200,6 +200,20 @@ class ValidateKeyRequest(BaseModel):
     provider: str = Field(max_length=50)
     api_key: str = Field(max_length=512)
 
+    @field_validator("provider")
+    @classmethod
+    def provider_must_be_known(cls, v: str) -> str:
+        """ALEX-TD-187: validate provider at Pydantic level (422) instead of runtime 200+error.
+
+        CredentialCreate already does this — ValidateKeyRequest was inconsistent.
+        Known providers: openai, anthropic, gemini (must match PROVIDER_TEST_MODEL).
+        """
+        v_normalized = v.lower().strip()
+        if v_normalized not in PROVIDER_TEST_MODEL:
+            allowed = ", ".join(sorted(PROVIDER_TEST_MODEL.keys()))
+            raise ValueError(f"Unknown provider '{v}'. Allowed: {allowed}")
+        return v_normalized
+
     @field_validator("api_key")
     @classmethod
     def api_key_must_not_be_empty(cls, v: str) -> str:
@@ -223,8 +237,11 @@ async def validate_llm_key(
 ):
     """Validate an LLM API key by making a minimal test request."""
     # ALEX-TD-163: `import os` and `from ..llm.client import acompletion` moved to module level
+    # ALEX-TD-187: provider is now validated by ValidateKeyRequest.provider_must_be_known
+    # → will never be unknown here (Pydantic returns 422 before reaching this handler).
+    # Keep runtime check as a defensive guard, but it should never trigger.
 
-    provider = body.provider.lower()
+    provider = body.provider  # already normalized (lowercased) by field_validator
     if provider not in PROVIDER_TEST_MODEL:
         return ValidateKeyResponse(valid=False, error=f"Unknown provider: {body.provider}")
 

@@ -11,6 +11,7 @@ from ..db.session import get_session
 from ..auth.dependencies import get_current_user
 from ..core.rate_limiting import limiter
 from ..orm.user import UserORM
+from sqlalchemy import update
 from ..orm.agent_library import AgentLibraryORM
 from ..orm.agent import AgentORM
 from ..orm.company import CompanyORM
@@ -212,8 +213,15 @@ def fork_agent(
     )
     session.add(new_agent)
 
-    # Increment use_count
-    lib_entry.use_count = (lib_entry.use_count or 0) + 1
+    # ALEX-TD-186: use atomic SQL UPDATE to prevent lost increments under concurrent forks.
+    # ORM-level read-modify-write `lib_entry.use_count + 1` is a race condition:
+    # two concurrent requests can both read use_count=N and both write N+1 → one increment lost.
+    # `UPDATE ... SET use_count = use_count + 1` executes atomically in the DB.
+    session.execute(
+        update(AgentLibraryORM)
+        .where(AgentLibraryORM.id == lib_entry.id)
+        .values(use_count=AgentLibraryORM.use_count + 1)
+    )
 
     session.commit()
     session.refresh(new_agent)

@@ -82,13 +82,19 @@ async def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[st
 
     if use_real_llm:
         # Real LLM path — used in production when AGENTCO_USE_REAL_LLM=true
-        response = await litellm.acompletion(
-            model=os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini"),
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            max_tokens=500,
+        # ALEX-TD-185: wrap in wait_for to prevent hung LLM call from blocking event loop.
+        # agent_node.py already does this (ALEX-TD-158) — mirror that pattern here.
+        _timeout = float(os.environ.get("LLM_CALL_TIMEOUT_SEC", "120"))
+        response = await asyncio.wait_for(
+            litellm.acompletion(
+                model=os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                max_tokens=500,
+            ),
+            timeout=_timeout,
         )
         content = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 50

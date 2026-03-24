@@ -216,7 +216,11 @@ def test_validate_key_anthropic_provider(auth_client):
 
 
 def test_validate_key_unknown_provider_returns_false(auth_client):
-    """POST /api/llm/validate-key с неизвестным провайдером → {valid: false}."""
+    """POST /api/llm/validate-key с неизвестным провайдером → 422.
+
+    ALEX-TD-187: ValidateKeyRequest теперь имеет @field_validator("provider"),
+    аналогично CredentialCreate — неизвестный провайдер возвращает 422 (было 200+error).
+    """
     client, _ = auth_client
     token = _register_and_login(client)
 
@@ -226,6 +230,4 @@ def test_validate_key_unknown_provider_returns_false(auth_client):
         headers=_auth_headers(token),
     )
 
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["valid"] is False
+    assert resp.status_code == 422
