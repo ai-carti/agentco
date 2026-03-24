@@ -3,7 +3,7 @@ from sqlalchemy import select
 from ..models.credential import Credential
 from ..repositories.credential import CredentialRepository
 from ..repositories.company import CompanyRepository
-from ..repositories.base import NotFoundError
+from ..repositories.base import NotFoundError, ConflictError
 from ..orm.credential import CredentialORM
 from . import encryption
 
@@ -24,6 +24,20 @@ class CredentialService:
 
     def create(self, company_id: str, provider: str, api_key: str, owner_id: str) -> Credential:
         self._check_company_owner(company_id, owner_id)
+        # ALEX-TD-175: prevent duplicate (company_id, provider) pairs.
+        # The orchestration layer always picks the first credential for a provider —
+        # duplicates are silent dead weight and confuse users in the UI.
+        existing = self._session.scalars(
+            select(CredentialORM).where(
+                CredentialORM.company_id == company_id,
+                CredentialORM.provider == provider,
+            )
+        ).first()
+        if existing is not None:
+            raise ConflictError(
+                f"Credential for provider '{provider}' already exists in company '{company_id}'. "
+                "Delete the existing credential first to replace it."
+            )
         encrypted = encryption.encrypt(api_key)
         cred = Credential(company_id=company_id, provider=provider, encrypted_api_key=encrypted)
         result = self._repo.add(cred)

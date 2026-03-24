@@ -12,7 +12,7 @@ from ..core.rate_limiting import limiter
 from ..db.session import get_session
 from ..llm.client import acompletion  # module-level import for testability
 from ..orm.user import UserORM
-from ..repositories.base import NotFoundError
+from ..repositories.base import NotFoundError, ConflictError
 from ..services.credential import CredentialService
 
 # ALEX-TD-050: rate limit for validate-key endpoint — each call makes a real LLM request
@@ -106,6 +106,8 @@ def create_credential(
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ConflictError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.get(

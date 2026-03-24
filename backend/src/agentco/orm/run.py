@@ -36,8 +36,16 @@ class RunORM(Base):
 class RunEventORM(Base):
     __tablename__ = "run_events"
 
+    # ALEX-TD-174: compound index (run_id, created_at) for list_events query.
+    # list_events does WHERE run_id = ? ORDER BY created_at — without compound index
+    # SQLite applies filesort on top of the run_id lookup (expensive for high-volume runs).
+    # Leading column run_id enables both the WHERE lookup and the ORDER BY in one index scan.
+    __table_args__ = (
+        Index("ix_run_events_run_created", "run_id", "created_at"),
+    )
+
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
-    # ALEX-TD-004 fix: index for list_events(run_id) query
+    # ALEX-TD-004 fix: index for list_events(run_id) query (single-col kept for backward compat)
     run_id: Mapped[str] = mapped_column(Text, ForeignKey("runs.id"), nullable=False, index=True)
     agent_id: Mapped[str | None] = mapped_column(Text)
     task_id: Mapped[str | None] = mapped_column(Text)
