@@ -92,6 +92,7 @@ export default function LibraryPortfolioPage() {
         <SkeletonCard variant="task" count={3} />
       ) : error ? (
         <div
+          role="alert"
           style={{
             padding: '2rem 1.5rem',
             background: 'rgba(127,29,29,0.1)',
@@ -103,6 +104,7 @@ export default function LibraryPortfolioPage() {
           <p style={{ color: '#f87171', margin: '0 0 0.75rem' }}>Failed to load portfolio</p>
           <button
             onClick={fetchPortfolio}
+            aria-label="Retry loading portfolio"
             style={{
               padding: '0.4rem 1rem',
               background: 'transparent',

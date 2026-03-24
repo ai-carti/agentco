@@ -40,12 +40,14 @@ export default function AgentEditPage() {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        // SIRI-UX-279: guard setState — response may arrive after component unmounts
+        if (controller.signal.aborted) return
         if (data) setAgent(data)
         setLoading(false)
       })
       .catch((err) => {
         if (err?.name === 'AbortError') return
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
   }, [companyId, agentId])

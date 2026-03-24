@@ -62,6 +62,8 @@ export default function WarRoom() {
         return res.json()
       })
       .then((data: Array<Record<string, unknown>> | undefined) => {
+        // SIRI-UX-280: guard setState — response may arrive after component unmounts (abort fired)
+        if (controller.signal.aborted) return
         if (data && data.length > 0) {
           // SIRI-UX-226: backend RunOut uses .id field, Run interface uses run_id
           // Map id → run_id so WS events (which use run_id) can find and update these runs
