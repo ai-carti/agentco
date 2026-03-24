@@ -261,7 +261,6 @@ export default function GlobalSearch() {
                             padding: '0.5rem 1rem', cursor: 'pointer',
                             display: 'flex', flexDirection: 'column', gap: '0.1rem',
                           }}
-                          onMouseEnter={() => setActiveIndex(flatIdx)}
                         >
                           <span style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{result.title}</span>
                           {result.subtitle && (
