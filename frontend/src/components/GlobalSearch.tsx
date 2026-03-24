@@ -34,13 +34,22 @@ export default function GlobalSearch() {
         e.preventDefault()
         setOpen(true)
       }
-      if (e.key === 'Escape') {
-        setOpen(false)
-      }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [])
+
+  // SIRI-UX-275: Escape listener gated on `open` — only active when dialog is open.
+  // Previously, setOpen(false) was called on every Escape regardless of dialog state,
+  // causing spurious state updates when other modals (Kanban, etc.) used Escape to close.
+  useEffect(() => {
+    if (!open) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [open])
 
   // Focus input when opened
   // SIRI-UX-181: store timer ID in ref so cleanup can clearTimeout on unmount/re-render

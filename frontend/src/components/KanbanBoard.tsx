@@ -1300,7 +1300,9 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               <option value="low">Low</option>
             </select>
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              {/* SIRI-UX-276: data-testid for consistent testability — matches cancel-delete-btn pattern */}
               <button
+                data-testid="create-task-cancel-btn"
                 onClick={() => { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') }}
                 style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               >
