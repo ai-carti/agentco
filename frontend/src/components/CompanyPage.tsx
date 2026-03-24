@@ -367,8 +367,8 @@ export default function CompanyPage() {
               tabIndex={isActive ? 0 : -1}
               onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
               onKeyDown={handleKeyDown}
-              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#94a3b8' }}
-              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#64748b' }}
+              // SIRI-UX-263: CSS class for hover instead of JS onMouseEnter/onMouseLeave
+              className="company-tab-btn"
               style={{
                 padding: '10px 18px',
                 background: 'transparent',
@@ -378,7 +378,6 @@ export default function CompanyPage() {
                 fontSize: '0.875rem',
                 fontWeight: isActive ? 600 : 500,
                 cursor: 'pointer',
-                transition: 'color 0.15s, border-color 0.15s',
                 marginBottom: -1,
               }}
             >

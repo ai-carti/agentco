@@ -166,6 +166,20 @@
   outline-offset: 2px;
 }
 
+/* SIRI-UX-262: KanbanBoard TaskCard — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.task-card {
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.task-card:hover {
+  border-color: #6b7280 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-card {
+    transition: none;
+  }
+}
+
 /* SIRI-UX-255: CompaniesPage company list items — CSS hover instead of JS onMouseEnter/onMouseLeave */
 .companies-item:hover {
   border-color: #6b7280 !important;
@@ -312,6 +326,14 @@
 .agent-edit-cancel-btn:hover {
   border-color: #6b7280;
   color: #e5e7eb;
+}
+
+/* SIRI-UX-263: CompanyPage tab nav buttons — CSS hover instead of JS onMouseEnter/onMouseLeave */
+.company-tab-btn {
+  transition: color 0.15s, border-color 0.15s;
+}
+.company-tab-btn:hover:not([aria-selected="true"]) {
+  color: #94a3b8;
 }
 
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */

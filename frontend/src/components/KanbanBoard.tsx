@@ -288,7 +288,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       tabIndex={0}
       aria-label={`Task: ${task.title}`}
       // SIRI-UX-246: apply task-grabbed CSS class while dragging for visual feedback
-      className={isGrabbed ? 'task-grabbed' : undefined}
+      // SIRI-UX-262: use task-card CSS class for hover (no JS onMouseEnter/onMouseLeave)
+      className={isGrabbed ? 'task-card task-grabbed' : 'task-card'}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}
@@ -305,18 +306,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         cursor: 'pointer',
         border: '1px solid #374151',
         position: 'relative',
-        transition: 'box-shadow 0.15s, border-color 0.15s',
         outline: 'none',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#6b7280'
-        // SIRI-UX-218: use box-shadow instead of transform:scale — scale creates a CSS stacking
-        // context which breaks position:fixed children (Edit/Delete/Assign modals).
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.5)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#374151'
-        e.currentTarget.style.boxShadow = 'none'
       }}
       onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
       onBlur={(e) => (e.currentTarget.style.borderColor = '#374151')}
