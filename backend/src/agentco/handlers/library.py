@@ -90,6 +90,7 @@ def save_to_library(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Save an owned agent to the shared library so others can fork it."""
     # Find the agent
     agent = session.get(AgentORM, body.agent_id)
     if agent is None:
@@ -191,6 +192,7 @@ def fork_agent(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Fork a library agent into the specified company. Increments the library agent's use_count."""
     # Check company ownership
     company = session.get(CompanyORM, str(company_id))
     if company is None or company.owner_id != current_user.id:

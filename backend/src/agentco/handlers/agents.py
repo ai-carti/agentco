@@ -87,6 +87,7 @@ def create_agent(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Create a new agent within a company. Optionally specify a parent_agent_id for hierarchy."""
     try:
         return AgentService(session).create(
             company_id=str(company_id),
@@ -132,6 +133,7 @@ def list_agents(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """List agents for a company with pagination (default limit=50, max=500)."""
     # ALEX-TD-142: added @limiter.limit — GET endpoints were unprotected
     # ALEX-TD-207: company_id is uuid.UUID
     try:
@@ -154,6 +156,7 @@ def get_agent(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Retrieve a single agent by ID. Returns 404 if not found or not owned."""
     try:
         return AgentService(session).get(
             company_id=str(company_id),
@@ -174,6 +177,7 @@ def update_agent(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Update agent name, role, system_prompt, or model. Returns 404 if not found."""
     try:
         return AgentService(session).update(
             company_id=str(company_id),
@@ -194,6 +198,7 @@ def delete_agent(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Delete an agent and unassign it from all tasks. Returns 204 on success."""
     try:
         AgentService(session).delete(
             company_id=str(company_id),

@@ -69,6 +69,7 @@ def list_companies(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """List all companies owned by the current user."""
     return [_to_out(c) for c in CompanyService(session).list_all(owner_id=current_user.id)]
 
 
@@ -80,6 +81,7 @@ def create_company(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Create a new company owned by the current user."""
     try:
         return _to_out(CompanyService(session).create(body.name, owner_id=current_user.id))
     except ValueError as e:
@@ -94,6 +96,10 @@ def get_company(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Retrieve a single company by ID (must be owned by current user).
+
+    Returns 404 if the company does not exist or belongs to another user.
+    """
     # ALEX-TD-057: ownership check consolidated in service.get_owned()
     # ALEX-TD-207: company_id is uuid.UUID — FastAPI returns 422 for non-UUID values.
     try:
@@ -112,6 +118,10 @@ def update_company(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Update company name. Only the owner may update their company.
+
+    Returns 404 if not found or not owned; 400 on invalid name.
+    """
     # ALEX-TD-054: single DB hit — ownership check + update merged in service
     # ALEX-TD-207: company_id is uuid.UUID
     try:
@@ -130,6 +140,10 @@ def delete_company(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Delete a company and all its data. Only the owner may delete their company.
+
+    Returns 204 on success; 404 if not found or not owned.
+    """
     # ALEX-TD-054: single DB hit — ownership check + delete merged in service
     # ALEX-TD-207: company_id is uuid.UUID
     try:

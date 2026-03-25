@@ -95,6 +95,7 @@ def create_task(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Create a new task assigned to the given agent within a company."""
     try:
         return TaskService(session).create(
             company_id=str(company_id),
@@ -117,6 +118,7 @@ def list_tasks(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """List tasks for the given agent within a company, with pagination."""
     try:
         return TaskService(session).list_by_agent(
             company_id=str(company_id),
@@ -139,6 +141,7 @@ def get_task(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Retrieve a single task by ID. Returns 404 if not found or not owned."""
     try:
         return TaskService(session).get(
             company_id=str(company_id),
@@ -161,6 +164,7 @@ def update_task(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Update task title and/or description. Returns 404 if not found or not owned."""
     try:
         return TaskService(session).update(
             company_id=str(company_id),
@@ -184,6 +188,7 @@ def update_task_status(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Transition task to a new FSM status. Returns 422 for invalid transitions."""
     try:
         return TaskService(session).update_status(
             company_id=str(company_id),
@@ -208,6 +213,7 @@ def delete_task(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Delete a task. Returns 204 on success; 404 if not found or not owned."""
     try:
         TaskService(session).delete(
             company_id=str(company_id),
