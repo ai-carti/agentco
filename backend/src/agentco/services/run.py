@@ -271,6 +271,7 @@ class RunService:
                     logger.error(
                         "run_dead_letter run_id=%s company_id=%s exhausted after %d attempts error=%s",
                         run_id, company_id, _MAX_RETRIES, exc,
+                        exc_info=True,
                     )
         raise last_exc  # type: ignore[misc]
 

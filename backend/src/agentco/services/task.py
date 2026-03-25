@@ -56,7 +56,8 @@ class TaskService:
     def list_by_agent(self, company_id: str, agent_id: str, owner_id: str, limit: int | None = None, offset: int | None = None) -> list[Task]:
         self._check_company_owner(company_id, owner_id)
         self._check_agent(company_id, agent_id)
-        return self._repo.list(limit=limit, offset=offset, agent_id=agent_id, company_id=company_id)
+        # ALEX-TD-201: use list_by_agent for deterministic created_at ordering
+        return self._repo.list_by_agent(agent_id=agent_id, limit=limit, offset=offset)
 
     def update(self, company_id: str, agent_id: str, task_id: str, owner_id: str,
                title: str | None = None, description: str | None = None) -> Task:
