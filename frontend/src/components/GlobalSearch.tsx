@@ -207,14 +207,10 @@ export default function GlobalSearch() {
     )
   }
 
+  // SIRI-UX-326: removed duplicate data-testid="global-search-trigger" hidden button — was pointless
+  // and caused getByTestId to throw when two elements had the same testid
   return (
-    <>
-      <button
-        data-testid="global-search-trigger"
-        onClick={() => setOpen(true)}
-        style={{ display: 'none' }}
-      />
-      <div
+    <div
         data-testid="global-search-overlay"
         onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
         style={{
@@ -328,6 +324,5 @@ export default function GlobalSearch() {
           )}
         </div>
       </div>
-    </>
   )
 }

@@ -11,7 +11,8 @@ describe('SIRI-UX-321: WarRoom dead-branch removal', () => {
     const { useAgentStore } = await import('../store/agentStore')
 
     useAuthStore.setState({ token: 'tok' })
-    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'Test Co' } as Parameters<typeof useAgentStore.setState>[0]['currentCompany'] })
+    // SIRI-UX-328: use direct Company type cast instead of complex Parameters<...> gymnastics that fails tsc
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'Test Co' } })
 
     // Mock fetch + WebSocket so component renders synchronously
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: false })

@@ -40,8 +40,10 @@ export function getInitials(name: string): string {
 }
 
 // SIRI-UX-238: formatTimeHMS (moved from WarRoomPage.tsx local formatTime)
+// SIRI-UX-327: guard against invalid ISO string — return '--:--:--' as fallback (same pattern as formatDateLong)
 export function formatTimeHMS(iso: string): string {
   const d = new Date(iso)
+  if (isNaN(d.getTime())) return '--:--:--'
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 

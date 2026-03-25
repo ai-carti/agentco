@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Button from './Button'
 import { getStoredToken, BASE_URL } from '../api/client'
@@ -137,7 +137,9 @@ export default function AgentPage() {
     return () => controller.abort()
   }, [companyId, agentId])
 
-  const handleSaveToLibrary = async () => {
+  // SIRI-UX-329: wrap in useCallback so the function is stable across renders
+  // (prevents Save to Library button from remounting on each parent render)
+  const handleSaveToLibrary = useCallback(async () => {
     // SIRI-UX-192: AbortController to guard setState on unmounted component
     saveLibraryAbortRef.current?.abort()
     const controller = new AbortController()
@@ -178,7 +180,8 @@ export default function AgentPage() {
         saveLibraryAbortRef.current = null
       }
     }
-  }
+  // SIRI-UX-329: deps — agentId and toast are stable; savedToLibrary excluded (not read inside)
+  }, [agentId, toast]) // SIRI-UX-329
 
   const visibleHistory = history.slice(0, visibleCount)
   const hasMore = history.length > visibleCount

@@ -217,13 +217,26 @@ export default function AuthPage() {
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           />
 
+          {/* SIRI-UX-324: was a <span> — inaccessible to keyboard/screen reader. Now a disabled <button>
+              so tab navigation finds it and AT announces "Forgot password? dimmed button" */}
           <div style={{ textAlign: 'right', marginTop: '-0.75rem', marginBottom: '1rem' }}>
-            <span
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
               title="Coming soon"
-              style={{ color: '#6b7280', fontSize: '0.8rem', cursor: 'default' }}
+              data-testid="forgot-password-btn"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6b7280',
+                fontSize: '0.8rem',
+                cursor: 'not-allowed',
+                padding: 0,
+              }}
             >
               Forgot password?
-            </span>
+            </button>
           </div>
 
           <button style={styles.button} type="submit" disabled={isLoading}>

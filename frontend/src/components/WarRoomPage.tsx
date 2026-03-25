@@ -774,9 +774,16 @@ export default function WarRoomPage() {
                 </div>
               )
             })}
+            {/* SIRI-UX-325: differentiate empty feed message by runStatus to avoid misleading "waiting" after run ends */}
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', color: '#475569', padding: 40, fontSize: '0.9rem' }}>
-                Waiting for agent activity...
+                {runStatus === 'stopped'
+                  ? '⏹ Run stopped — no activity recorded'
+                  : runStatus === 'done'
+                  ? '✓ Run completed — all messages shown'
+                  : runStatus === 'failed'
+                  ? '✗ Run failed — no messages were sent'
+                  : 'Waiting for agent activity...'}
               </div>
             )}
             {/* SIRI-UX-016: sentinel for auto-scroll */}

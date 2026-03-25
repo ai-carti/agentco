@@ -105,7 +105,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  const handleRun = async () => {
+  // SIRI-UX-330: wrap in useCallback so handleRun is stable across renders
+  // (prevents sidebar-run-btn from remounting on unrelated state changes)
+  const handleRun = useCallback(async () => {
     runAbortRef.current?.abort()
     const controller = new AbortController()
     runAbortRef.current = controller
@@ -141,7 +143,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
         setRunning(false)
       }
     }
-  }
+  }, [companyId, task.id, task.title, setTasks, toast]) // SIRI-UX-330
 
   const statusColor = STATUS_COLORS[task.status] ?? STATUS_COLORS.todo
   const assigneeName = task.assignee_name ?? 'Unassigned'
