@@ -83,6 +83,12 @@ class RunService:
         if company.owner_id != owner_id:
             raise NotFoundError(f"Company {company_id!r} not found")
 
+        # ALEX-TD-211: validate that goal is non-empty after stripping whitespace.
+        # RunCreate Pydantic schema enforces min_length=1 at the API layer, but direct
+        # callers (tests, webhooks, cron) bypass the handler → service must self-validate.
+        if not goal.strip():
+            raise ValueError("goal must not be empty")
+
         run = Run(
             company_id=company_id,
             goal=goal.strip(),
@@ -507,7 +513,21 @@ class RunService:
             try:
                 run_orm = update_session.get(self._repo.orm_model, run_id)
                 if run_orm:
-                    run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
+                    # ALEX-TD-209: guard against race condition where stop() already set
+                    # status="stopped" between ainvoke() completing and this final update.
+                    # stop() sets status="stopped" synchronously (no await) while the
+                    # bg_task.cancel() propagates asynchronously — ainvoke may complete
+                    # before CancelledError is processed. Without this guard, "stopped"
+                    # would be silently overwritten with "done"/"completed".
+                    _terminal = {"completed", "failed", "stopped", "done", "error"}
+                    if run_orm.status not in _terminal:
+                        run_orm.status = final_status if final_status in ("completed", "failed", "error") else "done"
+                    elif run_orm.status == "stopped":
+                        # Run was stopped concurrently — preserve "stopped", only update metrics.
+                        logger.info(
+                            "execute_run: run %s already stopped — preserving status, updating metrics",
+                            run_id,
+                        )
                     run_orm.result = result
                     run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
                     # ALEX-TD-088: persist accumulated token/cost metrics from LangGraph state

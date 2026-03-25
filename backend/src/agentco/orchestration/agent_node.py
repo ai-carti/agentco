@@ -72,7 +72,14 @@ _COST_PER_1K_TOKENS: dict[str, float] = {
 
 
 def _estimate_cost(model: str, total_tokens: int) -> float:
-    """Оценить стоимость по модели и количеству токенов."""
+    """Оценить стоимость по модели и количеству токенов.
+
+    ALEX-TD-210: guard against model=None (state.get("model", "gpt-4o") returns None
+    when the key is explicitly set to None in AgentState — dict.get only uses default
+    for *missing* keys). Without this guard, None.startswith() → AttributeError.
+    """
+    if not model:
+        return (total_tokens / 1000.0) * _COST_PER_1K_TOKENS["default"]
     for prefix, rate in _COST_PER_1K_TOKENS.items():
         if model.startswith(prefix):
             return (total_tokens / 1000.0) * rate
@@ -193,7 +200,8 @@ async def _publish_chunk(state: AgentState, content: str) -> None:
     try:
         bus = EventBus.get()
         # ALEX-TD-068: оцениваем стоимость чанка по длине (1 char ≈ 0.25 токена)
-        model = state.get("model", "gpt-4o")
+        # ALEX-TD-210: use `or "gpt-4o"` to handle explicit model=None in state
+        model = state.get("model") or "gpt-4o"
         chunk_tokens = max(1, len(content) // 4)
         chunk_cost = _estimate_cost(model, chunk_tokens)
         await bus.publish({
@@ -267,7 +275,9 @@ async def agent_node(state: AgentState) -> dict:
     - agent_id: str — ID агента (для EventBus и памяти)
     - company_id: str — ID компании (для EventBus фильтрации)
     """
-    model = state.get("model", "gpt-4o")
+    # ALEX-TD-210: use `or "gpt-4o"` to handle explicit model=None in state
+    # (dict.get only uses default for *missing* keys, not for None values)
+    model = state.get("model") or "gpt-4o"
     messages = await _build_messages_with_memory(state)
     tools = state.get("tools") or []
     tool_handlers: dict[str, ToolHandler] = state.get("tool_handlers") or {}
