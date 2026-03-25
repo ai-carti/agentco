@@ -56,10 +56,10 @@ describe('SIRI-UX-332: LIVE indicator visibility', () => {
     expect(screen.queryByTestId('live-indicator')).not.toBeInTheDocument()
   })
 
-  it('shows LIVE badge when runStatus is idle (standby mode)', () => {
-    // idle means war room is standing by — LIVE is appropriate (waiting for runs)
+  it('hides LIVE badge when runStatus is idle (SIRI-UX-337: no run started yet)', () => {
+    // SIRI-UX-337: idle means no run has started — showing LIVE misleads users
     renderWarRoomWithStatus('idle')
-    expect(screen.getByTestId('live-indicator')).toBeInTheDocument()
+    expect(screen.queryByTestId('live-indicator')).not.toBeInTheDocument()
   })
 })
 

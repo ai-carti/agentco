@@ -49,6 +49,8 @@ describe('SIRI-UX-237: CSS classes for animations (not inline style)', () => {
   it('LIVE-dot uses war-room-live-dot CSS class, not inline animation style', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
+    // SIRI-UX-337: LIVE badge only shows when runStatus !== idle/done/stopped/failed
+    act(() => { useWarRoomStore.getState().setRunStatus('active') })
 
     const liveIndicator = screen.getByTestId('live-indicator')
     const dot = liveIndicator.querySelector('span')

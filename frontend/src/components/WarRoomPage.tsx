@@ -673,8 +673,9 @@ export default function WarRoomPage() {
           >
             Activity Feed
             {/* SIRI-UX-332: hide LIVE badge when run is in a terminal state (done/stopped/failed)
-                Showing LIVE after run ends misleads users into thinking data is still streaming. */}
-            {runStatus !== 'done' && runStatus !== 'stopped' && runStatus !== 'failed' && (
+                SIRI-UX-337: also hide when runStatus === 'idle' (no run started yet) —
+                showing LIVE on initial page load misleads users before any run begins. */}
+            {runStatus !== 'idle' && runStatus !== 'done' && runStatus !== 'stopped' && runStatus !== 'failed' && (
               <span
                 data-testid="live-indicator"
                 style={{
