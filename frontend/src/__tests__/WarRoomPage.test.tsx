@@ -378,7 +378,8 @@ describe('WarRoomPage', () => {
     act(() => { vi.advanceTimersByTime(100) })
 
     // Open the agent panel (find toggle button)
-    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    // SIRI-UX-340: updated testid from 'agent-panel-toggle' to 'mobile-agents-toggle' (correct testid)
+    const toggleBtn = screen.queryByTestId('mobile-agents-toggle') || screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText('Toggle agents panel')
     if (toggleBtn) {
       fireEvent.click(toggleBtn)
     }
@@ -402,7 +403,8 @@ describe('WarRoomPage', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
 
-    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    // SIRI-UX-340: updated testid from 'agent-panel-toggle' to 'mobile-agents-toggle' (correct testid)
+    const toggleBtn = screen.queryByTestId('mobile-agents-toggle') || screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText('Toggle agents panel')
     if (toggleBtn) {
       fireEvent.click(toggleBtn)
       const backdrop = document.querySelector('[aria-label="Close agents panel"]')
@@ -424,7 +426,8 @@ describe('WarRoomPage', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
 
-    const toggleBtn = screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText(/agents/i)
+    // SIRI-UX-340: updated testid from 'agent-panel-toggle' to 'mobile-agents-toggle' (correct testid)
+    const toggleBtn = screen.queryByTestId('mobile-agents-toggle') || screen.queryByTestId('agent-panel-toggle') || screen.queryByLabelText('Toggle agents panel')
     if (toggleBtn) {
       fireEvent.click(toggleBtn)
       const backdrop = document.querySelector('[aria-label="Close agents panel"]')

@@ -340,7 +340,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               {logsLoading ? (
                 <SkeletonCard variant="task" count={2} />
               ) : logsError ? (
-                <span data-testid="logs-error" style={{ color: '#f87171' }}>⚠ Failed to load logs</span>
+                /* SIRI-UX-338: role="alert" so screen readers announce log load failure */
+                <span data-testid="logs-error" role="alert" style={{ color: '#f87171' }}>⚠ Failed to load logs</span>
               ) : logs.length === 0 ? (
                 <span style={{ color: '#475569' }}>No execution log yet</span>
               ) : (

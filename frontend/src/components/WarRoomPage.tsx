@@ -530,8 +530,11 @@ export default function WarRoomPage() {
         )}
 
         {/* Agent cards sidebar */}
+        {/* SIRI-UX-340: role="region" + aria-labelledby so screen reader landmark navigation reaches agents panel */}
         <div
           data-testid="agent-panel"
+          role="region"
+          aria-labelledby="agents-panel-heading"
           // BUG-074: CSS class provides transition with prefers-reduced-motion support
           className={isMobile ? 'war-room-agent-panel' : undefined}
           style={{
@@ -552,7 +555,7 @@ export default function WarRoomPage() {
             } : {}),
           }}
         >
-          <h2 style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+          <h2 id="agents-panel-heading" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
             Agents ({agents.length})
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -648,8 +651,11 @@ export default function WarRoomPage() {
         </div>
 
         {/* Activity Feed */}
+        {/* SIRI-UX-340: role="region" + aria-labelledby so screen reader landmark navigation reaches activity feed */}
         <div
           data-testid="activity-feed"
+          role="region"
+          aria-labelledby="activity-feed-heading"
           style={{
             flex: 1,
             display: 'flex',
@@ -658,6 +664,7 @@ export default function WarRoomPage() {
           }}
         >
           <div
+            id="activity-feed-heading"
             style={{
               padding: '12px 20px',
               borderBottom: '1px solid rgba(255,255,255,0.06)',

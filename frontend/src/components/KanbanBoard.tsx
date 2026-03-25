@@ -977,6 +977,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])
 
   const handleClose = useCallback(() => setSelectedTaskId(null), [])
+  // SIRI-UX-339: stable callback — avoids creating N new function refs per render inside filteredTasks.map
+  const handleCardClick = useCallback((task: Task) => setSelectedTaskId(task.id), [])
 
   // SIRI-UX-119: reset filters when company changes so stale filters don't persist
   useEffect(() => {
@@ -1200,7 +1202,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
                       key={task.id}
                       task={task}
                       companyId={companyId}
-                      onCardClick={(task) => setSelectedTaskId(task.id)}
+                      onCardClick={handleCardClick}
                       onDragStart={handleDragStart}
                       onDragEnd={handleDragEnd}
                       isGrabbed={grabbedTaskId === task.id}
@@ -1307,23 +1309,26 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
+            {/* SIRI-UX-341: use <Button> component for Cancel/Submit — matches Edit/Delete modal pattern */}
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
               {/* SIRI-UX-276: data-testid for consistent testability — matches cancel-delete-btn pattern */}
-              <button
+              <Button
                 data-testid="create-task-cancel-btn"
+                variant="secondary"
                 onClick={() => { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') }}
-                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 data-testid="create-task-submit-btn"
+                variant="primary"
                 onClick={handleCreateTask}
                 disabled={creating || !newTaskTitle.trim()}
-                style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.4rem 0.9rem' }}
               >
                 {creating ? 'Creating…' : 'Create'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
