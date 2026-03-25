@@ -292,7 +292,7 @@ async def run_task(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Создаёт Run для задачи и запускает агента в background.
+    """Create a Run for the given task and start the agent in a background task.
 
     ALEX-TD-207: company_id and task_id are uuid.UUID.
     """
@@ -321,7 +321,7 @@ async def list_task_runs(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Список ранов задачи с пагинацией (ALEX-TD-043: default limit=50, max=500).
+    """List runs for the given task with pagination (ALEX-TD-043: default limit=50, max=500).
 
     ALEX-TD-207: company_id and task_id are uuid.UUID.
     """
@@ -348,7 +348,7 @@ async def get_task_run(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Детали рана задачи.
+    """Get details for a specific task run.
 
     ALEX-TD-207: company_id, task_id, run_id are uuid.UUID.
     """

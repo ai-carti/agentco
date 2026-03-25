@@ -103,6 +103,7 @@ def create_credential(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Store an encrypted LLM API key for the given provider. Returns 409 if provider already has a key."""
     try:
         return CredentialService(session).create(
             company_id=str(company_id),
@@ -129,6 +130,7 @@ def list_credentials(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """List all credentials for the given company with pagination."""
     # ALEX-TD-098: pagination to prevent unbounded result sets
     try:
         return CredentialService(session).list_by_company(
@@ -153,6 +155,7 @@ def delete_credential(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Delete a credential by ID. Returns 404 if not found."""
     try:
         CredentialService(session).delete(
             company_id=str(company_id),
@@ -172,6 +175,7 @@ def list_llm_providers(
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
+    """Return the list of LLM providers that have a saved credential for the current user."""
     # ALEX-TD-168: rate limit added — list_providers_for_user does JOIN across all
     # user's companies; without limit an authenticated user can hammer this O(N) query.
     return CredentialService(session).list_providers_for_user(owner_id=current_user.id)

@@ -645,7 +645,6 @@ class RunService:
         # Обновляем статус → stopped
         run_orm.status = "stopped"
         run_orm.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        self._session.flush()
         self._session.commit()
 
         # ALEX-TD-045: публикуем run.stopped в EventBus
