@@ -327,8 +327,12 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>
               Execution Log
             </div>
+            {/* SIRI-UX-352: aria-live="polite" so screen readers announce new log entries
+                as they stream in during active task execution */}
             <div
               data-testid="task-logs-container"
+              aria-live="polite"
+              aria-label="Execution log"
               style={{
                 background: 'rgba(0,0,0,0.4)',
                 borderRadius: 6,

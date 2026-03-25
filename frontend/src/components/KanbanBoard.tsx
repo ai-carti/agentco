@@ -76,6 +76,25 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
     }
   }, [])
 
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  // SIRI-UX-350: close menu on mousedown outside the task card
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as Node | null
+      if (
+        menuRef.current && !menuRef.current.contains(target) &&
+        menuBtnRef.current && !menuBtnRef.current.contains(target)
+      ) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [menuOpen])
+
   const canRun = task.status === 'todo' || task.status === 'backlog'
 
   // BUG-050 / SIRI-UX-062 / SIRI-UX-070: close menu + modals on Escape key
@@ -309,6 +328,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
           {task.title}
         </div>
         <button
+          ref={menuBtnRef}
           data-testid={`task-menu-${task.id}`}
           onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
           aria-label="Task options"
@@ -324,6 +344,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         </button>
         {menuOpen && (
           <div
+            ref={menuRef}
             role="menu"
             style={{
               position: 'absolute', background: '#1f2937', border: '1px solid #374151',
@@ -1010,8 +1031,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     setGrabbedTaskId(taskId)
   }, [])
 
+  // SIRI-UX-349: also clear dragOverCol on dragEnd — if drag is cancelled (Escape)
+  // without triggering a drop, the column blue border stays forever.
   const handleDragEnd = useCallback(() => {
     setGrabbedTaskId(null)
+    setDragOverCol(null)
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {

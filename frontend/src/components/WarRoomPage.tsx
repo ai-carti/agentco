@@ -453,8 +453,11 @@ export default function WarRoomPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* SIRI-UX-353: aria-label describes the cost counter for screen readers —
+              the dollar sign and raw number alone are not self-descriptive */}
           <span
             data-testid="cost-counter"
+            aria-label={`Total run cost: $${cost.toFixed(4)}`}
             style={{
               fontFamily: 'monospace',
               fontSize: '0.9rem',
