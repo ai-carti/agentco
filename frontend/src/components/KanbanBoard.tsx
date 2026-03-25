@@ -1014,7 +1014,12 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     setDragOverCol(colId)
   }, [])
 
-  const handleDragLeave = useCallback(() => {
+  // SIRI-UX-299: check relatedTarget to avoid clearing dragOverCol when dragging
+  // over a child element inside the same column. Without this check, the blue border
+  // flickers every time the dragged card moves over a TaskCard div inside the column.
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    const related = e.relatedTarget as Node | null
+    if (related && (e.currentTarget as HTMLElement).contains(related)) return
     setDragOverCol(null)
   }, [])
 

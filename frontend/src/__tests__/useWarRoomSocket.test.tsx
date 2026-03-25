@@ -90,13 +90,16 @@ describe('useWarRoomSocket', () => {
     expect(result.current.isConnected).toBe(false)
   })
 
-  it('returns events array', () => {
+  it('SIRI-UX-298: does not return an events array (removed to prevent unnecessary re-renders)', () => {
+    // The events field was removed — hook only returns { isConnected, error }
     const { result } = renderHook(() => useWarRoomSocket('run-1'))
-    expect(Array.isArray(result.current.events)).toBe(true)
+    expect((result.current as { events?: unknown }).events).toBeUndefined()
   })
 
-  it('adds event to events array on message', () => {
-    const { result } = renderHook(() => useWarRoomSocket('run-1'))
+  it('SIRI-UX-298: dispatches message event to warRoomStore (not to events array)', () => {
+    // Verify that WS messages still correctly reach the store after removing events state
+    useWarRoomStore.getState().reset()
+    renderHook(() => useWarRoomSocket('run-1'))
     act(() => { MockWebSocket.instances[0].open() })
     act(() => {
       MockWebSocket.instances[0].triggerMessage({
@@ -110,8 +113,8 @@ describe('useWarRoomSocket', () => {
         timestamp: new Date().toISOString(),
       })
     })
-    expect(result.current.events.length).toBe(1)
-    expect(result.current.events[0].id).toBe('evt-1')
+    const msgs = useWarRoomStore.getState().messages
+    expect(msgs.some((m) => m.id === 'evt-1')).toBe(true)
   })
 
   it('updates warRoomStore on message event (adds to feed)', () => {

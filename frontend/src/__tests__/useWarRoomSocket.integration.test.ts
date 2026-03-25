@@ -123,81 +123,81 @@ describe('useWarRoomSocket — FE-001 integration smoke test', () => {
     unmount()
   })
 
-  it('handles llm_token event — stored in events array', async () => {
+  // SIRI-UX-298: events array removed from hook — verify via warRoomStore instead
+
+  it('handles llm_token event — cost dispatched to warRoomStore', async () => {
     const useWarRoomSocket = await importHook()
-    const { result, unmount } = renderHook(() => useWarRoomSocket('company-1'))
+    const { unmount } = renderHook(() => useWarRoomSocket('company-1'))
 
     act(() => { FakeWebSocket.last.triggerOpen() })
 
-    const tokenEvent = { id: 'evt-1', type: 'llm_token', token: 'Hello', agentId: 'agent-1' }
+    const costBefore = useWarRoomStore.getState().cost
+    const tokenEvent = { id: 'evt-1', type: 'llm_token', token: 'Hello', agentId: 'agent-1', cost: 0.001 }
     act(() => { FakeWebSocket.last.triggerMessage(tokenEvent) })
 
-    expect(result.current.events).toHaveLength(1)
-    expect(result.current.events[0].type).toBe('llm_token')
-    expect(result.current.events[0].id).toBe('evt-1')
+    // SIRI-UX-298: no events array — verify via store
+    expect(useWarRoomStore.getState().cost).toBeCloseTo(costBefore + 0.001, 6)
     unmount()
   })
 
-  it('handles run.started event — stored in events array', async () => {
+  it('handles run.started event — runStatus set to active in store', async () => {
     const useWarRoomSocket = await importHook()
-    const { result, unmount } = renderHook(() => useWarRoomSocket('company-1'))
+    const { unmount } = renderHook(() => useWarRoomSocket('company-1'))
 
     act(() => { FakeWebSocket.last.triggerOpen() })
 
     const runStarted = { id: 'evt-2', type: 'run.started', runId: 'run-99', agentId: 'agent-2' }
     act(() => { FakeWebSocket.last.triggerMessage(runStarted) })
 
-    expect(result.current.events).toHaveLength(1)
-    expect(result.current.events[0].type).toBe('run.started')
+    // SIRI-UX-298: no events array — verify via store
+    expect(useWarRoomStore.getState().runStatus).toBe('active')
     unmount()
   })
 
-  it('handles run.completed event — stored in events array', async () => {
+  it('handles run.completed event — runStatus set to done in store', async () => {
     const useWarRoomSocket = await importHook()
-    const { result, unmount } = renderHook(() => useWarRoomSocket('company-1'))
+    const { unmount } = renderHook(() => useWarRoomSocket('company-1'))
 
     act(() => { FakeWebSocket.last.triggerOpen() })
 
     const runCompleted = { id: 'evt-3', type: 'run.completed', runId: 'run-99', cost: 0.005 }
     act(() => { FakeWebSocket.last.triggerMessage(runCompleted) })
 
-    expect(result.current.events).toHaveLength(1)
-    expect(result.current.events[0].type).toBe('run.completed')
+    // SIRI-UX-298: no events array — verify via store
+    expect(useWarRoomStore.getState().runStatus).toBe('done')
     unmount()
   })
 
-  it('handles run.failed event — stored in events array', async () => {
+  it('handles run.failed event — runStatus set to failed in store', async () => {
     const useWarRoomSocket = await importHook()
-    const { result, unmount } = renderHook(() => useWarRoomSocket('company-1'))
+    const { unmount } = renderHook(() => useWarRoomSocket('company-1'))
 
     act(() => { FakeWebSocket.last.triggerOpen() })
 
     const runFailed = { id: 'evt-4', type: 'run.failed', runId: 'run-99', error: 'timeout' }
     act(() => { FakeWebSocket.last.triggerMessage(runFailed) })
 
-    expect(result.current.events).toHaveLength(1)
-    expect(result.current.events[0].type).toBe('run.failed')
+    // SIRI-UX-298: no events array — verify via store
+    expect(useWarRoomStore.getState().runStatus).toBe('failed')
     unmount()
   })
 
-  it('accumulates multiple events in order', async () => {
+  it('accumulates multiple events — dispatches all to store correctly', async () => {
     const useWarRoomSocket = await importHook()
-    const { result, unmount } = renderHook(() => useWarRoomSocket('company-1'))
+    const { unmount } = renderHook(() => useWarRoomSocket('company-1'))
 
     act(() => { FakeWebSocket.last.triggerOpen() })
 
     act(() => {
       FakeWebSocket.last.triggerMessage({ id: 'e1', type: 'run.started' })
-      FakeWebSocket.last.triggerMessage({ id: 'e2', type: 'llm_token', token: 'Hi' })
+      FakeWebSocket.last.triggerMessage({ id: 'e2', type: 'llm_token', token: 'Hi', cost: 0.0005 })
       FakeWebSocket.last.triggerMessage({ id: 'e3', type: 'run.completed' })
     })
 
-    expect(result.current.events).toHaveLength(3)
-    expect(result.current.events.map((e) => e.type)).toEqual([
-      'run.started',
-      'llm_token',
-      'run.completed',
-    ])
+    // SIRI-UX-298: no events array — all verified via store side effects
+    // run.started → active, run.completed → done (last one wins)
+    expect(useWarRoomStore.getState().runStatus).toBe('done')
+    expect(useWarRoomStore.getState().cost).toBeGreaterThan(0)
     unmount()
   })
 

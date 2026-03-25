@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+// SIRI-UX-298: removed `events` state — it was never consumed by any component
+// and caused a re-render on every WS message. Kept as ref if debugging is ever needed.
 import { useWarRoomStore, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { getStoredToken } from '../api/client'
 
@@ -14,16 +16,11 @@ interface WsEvent {
 }
 
 interface UseWarRoomSocketResult {
-  events: WsEvent[]
   isConnected: boolean
   error: string | null
 }
 
-// SIRI-UX-116: cap events array to prevent unbounded memory growth in long sessions
-const MAX_EVENTS = 500
-
 export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
-  const [events, setEvents] = useState<WsEvent[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,11 +56,6 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
     ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data as string) as WsEvent
-        // SIRI-UX-116: cap events array at MAX_EVENTS to prevent memory leak in long sessions
-        setEvents((prev) => {
-          const next = [...prev, data]
-          return next.length > MAX_EVENTS ? next.slice(next.length - MAX_EVENTS) : next
-        })
 
         // SIRI-UX-267: access store actions via getState() — avoids stale closure issues
         // and keeps connect() deps array minimal ([companyId] only)
@@ -166,5 +158,5 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
     }
   }, [connect])
 
-  return { events, isConnected, error }
+  return { isConnected, error }
 }
