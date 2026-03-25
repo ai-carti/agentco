@@ -6,6 +6,7 @@ BUG-041 — Integration test: POST /api/companies/{company_id}/tasks/{task_id}/r
 
 Run: uv run pytest tests/test_task_run_endpoint.py -v
 """
+import uuid
 import pytest
 from unittest.mock import AsyncMock, patch
 
@@ -116,7 +117,7 @@ def test_task_run_endpoint_404_unknown_task(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.post(
-        f"/api/companies/{company_id}/tasks/nonexistent-task-id/run",
+        f"/api/companies/{company_id}/tasks/{str(uuid.uuid4())}/run",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404

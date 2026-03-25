@@ -6,6 +6,7 @@ ALEX-TD-145: orchestration/nodes.py ceo_node — pending_tasks не очищае
 ALEX-TD-146: services/run.py _execute_agent — "cancelled" в _NO_RETRY_ERRORS мёртвый код
 """
 import asyncio
+import uuid
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -37,7 +38,7 @@ def test_get_agent_returns_404_for_missing(auth_client):
     company = client.post("/api/companies/", json={"name": "TD142 Get Co"}, headers={"Authorization": f"Bearer {token}"})
     company_id = company.json()["id"]
     resp = client.get(
-        f"/api/companies/{company_id}/agents/nonexistent-agent-id",
+        f"/api/companies/{company_id}/agents/{str(uuid.uuid4())}",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 404
@@ -80,7 +81,7 @@ def test_get_run_returns_404_for_missing(auth_client):
     company = client.post("/api/companies/", json={"name": "TD143 Run Co"}, headers={"Authorization": f"Bearer {token}"})
     company_id = company.json()["id"]
     resp = client.get(
-        f"/api/companies/{company_id}/runs/nonexistent-run-id",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 404

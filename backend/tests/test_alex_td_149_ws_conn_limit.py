@@ -3,6 +3,7 @@ ALEX-TD-149: WebSocket connection limit per user.
 
 TDD: test first → red → implement → green.
 """
+import uuid
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
@@ -74,7 +75,7 @@ class TestWsConnectionLimitTracking:
 
                         with TestClient(app) as client:
                             with client.websocket_connect(
-                                f"/ws/companies/comp-001/events?token=valid-token"
+                                f"/ws/companies/{uuid.uuid4()}/events?token=valid-token"
                             ) as ws:
                                 # Should receive close with code 4029
                                 with pytest.raises(Exception):

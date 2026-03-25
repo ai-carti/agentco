@@ -13,6 +13,7 @@ ALEX-TD-055 note: with the TD-055 fix, the server now always performs the WS han
 (websocket.accept()) before closing, so TestClient no longer raises on bad auth.
 Instead we verify the close code: 4001 = Unauthorized, 4003 = Forbidden.
 """
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
@@ -88,6 +89,6 @@ class TestWebSocketOwnership:
 
         code = _ws_close_code(
             client,
-            f"/ws/companies/nonexistent-id/events?token={token}",
+            f"/ws/companies/{uuid.uuid4()}/events?token={token}",
         )
         assert code == 4003, f"Expected close code 4003 (Forbidden), got {code}"

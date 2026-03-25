@@ -4,6 +4,7 @@ ALEX-TD-136: stop_run / patch_stop_run endpoints have rate limiting.
 ALEX-TD-137: list_library / get_portfolio have rate limiting.
 ALEX-TD-138: _get_embedding guard on empty response.data.
 """
+import uuid
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -70,7 +71,7 @@ def test_stop_run_accepts_normal_load(auth_client):
 
     # Stop a non-existent run — should be 404, not 405 (method not allowed) or 500
     resp = client.patch(
-        f"/api/companies/{company_id}/runs/nonexistent-run-id/stop",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}/stop",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 404
@@ -87,7 +88,7 @@ def test_post_stop_run_accepts_normal_load(auth_client):
     company_id = company.json()["id"]
 
     resp = client.post(
-        f"/api/companies/{company_id}/runs/nonexistent-run-id/stop",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}/stop",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 404

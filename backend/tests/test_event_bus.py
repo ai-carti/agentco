@@ -4,6 +4,7 @@ Tests for EventBus (M2-005).
 Unit tests for EventBus class + WebSocket integration tests.
 """
 import asyncio
+import uuid
 import pytest
 from unittest.mock import patch, AsyncMock
 
@@ -208,7 +209,7 @@ class TestWebSocketIntegration:
         from starlette.websockets import WebSocketDisconnect
         client, _ = auth_client
         try:
-            with client.websocket_connect("/ws/companies/fake/events") as ws:
+            with client.websocket_connect(f"/ws/companies/{uuid.uuid4()}/events") as ws:
                 try:
                     ws.receive_text()
                 except WebSocketDisconnect as e:

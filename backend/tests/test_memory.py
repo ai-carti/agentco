@@ -7,6 +7,7 @@ RED: тесты описывают ожидаемое поведение.
 - MemoryService: save_memory, get_memories, inject_memories_into_prompt
 - API GET /agents/{id}/memory
 """
+import uuid
 import pytest
 import struct
 from typing import List
@@ -285,7 +286,7 @@ class TestMemoryAPI:
         company_id = co_resp.json()["id"]
 
         resp = client.get(
-            f"/api/companies/{company_id}/agents/nonexistent-agent/memory",
+            f"/api/companies/{company_id}/agents/{str(uuid.uuid4())}/memory",
             headers=headers,
         )
         assert resp.status_code == 404

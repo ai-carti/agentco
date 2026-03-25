@@ -162,7 +162,7 @@ def list_mcp_servers(
     _resolve_agent(session, str(company_id), str(agent_id), current_user.id)
     servers = session.scalars(
         select(MCPServerORM)
-        .where(MCPServerORM.agent_id == agent_id)
+        .where(MCPServerORM.agent_id == str(agent_id))
         .order_by(MCPServerORM.created_at.asc())
         .offset(offset)
         .limit(limit)
@@ -181,7 +181,7 @@ def delete_mcp_server(
     current_user: UserORM = Depends(get_current_user),
 ):
     _resolve_agent(session, str(company_id), str(agent_id), current_user.id)
-    mcp = session.get(MCPServerORM, server_id)
+    mcp = session.get(MCPServerORM, str(server_id))
     if mcp is None or mcp.agent_id != str(agent_id):
         raise HTTPException(status_code=404, detail="MCP server not found")
     session.delete(mcp)

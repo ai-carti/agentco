@@ -11,6 +11,7 @@ ACs:
 
 Run: uv run pytest tests/test_library.py -v
 """
+import uuid
 import pytest
 
 
@@ -218,7 +219,7 @@ def test_fork_company_not_found(auth_client):
     lib_id = post_resp.json()["id"]
 
     resp = client.post(
-        "/api/companies/nonexistent-company/agents/fork",
+        f"/api/companies/{str(uuid.uuid4())}/agents/fork",
         json={"library_agent_id": lib_id},
         headers=_auth_headers(token),
     )

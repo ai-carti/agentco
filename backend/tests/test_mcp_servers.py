@@ -3,6 +3,7 @@ POST-004: MCP tools foundation — TDD tests.
 
 Run: uv run pytest tests/test_mcp_servers.py -v
 """
+import uuid
 import pytest
 
 
@@ -132,7 +133,7 @@ def test_create_mcp_server_404_unknown_agent(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.post(
-        _mcp_url(company_id, "nonexistent-agent-id"),
+        _mcp_url(company_id, str(uuid.uuid4())),
         json={"name": "x", "server_url": "http://x.local", "transport": "sse"},
         headers=_auth(token),
     )
