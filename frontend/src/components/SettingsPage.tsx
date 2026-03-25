@@ -356,8 +356,10 @@ export default function SettingsPage() {
               </div>
 
               {submitError && (
+                // SIRI-UX-304: role="alert" so screen reader announces validate/save errors automatically
                 <p
                   data-testid="llm-credentials-error"
+                  role="alert"
                   style={{ color: '#f87171', fontSize: '0.8rem', margin: 0 }}
                 >
                   {submitError}
@@ -377,8 +379,10 @@ export default function SettingsPage() {
 
             {/* Credentials fetch error */}
             {credentialsError && (
+              // SIRI-UX-304: role="alert" so screen reader announces credentials load error automatically
               <div
                 data-testid="credentials-fetch-error"
+                role="alert"
                 style={{
                   padding: '0.75rem',
                   background: '#1f2937',

@@ -53,9 +53,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const setTasks = useAgentStore((s) => s.setTasks)
   // SIRI-UX-225: tasks removed from destructure in TaskCard — all mutations now use getState().tasks
   // to avoid stale closure overwriting concurrent store updates (like handleRun already does)
-  // tasks still used for reading in render — keep subscription to trigger re-renders
-  // SIRI-UX-225: subscribe to tasks for re-renders; mutations use getState().tasks to avoid stale closure
-  useAgentStore((s) => s.tasks)
+  // SIRI-UX-225: mutations use getState().tasks to avoid stale closure
+  // SIRI-UX-307: removed orphan useAgentStore((s) => s.tasks) subscription from TaskCard.
+  // Each TaskCard subscribed to the global tasks array, causing N re-renders on every task change.
+  // TaskCard re-renders naturally via parent KanbanBoard when filteredTasks change.
   // SIRI-POST-006: focus trap refs for each modal
   const editTrapRef = useFocusTrap(editOpen)
   const deleteTrapRef = useFocusTrap(deleteOpen)

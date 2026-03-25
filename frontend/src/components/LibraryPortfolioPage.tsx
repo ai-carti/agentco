@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { getStoredToken } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 // SIRI-UX-198: use shared STATUS_COLORS from taskUtils instead of local statusColors
-import { STATUS_COLORS } from '../utils/taskUtils'
+// SIRI-UX-305: formatDateLong for consistent en-US date format
+import { STATUS_COLORS, formatDateLong } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -186,7 +187,8 @@ export default function LibraryPortfolioPage() {
                       {task.title}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
-                      {task.company_name} · {new Date(task.created_at).toLocaleDateString()}
+                      {/* SIRI-UX-305: use formatDateLong for consistent en-US format (replaces system-locale toLocaleDateString) */}
+                      {task.company_name} · {formatDateLong(task.created_at)}
                     </div>
                   </div>
                   <span

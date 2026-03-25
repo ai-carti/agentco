@@ -146,7 +146,8 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           ))}
         </select>
         {error && (
-          <p style={{ color: '#f87171', fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>
+          // SIRI-UX-306: role="alert" so screen reader announces model validation error automatically
+          <p data-testid="agent-form-model-error" role="alert" style={{ color: '#f87171', fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>
         )}
       </div>
 
