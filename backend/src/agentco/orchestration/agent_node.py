@@ -401,7 +401,7 @@ async def agent_node(state: AgentState) -> dict:
                     try:
                         tool_result = await handler(args, state)
                     except Exception as e:
-                        logger.error("Tool handler '%s' failed: %s", tool_name, e)
+                        logger.error("Tool handler '%s' failed: %s", tool_name, e, exc_info=True)
                         tool_result = f"error: {e}"
                 else:
                     tool_result = f"error: unknown tool '{tool_name}'"

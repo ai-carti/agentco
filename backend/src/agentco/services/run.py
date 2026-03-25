@@ -258,8 +258,10 @@ class RunService:
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
-                    # ALEX-TD-061: full jitter to avoid thundering herd
-                    delay = delay + random.uniform(0, 0.1) * delay
+                    # ALEX-TD-196: full jitter (0..delay) to avoid thundering herd.
+                    # Previously added only 0-10% randomness — true full jitter
+                    # distributes uniformly over [0, delay] for much better spread.
+                    delay = random.uniform(0, delay)
                     logger.warning(
                         "run_retry run_id=%s company_id=%s attempt=%d/%d delay=%.2fs error=%s",
                         run_id, company_id, attempt, _MAX_RETRIES, delay, exc,
@@ -530,7 +532,7 @@ class RunService:
             return result
 
         except Exception as exc:
-            logger.error("execute_run failed for %s: %s", run_id, exc)
+            logger.error("execute_run failed for %s: %s", run_id, exc, exc_info=True)
 
             # ALEX-TD-024: use fresh session for error update too
             # ALEX-TD-104: initialize run_orm = None BEFORE inner try to prevent UnboundLocalError.

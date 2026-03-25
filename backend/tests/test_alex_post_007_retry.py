@@ -55,7 +55,7 @@ async def test_execute_agent_retries_on_first_transient_error():
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
-         patch("random.uniform", return_value=0.0):  # ALEX-TD-061: zero jitter for deterministic test
+         patch("random.uniform", side_effect=lambda lo, hi: hi):  # ALEX-TD-061: zero jitter for deterministic test
         result = await svc._execute_agent(
             run_id="run-001",
             task_id="task-001",
@@ -91,7 +91,7 @@ async def test_execute_agent_exhausts_retries_raises_descriptive_error():
     # Override RUN_MAX_RETRIES env to 3 (default)
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
-         patch("random.uniform", return_value=0.0), \
+         patch("random.uniform", side_effect=lambda lo, hi: hi), \
          patch.dict("os.environ", {"RUN_MAX_RETRIES": "3", "RUN_RETRY_BASE_DELAY": "1.0"}):
         with pytest.raises(Exception) as exc_info:
             await svc._execute_agent(
@@ -138,7 +138,7 @@ async def test_execute_agent_succeeds_on_second_attempt():
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
-         patch("random.uniform", return_value=0.0):  # ALEX-TD-061: zero jitter
+         patch("random.uniform", side_effect=lambda lo, hi: hi):  # ALEX-TD-061: zero jitter
         result = await svc._execute_agent(
             run_id="run-003",
             task_id="task-003",
@@ -206,7 +206,7 @@ async def test_execute_agent_exponential_backoff_delays():
 
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", side_effect=record_sleep), \
-         patch("random.uniform", return_value=0.0), \
+         patch("random.uniform", side_effect=lambda lo, hi: hi), \
          patch.dict("os.environ", {"RUN_MAX_RETRIES": "3", "RUN_RETRY_BASE_DELAY": "1.0"}):
         with pytest.raises(Exception):
             await svc._execute_agent(
