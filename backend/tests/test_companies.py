@@ -5,6 +5,7 @@ Tests are written first (red), then code makes them green.
 
 Run: uv run pytest tests/test_companies.py -v
 """
+import uuid
 import pytest
 
 
@@ -119,7 +120,7 @@ def test_get_company_returns_404_for_unknown_id(auth_client):
     """GET /companies/unknown-id → 404."""
     client, _ = auth_client
     token = _register_and_login(client)
-    resp = client.get("/api/companies/nonexistent-id", headers=_auth_headers(token))
+    resp = client.get(f"/api/companies/{str(uuid.uuid4())}", headers=_auth_headers(token))
     assert resp.status_code == 404
 
 
@@ -158,7 +159,7 @@ def test_update_company_404_for_unknown_id(auth_client):
     client, _ = auth_client
     token = _register_and_login(client)
     resp = client.put(
-        "/api/companies/nonexistent",
+        f"/api/companies/{str(uuid.uuid4())}",
         json={"name": "X"},
         headers=_auth_headers(token),
     )

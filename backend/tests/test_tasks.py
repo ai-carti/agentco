@@ -7,6 +7,7 @@ FSM: todo → in_progress → done (+ failed). Остальные переход
 
 Run: uv run pytest tests/test_tasks.py -v
 """
+import uuid
 import pytest
 
 
@@ -114,7 +115,7 @@ def test_create_task_agent_not_found(auth_client):
     token = _register_and_login(client)
     company_id = _create_company(client, token)
 
-    resp = _create_task(client, token, company_id, "nonexistent-agent")
+    resp = _create_task(client, token, company_id, str(uuid.uuid4()))
     assert resp.status_code == 404
 
 
@@ -220,7 +221,7 @@ def test_get_task_returns_404_unknown(auth_client):
     agent_id = _create_agent(client, token, company_id)
 
     resp = client.get(
-        f"/api/companies/{company_id}/agents/{agent_id}/tasks/nonexistent-task",
+        f"/api/companies/{company_id}/agents/{agent_id}/tasks/{str(uuid.uuid4())}",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404
@@ -287,7 +288,7 @@ def test_update_task_returns_404_unknown(auth_client):
     agent_id = _create_agent(client, token, company_id)
 
     resp = client.put(
-        f"/api/companies/{company_id}/agents/{agent_id}/tasks/nonexistent",
+        f"/api/companies/{company_id}/agents/{agent_id}/tasks/{str(uuid.uuid4())}",
         json={"title": "X"},
         headers=_auth_headers(token),
     )

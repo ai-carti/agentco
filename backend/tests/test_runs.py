@@ -13,6 +13,7 @@ AC:
 Run: uv run pytest tests/test_runs.py -v
 """
 import asyncio
+import uuid
 import pytest
 from unittest.mock import AsyncMock, patch
 
@@ -270,7 +271,7 @@ def test_get_run_404(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.get(
-        f"/api/companies/{company_id}/runs/nonexistent-run-id",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404
@@ -315,7 +316,7 @@ def test_stop_nonexistent_run_returns_404(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.post(
-        f"/api/companies/{company_id}/runs/nonexistent-run/stop",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}/stop",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404
@@ -360,7 +361,7 @@ def test_list_events_404_run_not_found(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.get(
-        f"/api/companies/{company_id}/runs/nonexistent/events",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}/events",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404
@@ -407,7 +408,7 @@ def test_legacy_post_run_404_task_not_found(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.post(
-        f"/api/companies/{company_id}/tasks/nonexistent-task-id/run",
+        f"/api/companies/{company_id}/tasks/{str(uuid.uuid4())}/run",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404
@@ -515,7 +516,7 @@ def test_patch_stop_nonexistent_run_404(auth_client):
     company_id = _create_company(client, token)
 
     resp = client.patch(
-        f"/api/companies/{company_id}/runs/nonexistent/stop",
+        f"/api/companies/{company_id}/runs/{str(uuid.uuid4())}/stop",
         headers=_auth_headers(token),
     )
     assert resp.status_code == 404

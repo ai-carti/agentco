@@ -279,7 +279,8 @@ export default function WarRoomPage() {
     }
   // SIRI-UX-284: removed `runStatus` from deps — it's not read inside handleStop.
   // Including it caused handleStop to be recreated on every status change unnecessarily.
-  }, [companyId, stopping, toast]) // SIRI-UX-273
+  // SIRI-UX-320: setRunStatus added to deps to avoid stale closure
+  }, [companyId, stopping, toast, setRunStatus]) // SIRI-UX-273
 
   // SIRI-UX-266: useMemo MUST be before any early returns (Rules of Hooks)
   // Sort agents: level 0 (CEO) first, then by level
@@ -613,7 +614,7 @@ export default function WarRoomPage() {
                       >
                         {[0, 1, 2].map((i) => (
                           <span
-                            key={i}
+                            key={`thinking-dot-${i}`}
                             className="war-room-thinking-dot"
                             style={{
                               width: 3,
