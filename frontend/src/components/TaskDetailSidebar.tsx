@@ -5,7 +5,8 @@ import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
 // SIRI-UX-172: PRIORITY_COLORS now imported from taskUtils (was duplicated)
-import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials, formatTimeHMS } from '../utils/taskUtils'
+// SIRI-UX-302: formatDateLong imported from taskUtils (replaces local formatDate)
+import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials, formatTimeHMS, formatDateLong } from '../utils/taskUtils'
 // SIRI-UX-150: focus trap for accessibility
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -24,14 +25,7 @@ interface StatusHistoryEntry {
 }
 
 // SIRI-UX-240: formatTimestamp wrapper removed — call formatTimeHMS directly
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  } catch {
-    return iso
-  }
-}
+// SIRI-UX-302: local formatDate removed — use formatDateLong from taskUtils
 
 interface TaskDetailSidebarProps {
   task: Task
@@ -294,7 +288,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                 data-testid="sidebar-due-date"
                 style={{ fontSize: '0.875rem', color: isDueDateOverdue ? '#ef4444' : '#94a3b8' }}
               >
-                {formatDate(task.due_date)}
+                {formatDateLong(task.due_date)}
                 {isDueDateOverdue && ' ⚠ Overdue'}
               </span>
             </div>
@@ -376,7 +370,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                         {entry.status.replace('_', ' ')}
                       </span>
                       <span style={{ fontSize: '0.7rem', color: '#475569', marginLeft: 'auto' }}>
-                        {formatDate(entry.changed_at)}
+                        {formatDateLong(entry.changed_at)}
                       </span>
                     </div>
                   )

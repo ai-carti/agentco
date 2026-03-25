@@ -51,6 +51,18 @@ export function truncate(text: string, max: number): string {
   return text.slice(0, max) + '...'
 }
 
+// SIRI-UX-302: formatDateLong — full date display (Month Day, Year) shared across components
+// Replaces local formatDate() in TaskDetailSidebar and raw toLocaleDateString() calls in AgentPage
+export function formatDateLong(iso: string): string {
+  try {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return iso
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return iso
+  }
+}
+
 // SIRI-UX-268: formatDueDate extracted from KanbanBoard.tsx into shared taskUtils
 // so any component (e.g. TaskDetailSidebar) can display due date without duplicating logic
 export function formatDueDate(dateStr: string): { label: string; overdue: boolean } {

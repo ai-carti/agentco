@@ -169,7 +169,9 @@ export default function AgentEditPage() {
       )}
 
       {saveError && (
+        // SIRI-UX-300: role="alert" so screen readers announce the save error automatically
         <p
+          role="alert"
           data-testid="agent-edit-error"
           style={{ color: '#f87171', fontSize: '0.875rem', marginTop: '0.75rem' }}
         >

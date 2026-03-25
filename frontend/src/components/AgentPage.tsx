@@ -6,6 +6,8 @@ import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import { Brain, ScrollText } from 'lucide-react'
+// SIRI-UX-302/303: formatDateLong from shared taskUtils (replaces local toLocaleDateString)
+import { formatDateLong } from '../utils/taskUtils'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -321,7 +323,8 @@ export default function AgentPage() {
                   <span style={{ color: '#e5e7eb', flex: 1 }}>{entry.content}</span>
                   {entry.created_at && (
                     <span style={{ color: '#6b7280', fontSize: '0.75rem', flexShrink: 0 }}>
-                      {new Date(entry.created_at).toLocaleDateString()}
+                      {/* SIRI-UX-303: use shared formatDateLong for consistent locale */}
+                      {formatDateLong(entry.created_at)}
                     </span>
                   )}
                 </div>
@@ -338,7 +341,8 @@ export default function AgentPage() {
         {!historyLoaded ? (
           <SkeletonCard variant="task" count={3} />
         ) : historyError ? (
-          <p data-testid="history-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+          // SIRI-UX-301: role="alert" so screen readers announce the history load error
+          <p role="alert" data-testid="history-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
             ⚠ Failed to load task history
           </p>
         ) : history.length === 0 ? (
@@ -385,7 +389,8 @@ export default function AgentPage() {
                     <span style={{ fontWeight: 500 }}>{item.title}</span>
                     {item.created_at && (
                       <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
-                        {new Date(item.created_at).toLocaleDateString()}
+                        {/* SIRI-UX-303: use shared formatDateLong for consistent locale */}
+                        {formatDateLong(item.created_at)}
                       </span>
                     )}
                   </div>
