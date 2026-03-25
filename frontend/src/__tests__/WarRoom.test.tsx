@@ -262,10 +262,12 @@ describe('WarRoom', () => {
   })
 
   // BUG-043: initial REST fetch GET /api/companies/{id}/runs on mount
+  // BUG-078: waitFor timeout raised to 10 000ms — JSDOM async microtask chain
+  //          (fetch → .json() → setState) can exceed default 1 000ms under load.
   it('fetches initial runs from REST on mount', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [
+      json: () => Promise.resolve([
         {
           run_id: 'r-init',
           agent_name: 'InitAgent',
@@ -273,23 +275,23 @@ describe('WarRoom', () => {
           status: 'running',
           started_at: new Date().toISOString(),
         },
-      ],
+      ]),
     })
     vi.stubGlobal('fetch', fetchMock)
-    renderWarRoom()
+    await act(async () => { renderWarRoom() })
     await waitFor(() => {
       expect(screen.getByText('InitAgent')).toBeInTheDocument()
-    })
+    }, { timeout: 10_000 })
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/companies/comp-1/runs'),
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer jwt-tok-123' }) }),
     )
-  })
+  }, 15_000)
 
   it('shows run cards from REST fetch even before WS open', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [
+      json: () => Promise.resolve([
         {
           run_id: 'r-rest',
           agent_name: 'RestAgent',
@@ -297,14 +299,14 @@ describe('WarRoom', () => {
           status: 'running',
           started_at: new Date().toISOString(),
         },
-      ],
+      ]),
     })
     vi.stubGlobal('fetch', fetchMock)
-    renderWarRoom()
+    await act(async () => { renderWarRoom() })
     await waitFor(() => {
       expect(screen.getByText('RestAgent')).toBeInTheDocument()
-    })
+    }, { timeout: 10_000 })
     // Empty state should NOT show since there are runs
     expect(screen.queryByText(/all quiet here/i)).not.toBeInTheDocument()
-  })
+  }, 15_000)
 })
