@@ -93,11 +93,25 @@ class RedisEventBus:
         return self._client
 
     async def publish(self, event: dict) -> None:
-        """Publish event to Redis channel for the event's company_id."""
+        """Publish event to Redis channel for the event's company_id.
+
+        ALEX-TD-218 fix: wrap Redis publish in try/except so a Redis
+        ConnectionError / TimeoutError never propagates to execute_run and
+        crashes the run. Event delivery is best-effort — same policy as
+        InProcessEventBus (drops event, logs warning on failure).
+        """
         company_id = event.get("company_id", "")
         channel = f"{REDIS_CHANNEL_PREFIX}{company_id}"
-        client = await self._get_client()
-        await client.publish(channel, json.dumps(event))
+        try:
+            client = await self._get_client()
+            await client.publish(channel, json.dumps(event))
+        except Exception as e:
+            logger.warning(
+                "RedisEventBus: publish failed for company %s event %s: %s",
+                company_id,
+                event.get("type"),
+                e,
+            )
 
     async def subscribe(self, company_id: str) -> AsyncIterator[dict]:
         """Async generator yielding events for company_id from Redis pub/sub."""

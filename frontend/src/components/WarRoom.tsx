@@ -151,16 +151,16 @@ export default function WarRoom() {
       }
     }
 
-    ws.onclose = (event?: CloseEvent) => {
+    ws.onclose = (event: CloseEvent) => {
       // SIRI-UX-153: if onopen never fired, isConnecting may still be true — clear it
       // so we don't show a blank screen during reconnect cycles
       setIsConnecting(false)
       // SIRI-UX-232: if component unmounted, cleanup already ran — do NOT schedule reconnect
       if (!mountedRef.current) return
       // SIRI-UX-233: skip reconnect on intentional clean close (code 1000) — matches useWarRoomSocket pattern
-      if (event?.wasClean && event?.code === 1000) return
+      if (event.wasClean && event.code === 1000) return
       // SIRI-UX-147: do NOT reconnect on auth/permission errors — would loop forever
-      if (event?.code === 4001 || event?.code === 4003) return
+      if (event.code === 4001 || event.code === 4003) return
       // SIRI-UX-292: exponential backoff reconnect — mirrors useWarRoomSocket.ts pattern
       const delay = Math.min(retryDelayRef.current, MAX_BACKOFF_MS)
       reconnectTimer.current = setTimeout(() => {

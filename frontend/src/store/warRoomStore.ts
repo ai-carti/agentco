@@ -120,7 +120,8 @@ export function getNextMockEvent(agents: WarRoomAgent[]) {
   }
 }
 
-export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
+// SIRI-UX-345: removed unused `_get` parameter — store only uses `set`
+export const useWarRoomStore = create<WarRoomState>((set) => ({
   agents: [],
   messages: [],
   cost: 0,

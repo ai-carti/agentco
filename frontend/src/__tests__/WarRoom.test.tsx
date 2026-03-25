@@ -18,7 +18,7 @@ class MockWebSocket {
   url: string
   onopen: (() => void) | null = null
   onmessage: ((e: { data: string }) => void) | null = null
-  onclose: (() => void) | null = null
+  onclose: ((event: CloseEvent) => void) | null = null
   onerror: (() => void) | null = null
   close = vi.fn()
 
@@ -176,7 +176,7 @@ describe('WarRoom', () => {
       renderWarRoom()
       expect(MockWebSocket.instances.length).toBe(1)
       act(() => {
-        lastWs().onclose?.()
+        lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 }))
       })
       expect(MockWebSocket.instances.length).toBe(1)
       // SIRI-UX-292: initial backoff delay is 1000ms
@@ -196,21 +196,21 @@ describe('WarRoom', () => {
       renderWarRoom()
 
       // First close — reconnect after 1000ms
-      act(() => { lastWs().onclose?.() })
+      act(() => { lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 })) })
       act(() => { vi.advanceTimersByTime(999) })
       expect(MockWebSocket.instances.length).toBe(1) // not yet
       act(() => { vi.advanceTimersByTime(1) })
       expect(MockWebSocket.instances.length).toBe(2) // reconnected at 1000ms
 
       // Second close — delay doubled to 2000ms
-      act(() => { lastWs().onclose?.() })
+      act(() => { lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 })) })
       act(() => { vi.advanceTimersByTime(1999) })
       expect(MockWebSocket.instances.length).toBe(2) // not yet
       act(() => { vi.advanceTimersByTime(1) })
       expect(MockWebSocket.instances.length).toBe(3) // reconnected at 2000ms
 
       // Third close — delay doubled to 4000ms
-      act(() => { lastWs().onclose?.() })
+      act(() => { lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 })) })
       act(() => { vi.advanceTimersByTime(3999) })
       expect(MockWebSocket.instances.length).toBe(3) // not yet
       act(() => { vi.advanceTimersByTime(1) })
@@ -227,7 +227,7 @@ describe('WarRoom', () => {
       renderWarRoom()
 
       // Fail once — delay goes to 2000ms
-      act(() => { lastWs().onclose?.() })
+      act(() => { lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 })) })
       act(() => { vi.advanceTimersByTime(1000) })
       expect(MockWebSocket.instances.length).toBe(2)
 
@@ -235,7 +235,7 @@ describe('WarRoom', () => {
       act(() => { lastWs().onopen?.() })
 
       // Fail again — should use reset delay of 1000ms, not 2000ms
-      act(() => { lastWs().onclose?.() })
+      act(() => { lastWs().onclose?.(new CloseEvent('close', { wasClean: false, code: 1006 })) })
       act(() => { vi.advanceTimersByTime(999) })
       expect(MockWebSocket.instances.length).toBe(2) // not yet
       act(() => { vi.advanceTimersByTime(1) })

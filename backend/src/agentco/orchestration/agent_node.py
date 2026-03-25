@@ -295,60 +295,66 @@ async def agent_node(state: AgentState) -> dict:
         # ALEX-TD-158: wrap each LLM call in a per-call timeout so a hung
         # provider doesn't consume the entire run budget silently.
         # asyncio.TimeoutError propagates to _execute_agent for retry.
-        response = await asyncio.wait_for(
-            litellm.acompletion(**call_kwargs),
-            timeout=_LLM_CALL_TIMEOUT_SEC,
-        )
+        #
+        # ALEX-TD-217 fix: use asyncio.timeout() context manager to cover BOTH
+        # the acompletion() initialisation AND the entire streaming loop.
+        # The previous asyncio.wait_for(acompletion(...)) only timed out the
+        # connection setup — a stream that started but stalled mid-way would
+        # bypass _LLM_CALL_TIMEOUT_SEC and run until MAX_RUN_TIMEOUT_SEC (600s).
+        # asyncio.timeout() raises asyncio.TimeoutError on expiry regardless of
+        # where execution is inside the `async with` block.
+        async with asyncio.timeout(_LLM_CALL_TIMEOUT_SEC):
+            response = await litellm.acompletion(**call_kwargs)
 
-        # ── Collect streaming response ─────────────────────────────────────
-        full_text = ""
-        total_tokens = 0
+            # ── Collect streaming response ─────────────────────────────────
+            full_text = ""
+            total_tokens = 0
 
-        # tool_calls accumulator: index → {id, name, args_buffer}
-        tool_calls_acc: dict[int, dict] = {}
-        finish_reason: str | None = None
+            # tool_calls accumulator: index → {id, name, args_buffer}
+            tool_calls_acc: dict[int, dict] = {}
+            finish_reason: str | None = None
 
-        async for chunk in response:
-            try:
-                choice = chunk.choices[0]
-                delta = choice.delta
+            async for chunk in response:
+                try:
+                    choice = chunk.choices[0]
+                    delta = choice.delta
 
-                # Текстовый контент
-                content = delta.content
-                if content:
-                    full_text += content
-                    # Стриминг в EventBus
-                    await _publish_chunk(state, content)
+                    # Текстовый контент
+                    content = delta.content
+                    if content:
+                        full_text += content
+                        # Стриминг в EventBus
+                        await _publish_chunk(state, content)
 
-                # Tool calls
-                tc_list = delta.tool_calls
-                if tc_list:
-                    for tc in tc_list:
-                        idx = tc.index
-                        if idx not in tool_calls_acc:
-                            tool_calls_acc[idx] = {
-                                "id": None,
-                                "name": None,
-                                "args": "",
-                            }
-                        if tc.id:
-                            tool_calls_acc[idx]["id"] = tc.id
-                        if tc.function and tc.function.name:
-                            tool_calls_acc[idx]["name"] = tc.function.name
-                        if tc.function and tc.function.arguments:
-                            tool_calls_acc[idx]["args"] += tc.function.arguments
+                    # Tool calls
+                    tc_list = delta.tool_calls
+                    if tc_list:
+                        for tc in tc_list:
+                            idx = tc.index
+                            if idx not in tool_calls_acc:
+                                tool_calls_acc[idx] = {
+                                    "id": None,
+                                    "name": None,
+                                    "args": "",
+                                }
+                            if tc.id:
+                                tool_calls_acc[idx]["id"] = tc.id
+                            if tc.function and tc.function.name:
+                                tool_calls_acc[idx]["name"] = tc.function.name
+                            if tc.function and tc.function.arguments:
+                                tool_calls_acc[idx]["args"] += tc.function.arguments
 
-                if choice.finish_reason:
-                    finish_reason = choice.finish_reason
+                    if choice.finish_reason:
+                        finish_reason = choice.finish_reason
 
-                # Usage (обычно в финальном chunk)
-                tokens = _extract_tokens(chunk)
-                if tokens:
-                    total_tokens = tokens
+                    # Usage (обычно в финальном chunk)
+                    tokens = _extract_tokens(chunk)
+                    if tokens:
+                        total_tokens = tokens
 
-            except (AttributeError, IndexError) as e:
-                logger.debug("Chunk parsing error (skipped): %s", e)
-                continue
+                except (AttributeError, IndexError) as e:
+                    logger.debug("Chunk parsing error (skipped): %s", e)
+                    continue
 
         # ── Cost tracking ──────────────────────────────────────────────────
         cost_usd = _estimate_cost(model, total_tokens)

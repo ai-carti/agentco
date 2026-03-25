@@ -976,6 +976,15 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     })
   }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])
 
+  // SIRI-UX-346: extracted to avoid duplicating 5 setState calls in Escape handler, backdrop, Cancel button
+  const closeCreateModal = useCallback(() => {
+    setShowCreateModal(false)
+    setTitleTouched(false)
+    setNewTaskTitle('')
+    setNewTaskDesc('')
+    setNewTaskPriority('')
+  }, [])
+
   const handleClose = useCallback(() => setSelectedTaskId(null), [])
   // SIRI-UX-339: stable callback — avoids creating N new function refs per render inside filteredTasks.map
   const handleCardClick = useCallback((task: Task) => setSelectedTaskId(task.id), [])
@@ -990,17 +999,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   useEffect(() => {
     if (!showCreateModal) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowCreateModal(false)
-        setTitleTouched(false)
-        setNewTaskTitle('')
-        setNewTaskDesc('')
-        setNewTaskPriority('')
-      }
+      if (e.key === 'Escape') closeCreateModal()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [showCreateModal])
+  }, [showCreateModal, closeCreateModal])
 
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('text/plain', taskId)
@@ -1242,7 +1245,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') } }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeCreateModal() }}
         >
           <div ref={createModalTrapRef} style={{
             background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
@@ -1293,8 +1296,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             />
             {/* SIRI-UX-048: Priority selector */}
             {/* SIRI-UX-204: aria-label for screen readers */}
+            {/* SIRI-UX-342: add input-focus-ring-blue for consistent keyboard focus ring */}
             <select
               data-testid="create-task-priority-select"
+              className="input-focus-ring-blue"
               aria-label="Task priority"
               value={newTaskPriority}
               onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority | '')}
@@ -1315,7 +1320,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               <Button
                 data-testid="create-task-cancel-btn"
                 variant="secondary"
-                onClick={() => { setShowCreateModal(false); setTitleTouched(false); setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPriority('') }}
+                onClick={closeCreateModal}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
                 Cancel

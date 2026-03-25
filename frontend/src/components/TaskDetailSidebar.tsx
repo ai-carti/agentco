@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { type Task, useAgentStore } from '../store/agentStore'
 import { getStoredToken, BASE_URL } from '../api/client'
 import SkeletonCard from './SkeletonCard'
@@ -151,7 +151,11 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const canRun = task.status === 'todo' || task.status === 'backlog'
   const priorityColor = task.priority ? PRIORITY_COLORS[task.priority] : null
 
-  const isDueDateOverdue = task.due_date ? new Date(task.due_date) < new Date() : false
+  // SIRI-UX-343: memoize so new Date() is only called when due_date changes, not on every render
+  const isDueDateOverdue = useMemo(
+    () => (task.due_date ? new Date(task.due_date) < new Date() : false),
+    [task.due_date]
+  )
 
   return (
     <>

@@ -249,7 +249,14 @@ export default function WarRoomPage() {
         return
       }
       // RunOut schema uses `id`, not `run_id` — SIRI-UX-078 fix
-      const runs: { id: string }[] = await runsRes.json().catch(() => [])
+      // SIRI-UX-347: parse JSON properly — .catch(() => []) masked parse errors with misleading toast
+      let runs: { id: string }[]
+      try {
+        runs = await runsRes.json()
+      } catch {
+        toast.error('Failed to parse runs response')
+        return
+      }
       const toStop = Array.isArray(runs) ? runs : []
 
       if (toStop.length === 0) {
@@ -295,6 +302,16 @@ export default function WarRoomPage() {
   // SIRI-UX-266: useMemo MUST be before any early returns (Rules of Hooks)
   // Sort agents: level 0 (CEO) first, then by level
   const sortedAgents = useMemo(() => [...agents].sort((a, b) => a.level - b.level), [agents])
+
+  // SIRI-UX-344: stable toggle handler — avoids creating N new closures per render inside messages.map()
+  const handleToggleExpand = useCallback((msgId: string) => {
+    setExpandedMessages((prev) => {
+      const next = new Set(prev)
+      if (next.has(msgId)) next.delete(msgId)
+      else next.add(msgId)
+      return next
+    })
+  }, [])
 
   // SIRI-UX-294: extracted from Stop button — was duplicated in `disabled` and `style.opacity`
   const isStopDisabled = stopping || runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'
@@ -737,25 +754,13 @@ export default function WarRoomPage() {
                   tabIndex={isLong ? 0 : undefined}
                   aria-label={isLong ? `${isExpanded ? 'Collapse' : 'Expand'} message from ${msg.senderName}` : undefined}
                   aria-expanded={isLong ? isExpanded : undefined}
-                  onClick={() => {
-                    if (!isLong) return
-                    setExpandedMessages((prev) => {
-                      const next = new Set(prev)
-                      if (next.has(msg.id)) next.delete(msg.id)
-                      else next.add(msg.id)
-                      return next
-                    })
-                  }}
+                  // SIRI-UX-344: use stable handleToggleExpand (useCallback) instead of inline closure
+                  onClick={() => { if (isLong) handleToggleExpand(msg.id) }}
                   onKeyDown={(e) => {
                     if (!isLong) return
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      setExpandedMessages((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(msg.id)) next.delete(msg.id)
-                        else next.add(msg.id)
-                        return next
-                      })
+                      handleToggleExpand(msg.id)
                     }
                   }}
                   style={{
