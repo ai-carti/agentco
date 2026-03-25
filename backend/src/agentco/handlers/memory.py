@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -37,8 +38,8 @@ _RATE_LIMIT_MEMORY = os.environ.get("RATE_LIMIT_MEMORY", "60/minute")
 @limiter.limit(_RATE_LIMIT_MEMORY)
 def get_agent_memory(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
@@ -52,7 +53,7 @@ def get_agent_memory(
     # Проверяем ownership компании
     company_repo = CompanyRepository(session)
     try:
-        company = company_repo.get(company_id)
+        company = company_repo.get(str(company_id))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
     if company.owner_id != current_user.id:
@@ -61,10 +62,10 @@ def get_agent_memory(
     # Проверяем что агент существует и принадлежит компании
     agent_repo = AgentRepository(session)
     try:
-        agent = agent_repo.get(agent_id)
+        agent = agent_repo.get(str(agent_id))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if agent.company_id != company_id:
+    if agent.company_id != str(company_id):
         raise HTTPException(status_code=404, detail="Agent not found")
 
     # Получаем воспоминания с пагинацией.
@@ -73,7 +74,7 @@ def get_agent_memory(
     memory_service = None
     try:
         memory_service = MemoryService(_MEMORY_DB)
-        memories = memory_service.get_all(agent_id=agent_id, limit=limit, offset=offset)
+        memories = memory_service.get_all(agent_id=str(agent_id), limit=limit, offset=offset)
     finally:
         if memory_service is not None:
             memory_service.close()

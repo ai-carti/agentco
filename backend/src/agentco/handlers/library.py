@@ -186,13 +186,13 @@ def get_portfolio(
 @limiter.limit(_RATE_LIMIT_FORK)
 def fork_agent(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     body: ForkRequest,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     # Check company ownership
-    company = session.get(CompanyORM, company_id)
+    company = session.get(CompanyORM, str(company_id))
     if company is None or company.owner_id != current_user.id:
         raise HTTPException(status_code=404, detail="Company not found")
 
@@ -204,7 +204,7 @@ def fork_agent(
     # Create forked agent
     new_agent = AgentORM(
         id=str(uuid.uuid4()),
-        company_id=company_id,
+        company_id=str(company_id),
         name=lib_entry.name,
         role=lib_entry.role,
         system_prompt=lib_entry.system_prompt,

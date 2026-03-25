@@ -27,6 +27,7 @@ import litellm
 from agentco.orchestration.state import AgentState
 # ALEX-TD-120: top-level import — avoid per-chunk lazy import in hot streaming path
 from agentco.core.event_bus import EventBus
+from agentco.orchestration.nodes import _get_max_tokens
 
 if TYPE_CHECKING:
     from agentco.memory.service import MemoryService
@@ -138,7 +139,10 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
     task = state.get("input", "")
 
     # Инжект памяти
-    if memory_service and system_prompt:
+    # ALEX-TD-205: skip inject if token limit already reached — avoids one extra
+    # (costly) LLM call that the graph would reject on the next iteration anyway.
+    _token_limit_reached = state.get("total_tokens", 0) >= _get_max_tokens()
+    if memory_service and system_prompt and not _token_limit_reached:
         try:
             system_prompt = await memory_service.inject_memories(
                 agent_id=agent_id,

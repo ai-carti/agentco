@@ -1,3 +1,4 @@
+import uuid
 import ipaddress
 import logging
 import os
@@ -117,18 +118,18 @@ def _resolve_agent(session: Session, company_id: str, agent_id: str, owner_id: s
 @limiter.limit(_RATE_LIMIT_MCP_CREATE)
 def create_mcp_server(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     body: MCPServerCreate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    _resolve_agent(session, company_id, agent_id, current_user.id)
+    _resolve_agent(session, str(company_id), str(agent_id), current_user.id)
 
     # Check duplicate name for this agent
     existing = session.scalars(
         select(MCPServerORM).where(
-            MCPServerORM.agent_id == agent_id,
+            MCPServerORM.agent_id == str(agent_id),
             MCPServerORM.name == body.name,
         )
     ).first()
@@ -136,7 +137,7 @@ def create_mcp_server(
         raise HTTPException(status_code=409, detail=f"MCP server with name '{body.name}' already exists for this agent")
 
     mcp = MCPServerORM(
-        agent_id=agent_id,
+        agent_id=str(agent_id),
         name=body.name,
         server_url=body.server_url,
         transport=body.transport.value,
@@ -151,14 +152,14 @@ def create_mcp_server(
 @limiter.limit(_RATE_LIMIT_MCP_READ)
 def list_mcp_servers(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    _resolve_agent(session, company_id, agent_id, current_user.id)
+    _resolve_agent(session, str(company_id), str(agent_id), current_user.id)
     servers = session.scalars(
         select(MCPServerORM)
         .where(MCPServerORM.agent_id == agent_id)
@@ -173,15 +174,15 @@ def list_mcp_servers(
 @limiter.limit(_RATE_LIMIT_MCP_DELETE)
 def delete_mcp_server(
     request: Request,
-    company_id: str,
-    agent_id: str,
-    server_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    server_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    _resolve_agent(session, company_id, agent_id, current_user.id)
+    _resolve_agent(session, str(company_id), str(agent_id), current_user.id)
     mcp = session.get(MCPServerORM, server_id)
-    if mcp is None or mcp.agent_id != agent_id:
+    if mcp is None or mcp.agent_id != str(agent_id):
         raise HTTPException(status_code=404, detail="MCP server not found")
     session.delete(mcp)
     session.commit()

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 import os
 from datetime import datetime
 from typing import Optional
@@ -97,14 +98,14 @@ class CredentialOut(BaseModel):
 @limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def create_credential(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     body: CredentialCreate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return CredentialService(session).create(
-            company_id=company_id,
+            company_id=str(company_id),
             provider=body.provider,
             api_key=body.api_key,
             owner_id=current_user.id,
@@ -122,7 +123,7 @@ def create_credential(
 @limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def list_credentials(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
@@ -131,7 +132,7 @@ def list_credentials(
     # ALEX-TD-098: pagination to prevent unbounded result sets
     try:
         return CredentialService(session).list_by_company(
-            company_id=company_id,
+            company_id=str(company_id),
             owner_id=current_user.id,
             limit=limit,
             offset=offset,
@@ -147,15 +148,15 @@ def list_credentials(
 @limiter.limit(_RATE_LIMIT_CREDENTIALS)
 def delete_credential(
     request: Request,
-    company_id: str,
-    credential_id: str,
+    company_id: uuid.UUID,
+    credential_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         CredentialService(session).delete(
-            company_id=company_id,
-            credential_id=credential_id,
+            company_id=str(company_id),
+            credential_id=str(credential_id),
             owner_id=current_user.id,
         )
     except NotFoundError as e:

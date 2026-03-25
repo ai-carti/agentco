@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// SIRI-UX-316: exported so components can import instead of each defining their own local copy
+export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const TOKEN_KEY = 'agentco_token'
 

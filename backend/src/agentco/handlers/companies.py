@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
@@ -89,13 +90,14 @@ def create_company(
 @limiter.limit(_RATE_LIMIT_COMPANIES_READ)
 def get_company(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-057: ownership check consolidated in service.get_owned()
+    # ALEX-TD-207: company_id is uuid.UUID — FastAPI returns 422 for non-UUID values.
     try:
-        company = CompanyService(session).get_owned(company_id, owner_id=current_user.id)
+        company = CompanyService(session).get_owned(str(company_id), owner_id=current_user.id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
     return _to_out(company)
@@ -105,14 +107,15 @@ def get_company(
 @limiter.limit(_RATE_LIMIT_COMPANIES)
 def update_company(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     body: CompanyUpdate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-054: single DB hit — ownership check + update merged in service
+    # ALEX-TD-207: company_id is uuid.UUID
     try:
-        return _to_out(CompanyService(session).update(company_id, body.name, owner_id=current_user.id))
+        return _to_out(CompanyService(session).update(str(company_id), body.name, owner_id=current_user.id))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")
     except ValueError as e:
@@ -123,12 +126,13 @@ def update_company(
 @limiter.limit(_RATE_LIMIT_COMPANIES)
 def delete_company(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-054: single DB hit — ownership check + delete merged in service
+    # ALEX-TD-207: company_id is uuid.UUID
     try:
-        CompanyService(session).delete_owned(company_id, owner_id=current_user.id)
+        CompanyService(session).delete_owned(str(company_id), owner_id=current_user.id)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Company not found")

@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -81,14 +82,14 @@ class AgentOut(BaseModel):
 @limiter.limit(_RATE_LIMIT_AGENTS)
 def create_agent(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     body: AgentCreate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).create(
-            company_id=company_id,
+            company_id=str(company_id),
             owner_id=current_user.id,
             **body.model_dump(),
         )
@@ -103,17 +104,18 @@ def create_agent(
 @limiter.limit(_RATE_LIMIT_AGENTS_TREE)
 def get_agents_tree(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     """
     POST-006: Returns agents as a nested tree.
     Each node has: id, name, role, model, hierarchy_level, parent_agent_id, children[].
+    ALEX-TD-207: company_id is uuid.UUID.
     """
     try:
         return AgentService(session).get_tree(
-            company_id=company_id,
+            company_id=str(company_id),
             owner_id=current_user.id,
         )
     except NotFoundError:
@@ -124,16 +126,17 @@ def get_agents_tree(
 @limiter.limit(_RATE_LIMIT_AGENTS_READ)
 def list_agents(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     # ALEX-TD-142: added @limiter.limit — GET endpoints were unprotected
+    # ALEX-TD-207: company_id is uuid.UUID
     try:
         return AgentService(session).list_by_company(
-            company_id=company_id,
+            company_id=str(company_id),
             owner_id=current_user.id,
             limit=limit,
             offset=offset,
@@ -146,15 +149,15 @@ def list_agents(
 @limiter.limit(_RATE_LIMIT_AGENTS_READ)
 def get_agent(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).get(
-            company_id=company_id,
-            agent_id=agent_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
             owner_id=current_user.id,
         )
     except NotFoundError:
@@ -165,16 +168,16 @@ def get_agent(
 @limiter.limit(_RATE_LIMIT_AGENTS)
 def update_agent(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     body: AgentUpdate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return AgentService(session).update(
-            company_id=company_id,
-            agent_id=agent_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
             owner_id=current_user.id,
             **body.model_dump(exclude_none=True),
         )
@@ -186,15 +189,15 @@ def update_agent(
 @limiter.limit(_RATE_LIMIT_AGENTS)
 def delete_agent(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         AgentService(session).delete(
-            company_id=company_id,
-            agent_id=agent_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
             owner_id=current_user.id,
         )
     except NotFoundError:

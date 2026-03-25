@@ -11,6 +11,7 @@ Endpoints:
 """
 import logging
 import os
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -116,7 +117,7 @@ def _session_ctx() -> "Session":
 @limiter.limit(_RATE_LIMIT_CREATE_RUN)
 async def create_run(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     body: RunCreate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
@@ -125,10 +126,11 @@ async def create_run(
 
     ALEX-TD-126: passes session_factory so the background execute_run() task
     can open a fresh DB session (avoids detached-instance errors in async context).
+    ALEX-TD-207: company_id is uuid.UUID — FastAPI returns 422 for non-UUID values.
     """
     try:
         run = RunService(session).create_with_goal(
-            company_id=company_id,
+            company_id=str(company_id),
             goal=body.goal,
             owner_id=current_user.id,
             session_factory=_session_ctx,
@@ -149,14 +151,17 @@ VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "d
 @limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_runs(
     request: Request,
-    company_id: str,
+    company_id: uuid.UUID,
     limit: int = Query(default=20, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running"""
+    """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running
+
+    ALEX-TD-207: company_id is uuid.UUID — FastAPI returns 422 for non-UUID values.
+    """
     if status_filter is not None and status_filter not in VALID_RUN_STATUSES:
         raise HTTPException(
             status_code=422,
@@ -164,7 +169,7 @@ async def list_runs(
         )
     try:
         runs = RunService(session).list_by_company_owned(
-            company_id,
+            str(company_id),
             owner_id=current_user.id,
             limit=limit,
             offset=offset,
@@ -184,26 +189,29 @@ async def list_runs(
 @limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def get_run(
     request: Request,
-    company_id: str,
-    run_id: str,
+    company_id: uuid.UUID,
+    run_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Run details with events count."""
+    """Run details with events count.
+
+    ALEX-TD-207: company_id and run_id are uuid.UUID — FastAPI returns 422 for non-UUID values.
+    """
     try:
         detail = RunService(session).get_detail(
-            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+            company_id=str(company_id), run_id=str(run_id), owner_id=current_user.id,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Run not found")
     return RunDetailOut(**detail)
 
 
-async def _do_stop_run(company_id: str, run_id: str, session: Session, current_user: UserORM) -> RunOut:
+async def _do_stop_run(company_id: uuid.UUID, run_id: uuid.UUID, session: Session, current_user: UserORM) -> RunOut:
     """Shared stop logic for both POST and PATCH."""
     try:
         run = RunService(session).stop(
-            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+            company_id=str(company_id), run_id=str(run_id), owner_id=current_user.id,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -214,8 +222,8 @@ async def _do_stop_run(company_id: str, run_id: str, session: Session, current_u
 @limiter.limit(_RATE_LIMIT_RUN)
 async def patch_stop_run(
     request: Request,
-    company_id: str,
-    run_id: str,
+    company_id: uuid.UUID,
+    run_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
@@ -224,6 +232,7 @@ async def patch_stop_run(
     ALEX-TD-136 fix: added @limiter.limit — stop endpoints were unprotected,
     allowing rapid-fire stop requests that cause DB churn (repeated status reads,
     CancelledError storms on asyncio tasks). Rate limit mirrors POST /tasks/{id}/run.
+    ALEX-TD-207: company_id and run_id are uuid.UUID.
     """
     return await _do_stop_run(company_id, run_id, session, current_user)
 
@@ -232,14 +241,15 @@ async def patch_stop_run(
 @limiter.limit(_RATE_LIMIT_RUN)
 async def stop_run(
     request: Request,
-    company_id: str,
-    run_id: str,
+    company_id: uuid.UUID,
+    run_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     """Stop a running run (POST — backward compat).
 
     ALEX-TD-136 fix: added @limiter.limit — see patch_stop_run.
+    ALEX-TD-207: company_id and run_id are uuid.UUID.
     """
     return await _do_stop_run(company_id, run_id, session, current_user)
 
@@ -248,17 +258,20 @@ async def stop_run(
 @limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_run_events(
     request: Request,
-    company_id: str,
-    run_id: str,
+    company_id: uuid.UUID,
+    run_id: uuid.UUID,
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """List events for a run with pagination (default limit=100, max=1000)."""
+    """List events for a run with pagination (default limit=100, max=1000).
+
+    ALEX-TD-207: company_id and run_id are uuid.UUID.
+    """
     try:
         events = RunService(session).list_events(
-            company_id=company_id, run_id=run_id, owner_id=current_user.id,
+            company_id=str(company_id), run_id=str(run_id), owner_id=current_user.id,
             limit=limit, offset=offset,
         )
     except NotFoundError:
@@ -274,16 +287,19 @@ async def list_run_events(
 @limiter.limit(_RATE_LIMIT_RUN)
 async def run_task(
     request: Request,
-    company_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    task_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Создаёт Run для задачи и запускает агента в background."""
+    """Создаёт Run для задачи и запускает агента в background.
+
+    ALEX-TD-207: company_id and task_id are uuid.UUID.
+    """
     try:
         run = RunService(session).create_and_start(
-            company_id=company_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
             session_factory=_session_ctx,
         )
@@ -298,18 +314,21 @@ async def run_task(
 @limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def list_task_runs(
     request: Request,
-    company_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    task_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Список ранов задачи с пагинацией (ALEX-TD-043: default limit=50, max=500)."""
+    """Список ранов задачи с пагинацией (ALEX-TD-043: default limit=50, max=500).
+
+    ALEX-TD-207: company_id and task_id are uuid.UUID.
+    """
     try:
         runs = RunService(session).list_by_task_owned(
-            company_id=company_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
             limit=limit,
             offset=offset,
@@ -323,18 +342,21 @@ async def list_task_runs(
 @limiter.limit(_RATE_LIMIT_RUNS_READ)
 async def get_task_run(
     request: Request,
-    company_id: str,
-    task_id: str,
-    run_id: str,
+    company_id: uuid.UUID,
+    task_id: uuid.UUID,
+    run_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """Детали рана задачи."""
+    """Детали рана задачи.
+
+    ALEX-TD-207: company_id, task_id, run_id are uuid.UUID.
+    """
     try:
         detail = RunService(session).get_task_run_detail(
-            company_id=company_id,
-            task_id=task_id,
-            run_id=run_id,
+            company_id=str(company_id),
+            task_id=str(task_id),
+            run_id=str(run_id),
             owner_id=current_user.id,
         )
     except NotFoundError:

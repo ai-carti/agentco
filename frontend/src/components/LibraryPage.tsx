@@ -146,8 +146,9 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
           Fork to Company
         </h2>
 
+        {/* SIRI-UX-315: role="alert" so screen reader announces fork errors automatically */}
         {error && (
-          <p style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{error}</p>
+          <p role="alert" style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{error}</p>
         )}
 
         {loading ? (

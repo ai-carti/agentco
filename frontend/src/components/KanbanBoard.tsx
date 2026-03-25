@@ -1268,8 +1268,9 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
                 outline: 'none',
               }}
             />
+            {/* SIRI-UX-317: role="alert" so screen reader announces validation error dynamically */}
             {titleTouched && !newTaskTitle.trim() && (
-              <p id="title-error" style={{ color: '#ef4444', fontSize: '0.75rem', margin: '0 0 0.75rem' }}>
+              <p id="title-error" role="alert" style={{ color: '#ef4444', fontSize: '0.75rem', margin: '0 0 0.75rem' }}>
                 Title is required
               </p>
             )}

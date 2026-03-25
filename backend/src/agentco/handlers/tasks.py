@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -88,16 +89,16 @@ class TaskOut(BaseModel):
 @limiter.limit(_RATE_LIMIT_TASKS_CREATE)
 def create_task(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     body: TaskCreate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).create(
-            company_id=company_id,
-            agent_id=agent_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
             owner_id=current_user.id,
             **body.model_dump(),
         )
@@ -109,8 +110,8 @@ def create_task(
 @limiter.limit(_RATE_LIMIT_TASKS_READ)
 def list_tasks(
     request: Request,
-    company_id: str,
-    agent_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
@@ -118,8 +119,8 @@ def list_tasks(
 ):
     try:
         return TaskService(session).list_by_agent(
-            company_id=company_id,
-            agent_id=agent_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
             owner_id=current_user.id,
             limit=limit,
             offset=offset,
@@ -132,17 +133,17 @@ def list_tasks(
 @limiter.limit(_RATE_LIMIT_TASKS_READ)
 def get_task(
     request: Request,
-    company_id: str,
-    agent_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    task_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).get(
-            company_id=company_id,
-            agent_id=agent_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
         )
     except NotFoundError:
@@ -153,18 +154,18 @@ def get_task(
 @limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def update_task(
     request: Request,
-    company_id: str,
-    agent_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    task_id: uuid.UUID,
     body: TaskUpdate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).update(
-            company_id=company_id,
-            agent_id=agent_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
             **body.model_dump(exclude_none=True),
         )
@@ -176,18 +177,18 @@ def update_task(
 @limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def update_task_status(
     request: Request,
-    company_id: str,
-    agent_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    task_id: uuid.UUID,
     body: TaskStatusUpdate,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         return TaskService(session).update_status(
-            company_id=company_id,
-            agent_id=agent_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
             new_status=body.status,
         )
@@ -201,17 +202,17 @@ def update_task_status(
 @limiter.limit(_RATE_LIMIT_TASKS_MUTATE)
 def delete_task(
     request: Request,
-    company_id: str,
-    agent_id: str,
-    task_id: str,
+    company_id: uuid.UUID,
+    agent_id: uuid.UUID,
+    task_id: uuid.UUID,
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     try:
         TaskService(session).delete(
-            company_id=company_id,
-            agent_id=agent_id,
-            task_id=task_id,
+            company_id=str(company_id),
+            agent_id=str(agent_id),
+            task_id=str(task_id),
             owner_id=current_user.id,
         )
     except NotFoundError:
