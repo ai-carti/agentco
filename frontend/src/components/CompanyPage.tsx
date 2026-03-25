@@ -226,6 +226,9 @@ export default function CompanyPage() {
     }
   }, [id, setCurrentCompany, setTasks, setAgents, setActiveCompanyTab])
 
+  // SIRI-UX-336: stable callback — avoids re-render of CompanyHeader on every CompanyPage render
+  const handleHomeClick = useCallback(() => navigate('/'), [navigate])
+
   // SIRI-UX-277: memoize to avoid unnecessary KanbanBoard re-renders on each CompanyPage render
   const handleLoadMoreTasks = useCallback(async () => {
     if (!id || !hasMoreTasks) return
@@ -326,7 +329,7 @@ export default function CompanyPage() {
       {currentCompany && (
         <CompanyHeader
           name={currentCompany.name}
-          onHomeClick={() => navigate('/')}
+          onHomeClick={handleHomeClick}
         />
       )}
 

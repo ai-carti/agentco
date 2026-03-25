@@ -115,6 +115,8 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
           data-testid="agent-edit-btn"
           variant="secondary"
           onClick={() => onEdit(agent)}
+          // SIRI-UX-334: agent-specific aria-label — screen reader announces "Edit CEO" not just "Edit"
+          aria-label={`Edit ${agent.name}`}
           style={{ flex: 1, fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
         >
           Edit
@@ -122,6 +124,8 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
         <Link
           data-testid="agent-history-btn"
           to={`/companies/${companyId}/agents/${agent.id}`}
+          // SIRI-UX-334: agent-specific aria-label — screen reader announces "View CEO" not just "View Agent"
+          aria-label={`View ${agent.name}`}
           style={{
             flex: 1,
             textDecoration: 'none',

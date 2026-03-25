@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAgentStore } from '../store/agentStore'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -31,12 +31,13 @@ export default function Sidebar() {
   // SIRI-UX-272: only War Room `to` is dynamic — avoid re-declaring all 4 items per render
   const warRoomTo = currentCompany ? `/companies/${currentCompany.id}` : '/'
 
-  const NAV_ITEMS = [
+  // SIRI-UX-335: useMemo so NAV_ITEMS array is not recreated on every render (only when warRoomTo changes)
+  const NAV_ITEMS = useMemo(() => [
     STATIC_NAV_ITEMS[0], // Companies
     { to: warRoomTo, label: 'War Room', icon: '\u{2694}\u{FE0F}', testId: 'sidebar-nav-warroom', end: false } as const,
     STATIC_NAV_ITEMS[1], // Library
     STATIC_NAV_ITEMS[2], // Settings
-  ]
+  ], [warRoomTo])
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {

@@ -17,6 +17,16 @@ const statusDotStyle: Record<WarRoomAgentStatus, string> = {
   done: 'bg-blue-500',
 }
 
+// SIRI-UX-335: inline background fallbacks for environments without Tailwind CSS processing
+// (test environments, SSR, email previews). Tailwind classes are the primary source; these
+// are fallbacks that ensure dots are visible even without CSS compilation.
+const statusDotBg: Record<WarRoomAgentStatus, string> = {
+  idle: '#6b7280',      // gray-500
+  thinking: '#4ade80',  // green-400
+  running: '#4ade80',   // green-400
+  done: '#3b82f6',      // blue-500
+}
+
 const statusLabel: Record<WarRoomAgentStatus, string> = {
   idle: 'Idle',
   thinking: 'Thinking…',
@@ -592,6 +602,8 @@ export default function WarRoomPage() {
                         height: 10,
                         borderRadius: '50%',
                         flexShrink: 0,
+                        // SIRI-UX-335: inline fallback so dot is visible without Tailwind
+                        background: statusDotBg[agent.status],
                       }}
                     />
                   </div>
@@ -660,34 +672,38 @@ export default function WarRoomPage() {
             }}
           >
             Activity Feed
-            <span
-              data-testid="live-indicator"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                background: 'rgba(34,197,94,0.1)',
-                border: '1px solid rgba(34,197,94,0.3)',
-                borderRadius: 12,
-                padding: '1px 8px',
-                fontSize: '0.65rem',
-                color: '#4ade80',
-                fontWeight: 700,
-                letterSpacing: 0.5,
-              }}
-            >
+            {/* SIRI-UX-332: hide LIVE badge when run is in a terminal state (done/stopped/failed)
+                Showing LIVE after run ends misleads users into thinking data is still streaming. */}
+            {runStatus !== 'done' && runStatus !== 'stopped' && runStatus !== 'failed' && (
               <span
-                className="war-room-live-dot"
+                data-testid="live-indicator"
                 style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#4ade80',
-                  display: 'inline-block',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  background: 'rgba(34,197,94,0.1)',
+                  border: '1px solid rgba(34,197,94,0.3)',
+                  borderRadius: 12,
+                  padding: '1px 8px',
+                  fontSize: '0.65rem',
+                  color: '#4ade80',
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
                 }}
-              />
-              LIVE
-            </span>
+              >
+                <span
+                  className="war-room-live-dot"
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: '#4ade80',
+                    display: 'inline-block',
+                  }}
+                />
+                LIVE
+              </span>
+            )}
           </div>
           {/* SIRI-UX-068: aria-live so screen readers announce new agent messages */}
           <div
