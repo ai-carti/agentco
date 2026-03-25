@@ -138,7 +138,8 @@ export default function AuthPage() {
         </p>
 
         {/* SIRI-UX-282: roving tabindex — active tab gets tabIndex=0, inactive gets tabIndex=-1
-            so Tab key doesn't visit both tabs; Arrow keys move between them (APG tabs pattern) */}
+            so Tab key doesn't visit both tabs; Arrow keys move between them (APG tabs pattern)
+            SIRI-UX-310: ArrowLeft/ArrowRight keyboard navigation between tabs (WAI-ARIA APG) */}
         <div role="tablist" style={styles.tabs}>
           <button
             id="tab-signin"
@@ -148,6 +149,13 @@ export default function AuthPage() {
             tabIndex={tab === 'signin' ? 0 : -1}
             style={styles.tab(tab === 'signin')}
             onClick={() => setTab('signin')}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') {
+                e.preventDefault()
+                setTab('signup')
+                document.getElementById('tab-signup')?.focus()
+              }
+            }}
             type="button"
           >
             Sign In
@@ -160,6 +168,13 @@ export default function AuthPage() {
             tabIndex={tab === 'signup' ? 0 : -1}
             style={styles.tab(tab === 'signup')}
             onClick={() => setTab('signup')}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault()
+                setTab('signin')
+                document.getElementById('tab-signin')?.focus()
+              }
+            }}
             type="button"
           >
             Sign Up

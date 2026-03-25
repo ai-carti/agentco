@@ -30,6 +30,8 @@ export default function CompanySettingsPage() {
   const deleteTrapRef = useFocusTrap(deleteModalOpen)
   // SIRI-UX-189: AbortController ref to guard setState/toast in finally on unmounted component
   const saveAbortRef = useRef<AbortController | null>(null)
+  // SIRI-UX-309: AbortController ref for handleDelete to guard toast/setState on unmounted component
+  const deleteAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!companyId) return
@@ -52,6 +54,14 @@ export default function CompanySettingsPage() {
       })
     return () => controller.abort()
   }, [companyId])
+
+  // SIRI-UX-309: cleanup abort refs on unmount
+  useEffect(() => {
+    return () => {
+      saveAbortRef.current?.abort()
+      deleteAbortRef.current?.abort()
+    }
+  }, [])
 
   const handleSave = async () => {
     saveAbortRef.current?.abort()
@@ -90,13 +100,20 @@ export default function CompanySettingsPage() {
   }
 
   const handleDelete = async () => {
+    // SIRI-UX-309: AbortController to guard toast/setState on unmounted component
+    deleteAbortRef.current?.abort()
+    const controller = new AbortController()
+    deleteAbortRef.current = controller
+    const { signal } = controller
     setIsDeleting(true)
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal,
       })
+      if (signal.aborted) return
       if (res.ok) {
         toast.success('Company deleted')
         navigate('/')
@@ -104,9 +121,12 @@ export default function CompanySettingsPage() {
         toast.error('Failed to delete company')
         setIsDeleting(false)
       }
-    } catch {
-      toast.error('Network error')
-      setIsDeleting(false)
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      if (!signal.aborted) {
+        toast.error('Network error')
+        setIsDeleting(false)
+      }
     }
   }
 
