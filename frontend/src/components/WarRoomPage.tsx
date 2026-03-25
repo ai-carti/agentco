@@ -278,6 +278,9 @@ export default function WarRoomPage() {
   // Sort agents: level 0 (CEO) first, then by level
   const sortedAgents = useMemo(() => [...agents].sort((a, b) => a.level - b.level), [agents])
 
+  // SIRI-UX-294: extracted from Stop button — was duplicated in `disabled` and `style.opacity`
+  const isStopDisabled = stopping || runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'
+
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
   if (agents.length === 0 && isConnecting) {
     return (
@@ -433,8 +436,8 @@ export default function WarRoomPage() {
             data-testid="stop-btn"
             variant="danger"
             onClick={handleStop}
-            disabled={stopping || runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'}
-            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: (runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped') ? 0.4 : 1 }}
+            disabled={isStopDisabled}
+            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: isStopDisabled ? 0.4 : 1 }}
           >
             {stopping ? 'Stopping…' : 'Stop'}
           </Button>

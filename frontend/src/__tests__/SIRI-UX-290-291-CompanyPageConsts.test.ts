@@ -3,16 +3,14 @@
  * SIRI-UX-291: handleCreateAgent must be wrapped in useCallback
  *
  * We validate by reading the source and checking the patterns.
+ * Uses dynamic import to avoid Node.js fs/path APIs (tsconfig targets browser).
  */
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
 
-// NOTE: This test intentionally reads the source file to check structural patterns.
-// We use readFileSync from Node.js — this runs in vitest (Node runtime), not browser.
-
-const srcPath = resolve(__dirname, '../components/CompanyPage.tsx')
-const src = readFileSync(srcPath, 'utf-8')
+// Vitest supports ?raw imports to get file content as string
+// This avoids needing @types/node (fs/path) in the browser-targeted tsconfig
+const modules = import.meta.glob('../components/CompanyPage.tsx', { query: '?raw', import: 'default', eager: true })
+const src: string = modules['../components/CompanyPage.tsx'] as string
 
 describe('SIRI-UX-290: TASK_LIMIT is module-level constant', () => {
   it('TASK_LIMIT is declared outside the component function', () => {

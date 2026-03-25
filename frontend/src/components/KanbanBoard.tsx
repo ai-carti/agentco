@@ -438,9 +438,11 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         </Button>
       )}
 
+      {/* SIRI-UX-293: role="alert" so screen readers announce the error — same fix as SIRI-UX-283, SIRI-UX-289 */}
       {runError && (
         <p
           data-testid={`run-error-${task.id}`}
+          role="alert"
           style={{ fontSize: '0.7rem', color: '#f87171', margin: '0.3rem 0 0' }}
         >
           ⚠ {runError}

@@ -148,7 +148,7 @@ export default function GlobalSearch() {
     return groups
   }, [results])
 
-  const flatResults = results
+  // SIRI-UX-296: removed redundant alias — use `results` directly
 
   const handleSelect = useCallback((result: SearchResult) => {
     setOpen(false)
@@ -158,15 +158,15 @@ export default function GlobalSearch() {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIndex((prev) => Math.min(prev + 1, flatResults.length - 1))
+      setActiveIndex((prev) => Math.min(prev + 1, results.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIndex((prev) => Math.max(prev - 1, 0))
-    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < flatResults.length) {
+    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < results.length) {
       e.preventDefault()
-      handleSelect(flatResults[activeIndex])
+      handleSelect(results[activeIndex])
     }
-  }, [activeIndex, flatResults, handleSelect])
+  }, [activeIndex, results, handleSelect])
 
   // SIRI-UX-288: scroll the active search option into the visible listbox area when activeIndex changes
   useEffect(() => {
@@ -280,7 +280,7 @@ export default function GlobalSearch() {
                       {groupLabels[type]}
                     </div>
                     {group.map((result) => {
-                      const flatIdx = flatResults.indexOf(result)
+                      const flatIdx = results.indexOf(result)
                       const isActive = flatIdx === activeIndex
                       return (
                         <div
