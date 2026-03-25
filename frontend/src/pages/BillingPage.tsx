@@ -102,8 +102,9 @@ export default function BillingPage() {
       </h1>
 
       {/* ── Current Plan ── */}
-      <section data-testid="billing-current-plan" style={{ marginBottom: '2rem' }}>
-        <h2 style={sectionHeadingStyle}>Current Plan</h2>
+      {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
+      <section data-testid="billing-current-plan" aria-labelledby="billing-heading-current" style={{ marginBottom: '2rem' }}>
+        <h2 id="billing-heading-current" style={sectionHeadingStyle}>Current Plan</h2>
         <div style={{ ...cardStyle, display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
           <div>
             <p style={labelStyle}>Plan</p>
@@ -175,8 +176,9 @@ export default function BillingPage() {
       </section>
 
       {/* ── Upgrade Plans ── */}
-      <section data-testid="billing-upgrade" style={{ marginBottom: '2rem' }}>
-        <h2 style={sectionHeadingStyle}>Upgrade</h2>
+      {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
+      <section data-testid="billing-upgrade" aria-labelledby="billing-heading-upgrade" style={{ marginBottom: '2rem' }}>
+        <h2 id="billing-heading-upgrade" style={sectionHeadingStyle}>Upgrade</h2>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           {PLANS.map((plan) => (
             <div
@@ -244,8 +246,10 @@ export default function BillingPage() {
                 ))}
               </ul>
               <div title="Coming soon — Stripe integration">
+                {/* SIRI-UX-323: aria-label distinguishes plan buttons for screen readers */}
                 <button
                   disabled
+                  aria-label={plan.current ? `${plan.name} — current plan` : `Upgrade to ${plan.name}`}
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -267,8 +271,9 @@ export default function BillingPage() {
       </section>
 
       {/* ── Usage History ── */}
-      <section data-testid="billing-history">
-        <h2 style={sectionHeadingStyle}>Usage History</h2>
+      {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
+      <section data-testid="billing-history" aria-labelledby="billing-heading-history">
+        <h2 id="billing-heading-history" style={sectionHeadingStyle}>Usage History</h2>
         <div style={{ ...cardStyle, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>

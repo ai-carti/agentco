@@ -210,7 +210,8 @@ export default function WarRoom() {
           ctaLabel="▶ Run a Task"
           onCTA={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
         />
-      ) : runs.length > 0 ? (
+      ) : (
+        // SIRI-UX-321: removed dead `runs.length > 0 ? (...) : null` — always true at this point
         <div className="space-y-3">
           {runs.map((run) => (
             <div
@@ -246,7 +247,7 @@ export default function WarRoom() {
             </div>
           ))}
         </div>
-      ) : null}
+      )}
     </div>
   )
 }
