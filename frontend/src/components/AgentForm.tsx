@@ -1,9 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import SystemPromptEditor from './SystemPromptEditor'
 import Button from './Button'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const FALLBACK_MODELS = ['gpt-4o', 'gpt-4o-mini', 'claude-sonnet-4-5', 'gemini-1.5-pro']
 

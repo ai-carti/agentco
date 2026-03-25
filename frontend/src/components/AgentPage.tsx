@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Button from './Button'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
@@ -9,7 +9,6 @@ import { Brain, ScrollText } from 'lucide-react'
 // SIRI-UX-302/303: formatDateLong from shared taskUtils (replaces local toLocaleDateString)
 import { formatDateLong } from '../utils/taskUtils'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const PAGE_SIZE = 20
 

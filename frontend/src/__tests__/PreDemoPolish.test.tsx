@@ -37,6 +37,7 @@ vi.mock('../context/ToastContext', () => ({
 // Stub client
 vi.mock('../api/client', () => ({
   getStoredToken: () => 'tok',
+  BASE_URL: 'http://localhost:8000',
 }))
 
 describe('PRE-DEMO-POLISH: AuthPage tagline', () => {

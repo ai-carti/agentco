@@ -36,6 +36,7 @@ import KanbanBoard from '../components/KanbanBoard'
 
 vi.mock('../api/client', () => ({
   getStoredToken: () => 'test-token',
+  BASE_URL: 'http://localhost:8000',
 }))
 
 // Toast mock

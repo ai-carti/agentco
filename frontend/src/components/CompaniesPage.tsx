@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
@@ -9,7 +9,6 @@ import { Building2 } from 'lucide-react'
 // SIRI-UX-170: focus trap for New Company modal
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 interface Company {
   id: string

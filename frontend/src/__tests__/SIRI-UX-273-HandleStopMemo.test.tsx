@@ -19,6 +19,7 @@ vi.mock('../context/ToastContext', () => ({
 }))
 vi.mock('../api/client', () => ({
   getStoredToken: () => null,
+  BASE_URL: 'http://localhost:8000',
 }))
 
 beforeEach(() => {

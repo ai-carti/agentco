@@ -4,12 +4,11 @@ import { useShallow } from 'zustand/shallow'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
 import { useToast } from '../context/ToastContext'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import Button from './Button'
 import { Moon } from 'lucide-react'
 import { formatTimeHMS, truncate } from '../utils/taskUtils'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const statusDotStyle: Record<WarRoomAgentStatus, string> = {
   idle: 'bg-gray-500',

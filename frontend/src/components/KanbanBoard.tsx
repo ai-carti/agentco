@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useAgentStore, type Task, type TaskStatus, type TaskPriority } from '../store/agentStore'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import TaskDetailSidebar from './TaskDetailSidebar'
 import Button from './Button'
 import { useToast } from '../context/ToastContext'
@@ -14,7 +14,6 @@ import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials as _getInit
 // SIRI-POST-006: focus trap hook for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },

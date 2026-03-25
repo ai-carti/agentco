@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import { Bot } from 'lucide-react'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-POST-006: focus trap
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 interface LibraryAgent {
   id: string

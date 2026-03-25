@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import Button from './Button'
 // SIRI-POST-006: focus trap for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 interface CompanyData {
   id: string

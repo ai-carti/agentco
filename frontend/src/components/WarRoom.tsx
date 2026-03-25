@@ -7,8 +7,8 @@ import SkeletonCard from './SkeletonCard'
 import { Moon } from 'lucide-react'
 // SIRI-UX-196: use shared relativeTime from taskUtils instead of local timeAgo
 import { relativeTime } from '../utils/taskUtils'
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// SIRI-UX-319: import BASE_URL from single source of truth
+import { BASE_URL } from '../api/client'
 
 // SIRI-UX-292: exponential backoff cap — mirrors useWarRoomSocket.ts
 const MAX_BACKOFF_MS = 30_000

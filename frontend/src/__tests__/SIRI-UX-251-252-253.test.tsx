@@ -10,7 +10,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 // ─── SIRI-UX-251 ────────────────────────────────────────────────────────────
 
-vi.mock('../api/client', () => ({ getStoredToken: () => 'test-token' }))
+vi.mock('../api/client', () => ({ getStoredToken: () => 'test-token', BASE_URL: 'http://localhost:8000' }))
 vi.mock('../context/ToastContext', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }))

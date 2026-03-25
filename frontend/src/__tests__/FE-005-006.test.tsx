@@ -18,6 +18,7 @@ vi.mock('../hooks/useWarRoomSocket', () => ({
 
 vi.mock('../api/client', () => ({
   getStoredToken: () => null,
+  BASE_URL: 'http://localhost:8000',
 }))
 
 function renderWithToast(ui: React.ReactElement) {

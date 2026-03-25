@@ -14,6 +14,7 @@ vi.mock('../hooks/useWarRoomSocket', () => ({
 // Mock getStoredToken
 vi.mock('../api/client', () => ({
   getStoredToken: vi.fn(() => 'test-token'),
+  BASE_URL: 'http://localhost:8000',
 }))
 
 import WarRoomPage from '../components/WarRoomPage'

@@ -8,7 +8,7 @@ import Button from './Button'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
 import { useAgentStore } from '../store/agentStore'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import { Bot } from 'lucide-react'
 // SIRI-UX-107: import shared utilities to eliminate local duplicates of AVATAR_COLORS + hashCode
@@ -99,7 +99,6 @@ const TAB_LABELS: { id: TabId; label: string }[] = [
   { id: 'agents', label: 'Agents' },
 ]
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 // SIRI-UX-290: module-level constant — was inside component body (recreated on every render, same bug as SIRI-UX-253)
 const TASK_LIMIT = 50

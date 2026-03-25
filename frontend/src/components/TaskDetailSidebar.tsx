@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { type Task, useAgentStore } from '../store/agentStore'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
 // SIRI-UX-049: shared utilities extracted to taskUtils (no local duplicates)
@@ -10,7 +10,6 @@ import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials, formatTime
 // SIRI-UX-150: focus trap for accessibility
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 // SIRI-UX-172: PRIORITY_COLORS moved to taskUtils.ts
 

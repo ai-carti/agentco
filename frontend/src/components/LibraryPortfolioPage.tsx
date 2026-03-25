@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getStoredToken } from '../api/client'
+import { getStoredToken, BASE_URL } from '../api/client'
 import SkeletonCard from './SkeletonCard'
 // SIRI-UX-198: use shared STATUS_COLORS from taskUtils instead of local statusColors
 // SIRI-UX-305: formatDateLong for consistent en-US date format
 import { STATUS_COLORS, formatDateLong } from '../utils/taskUtils'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 interface PortfolioTask {
   id: string

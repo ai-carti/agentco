@@ -51,6 +51,7 @@ vi.mock('../store/agentStore', () => ({
 
 vi.mock('../api/client', () => ({
   getStoredToken: vi.fn(() => null),
+  BASE_URL: 'http://localhost:8000',
 }))
 
 // SIRI-UX-127: mock ToastContext to capture toast.error calls
