@@ -5,9 +5,14 @@ import { useAgentStore } from '../store/agentStore'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 // SIRI-UX-285: detect macOS to show ⌘K instead of Ctrl+K in the trigger button
-// Evaluated at call time so test environments that override navigator.platform work correctly.
+// SIRI-UX-295: navigator.platform is deprecated (MDN 2022). Use navigator.userAgentData?.platform
+// (Chrome 90+) as primary source; fall back to navigator.platform for older browsers.
+// Evaluated at call time so test environments that override navigator properties work correctly.
 function getIsMac(): boolean {
-  return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+  if (typeof navigator === 'undefined') return false
+  const uadPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
+  if (uadPlatform) return /mac/i.test(uadPlatform)
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 }
 
 interface SearchResult {

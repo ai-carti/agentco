@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useShallow } from 'zustand/shallow'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
 import { useToast } from '../context/ToastContext'
@@ -28,11 +29,18 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
 import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function WarRoomPage() {
-  const agents = useWarRoomStore((s) => s.agents)
-  const messages = useWarRoomStore((s) => s.messages)
-  const cost = useWarRoomStore((s) => s.cost)
-  const runStatus = useWarRoomStore((s) => s.runStatus)
-  const flashingAgents = useWarRoomStore((s) => s.flashingAgents)
+  // SIRI-UX-297: merge state subscriptions into one useShallow selector to avoid up to 10
+  // separate re-renders when the store updates multiple fields in a batch.
+  // Actions are stable references and kept as separate subscriptions (no re-render cost).
+  const { agents, messages, cost, runStatus, flashingAgents } = useWarRoomStore(
+    useShallow((s) => ({
+      agents: s.agents,
+      messages: s.messages,
+      cost: s.cost,
+      runStatus: s.runStatus,
+      flashingAgents: s.flashingAgents,
+    }))
+  )
   const loadMockData = useWarRoomStore((s) => s.loadMockData)
   const addMessage = useWarRoomStore((s) => s.addMessage)
   const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)

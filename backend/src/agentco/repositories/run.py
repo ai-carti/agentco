@@ -54,7 +54,8 @@ class RunRepository(BaseRepository[RunORM, Run]):
         stmt = select(self.orm_model).where(RunORM.company_id == company_id)
         if status_filter is not None:
             stmt = stmt.where(RunORM.status == status_filter)
-        stmt = stmt.order_by(RunORM.started_at.desc()).limit(limit).offset(offset)
+        # ALEX-TD-199: nullslast() prevents NULL started_at from sorting before dated rows
+        stmt = stmt.order_by(RunORM.started_at.desc().nullslast()).limit(limit).offset(offset)
         return [self._to_domain(row) for row in self._session.scalars(stmt).all()]
 
     def list_by_task(self, task_id: str, limit: int = 50, offset: int = 0) -> list[Run]:
@@ -62,7 +63,8 @@ class RunRepository(BaseRepository[RunORM, Run]):
         stmt = (
             select(self.orm_model)
             .where(RunORM.task_id == task_id)
-            .order_by(RunORM.started_at.desc())
+            # ALEX-TD-199: nullslast() prevents NULL started_at from sorting before dated rows
+            .order_by(RunORM.started_at.desc().nullslast())
             .limit(limit)
             .offset(offset)
         )

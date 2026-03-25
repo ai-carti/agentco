@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
@@ -125,8 +125,10 @@ app.add_middleware(ApiV1AliasMiddleware)
 
 
 # AC2: GET /health → {"status": "ok"} (with DB liveness check — ALEX-TD-052)
+# ALEX-TD-198: rate-limited to prevent DB spam from load balancers / monitoring
 @app.get("/health")
-async def health_check():
+@limiter.limit("120/minute")
+async def health_check(request: Request):
     """Liveness probe for Railway. Checks DB connectivity so Railway restarts on DB failure."""
     from sqlalchemy import text
     from .db.session import SessionLocal
@@ -147,8 +149,10 @@ async def health_check():
     return {"status": "ok"}
 
 
+# ALEX-TD-198: rate-limited to prevent DB spam from load balancers / monitoring
 @app.get("/api/health")
-async def health():
+@limiter.limit("120/minute")
+async def health(request: Request):
     return {"status": "ok", "version": "0.1.0"}
 
 
