@@ -169,7 +169,10 @@ export const useWarRoomStore = create<WarRoomState>((set, _get) => ({
     set({
       agents: MOCK_AGENTS,
       messages: MOCK_MESSAGES,
-      cost: 0.042,
+      // SIRI-UX-313: cost must start at 0 — per SIRI-POST-004/SIRI-UX-125/SIRI-UX-212,
+      // cost is accumulated exclusively from real WS llm_token events via addCost().
+      // Setting mock cost pollutes the cost counter in dev mode and hides real accumulation bugs.
+      cost: 0,
       // SIRI-UX-121: mock mode still uses 'idle' — no real run is happening
       runStatus: 'idle' as RunStatus,
     }),

@@ -155,14 +155,25 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   return (
     <>
       {/* Backdrop */}
+      {/* SIRI-UX-311: role="button" + tabIndex + onKeyDown — keyboard users can close sidebar via backdrop */}
       <div
         data-testid="sidebar-backdrop"
+        role="button"
+        tabIndex={0}
+        aria-label="Close task details"
         onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+            e.preventDefault()
+            onClose()
+          }
+        }}
         style={{
           position: 'fixed',
           inset: 0,
           background: 'rgba(0,0,0,0.5)',
           zIndex: 40,
+          cursor: 'default',
         }}
       />
 

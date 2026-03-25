@@ -160,7 +160,8 @@ describe('SIRI-UX-057: TaskDetailSidebar close button aria-label', () => {
 
   it('close button is accessible by aria-label role query', () => {
     renderSidebar()
-    const closeBtn = screen.getByRole('button', { name: /close/i })
+    // Use exact match to avoid matching backdrop aria-label="Close task details" (SIRI-UX-311)
+    const closeBtn = screen.getByRole('button', { name: 'Close' })
     expect(closeBtn).toBeInTheDocument()
   })
 })

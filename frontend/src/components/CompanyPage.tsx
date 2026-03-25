@@ -247,7 +247,9 @@ export default function CompanyPage() {
         const items = Array.isArray(data) ? data : []
         const currentTasks = useAgentStore.getState().tasks
         setTasks([...currentTasks, ...items])
-        setTaskOffset(taskOffset + items.length)
+        // SIRI-UX-312: use functional updater to avoid stale closure on taskOffset
+        // Concurrent calls or StrictMode double-invoke could use stale value otherwise
+        setTaskOffset((prev) => prev + items.length)
         setHasMoreTasks(items.length === TASK_LIMIT)
       } else {
         // SIRI-UX-151: surface load-more errors so user knows what happened

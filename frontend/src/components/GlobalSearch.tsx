@@ -257,12 +257,25 @@ export default function GlobalSearch() {
             }}
           />
 
+          {/* SIRI-UX-314: search scope hint so user understands what's being searched */}
+          {debouncedQuery.length < 2 && (
+            <p
+              data-testid="global-search-scope-hint"
+              style={{ textAlign: 'center', color: '#6b7280', padding: '0.75rem 1rem', fontSize: '0.8rem' }}
+            >
+              {currentCompany
+                ? `Searching in "${currentCompany.name}"`
+                : 'Select a company to search agents and tasks'}
+            </p>
+          )}
           {debouncedQuery.length >= 2 && results.length === 0 && (
             <p
               data-testid="global-search-empty"
               style={{ textAlign: 'center', color: '#6b7280', padding: '1rem 0' }}
             >
-              {`No results for "${debouncedQuery}"`}
+              {currentCompany
+                ? `No results for "${debouncedQuery}" in "${currentCompany.name}"`
+                : `No results for "${debouncedQuery}"`}
             </p>
           )}
 
