@@ -264,3 +264,61 @@ class TestWebSocketIntegration:
             assert data["type"] == "run.started"
             assert data["run_id"] == "r-123"
             assert data["company_id"] == company_id
+
+
+# ─── ALEX-TD-218: RedisEventBus.publish() должен обрабатывать ошибки Redis ──────
+
+class TestRedisEventBusPublishErrorHandling:
+    """ALEX-TD-218: ConnectionError/TimeoutError в publish() не должны ломать основной flow."""
+
+    @pytest.mark.asyncio
+    async def test_publish_connection_error_does_not_raise(self):
+        """
+        Если Redis недоступен (ConnectionError), publish() должен поглотить ошибку
+        и залогировать warning — не пробрасывать исключение вызывающему.
+        """
+        from agentco.core.event_bus import RedisEventBus
+
+        bus = RedisEventBus("redis://localhost:6379")
+
+        mock_client = AsyncMock()
+        mock_client.publish.side_effect = ConnectionError("Redis connection refused")
+
+        with patch.object(bus, "_get_client", return_value=mock_client):
+            # Не должно бросать исключение
+            await bus.publish({"type": "llm_token", "company_id": "c1", "data": "x"})
+
+    @pytest.mark.asyncio
+    async def test_publish_timeout_error_does_not_raise(self):
+        """
+        Если Redis timeout (TimeoutError), publish() должен поглотить ошибку.
+        """
+        from agentco.core.event_bus import RedisEventBus
+
+        bus = RedisEventBus("redis://localhost:6379")
+
+        mock_client = AsyncMock()
+        mock_client.publish.side_effect = TimeoutError("Redis timeout")
+
+        with patch.object(bus, "_get_client", return_value=mock_client):
+            await bus.publish({"type": "completion", "company_id": "c2", "data": "done"})
+
+    @pytest.mark.asyncio
+    async def test_publish_logs_warning_on_error(self):
+        """
+        При ошибке Redis, publish() должен логировать warning с деталями.
+        """
+        from agentco.core.event_bus import RedisEventBus
+        import logging
+
+        bus = RedisEventBus("redis://localhost:6379")
+
+        mock_client = AsyncMock()
+        mock_client.publish.side_effect = ConnectionError("Connection refused")
+
+        with patch.object(bus, "_get_client", return_value=mock_client):
+            with patch("agentco.core.event_bus.logger") as mock_logger:
+                await bus.publish({"type": "llm_token", "company_id": "c3", "data": "y"})
+                mock_logger.warning.assert_called_once()
+                warning_args = mock_logger.warning.call_args[0]
+                assert "c3" in str(warning_args) or "llm_token" in str(warning_args)

@@ -724,3 +724,54 @@ class TestEmptyLLMResponse:
         assert len(new_messages) == 1
         assert new_messages[0]["role"] == "assistant"
         assert new_messages[0]["content"] == "Hello world"
+
+
+# ─── ALEX-TD-217: asyncio.timeout() covers entire streaming loop ──────────────
+
+class TestStreamingTimeout:
+    """ALEX-TD-217: таймаут должен покрывать не только acompletion(), но и весь async for loop."""
+
+    @pytest.mark.asyncio
+    async def test_streaming_loop_timeout_raises(self):
+        """
+        Если стриминг начался, но провайдер завис на середине потока,
+        asyncio.TimeoutError должен сработать (не ждать MAX_RUN_TIMEOUT_SEC).
+        """
+        import asyncio
+        from agentco.orchestration.agent_node import agent_node
+
+        async def _hanging_stream():
+            yield _make_text_chunk("partial response")
+            # Симулируем зависание провайдера — никогда не завершается
+            await asyncio.sleep(9999)
+
+        hanging = MagicMock()
+        hanging.__aiter__ = lambda self: _hanging_stream()
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            with patch("agentco.orchestration.agent_node._LLM_CALL_TIMEOUT_SEC", 0.05):
+                mock_acomp.return_value = hanging
+                state = _make_base_state()
+                with pytest.raises((asyncio.TimeoutError, TimeoutError)):
+                    await agent_node(state)
+
+    @pytest.mark.asyncio
+    async def test_normal_streaming_completes_within_timeout(self):
+        """
+        Нормальный стриминг (без зависания) должен успешно завершиться.
+        """
+        from agentco.orchestration.agent_node import agent_node
+        chunks = [
+            _make_text_chunk("Hello"),
+            _make_text_chunk(" world"),
+            _make_finish_chunk("stop"),
+        ]
+        stream = _make_async_stream(chunks)
+
+        with patch("agentco.orchestration.agent_node.litellm.acompletion", new_callable=AsyncMock) as mock_acomp:
+            mock_acomp.return_value = stream
+            state = _make_base_state()
+            result = await agent_node(state)
+
+        assert "messages" in result
+        assert result["messages"][0]["content"] == "Hello world"
