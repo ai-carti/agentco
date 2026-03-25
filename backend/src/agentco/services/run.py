@@ -402,8 +402,21 @@ class RunService:
                 raise ValueError(f"Run {run_id!r} not found")
 
             company_id = run_orm.company_id
-            initial_goal = run_orm.goal or (run_orm.task_id or "")
-            initial_task_id = run_orm.task_id
+            _initial_task_id = run_orm.task_id
+            # ALEX-TD-204: when goal is None (task-based run), load task title+description
+            # instead of falling back to task_id UUID string (LLM gets UUID → useless input).
+            if run_orm.goal:
+                initial_goal = run_orm.goal
+            elif _initial_task_id:
+                from ..orm.task import TaskORM as _TaskORM
+                task_orm = _init_session.get(_TaskORM, _initial_task_id)
+                if task_orm is not None:
+                    task_desc = task_orm.description or ""
+                    initial_goal = f"{task_orm.title}\n{task_desc}".strip() if task_desc else task_orm.title
+                else:
+                    initial_goal = _initial_task_id  # fallback: shouldn't happen
+            else:
+                initial_goal = ""
 
             # Обновляем статус → running
             run_orm.status = "running"

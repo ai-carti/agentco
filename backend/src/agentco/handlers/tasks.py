@@ -1,6 +1,7 @@
 import logging
 import os
 
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
@@ -72,6 +73,11 @@ class TaskOut(BaseModel):
     title: str
     description: str | None
     status: str
+    # ALEX-TD-203: expose created_at and result — present in Task domain model but
+    # previously hidden from REST API. Frontend needs created_at for sorting and
+    # result to display task outcome after a run completes.
+    created_at: datetime | None = None
+    result: str | None = None
 
     model_config = {"from_attributes": True}
 
