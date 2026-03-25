@@ -163,7 +163,11 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
     messages: list[dict] = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
-    messages.extend(state.get("messages", []))
+    # ALEX-TD-219: use `or []` to guard against explicit None value in state.
+    # dict.get(key, default) only returns default for *missing* keys — if a
+    # LangGraph node returns {"messages": None}, get("messages", []) returns None
+    # → messages.extend(None) → TypeError. `or []` handles both missing and None.
+    messages.extend(state.get("messages") or [])
     return messages
 
 

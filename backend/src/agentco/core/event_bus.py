@@ -128,6 +128,15 @@ class RedisEventBus:
                         logger.warning("RedisEventBus: invalid JSON in message: %s", e)
         except asyncio.CancelledError:
             raise
+        except Exception as e:
+            # ALEX-TD-220: catch Redis ConnectionError / TimeoutError from pubsub.listen().
+            # If Redis drops the connection mid-stream, the error propagates through the
+            # async generator into the SSE endpoint, aborting the client stream with 500
+            # instead of a graceful disconnect. Log and exit the loop cleanly.
+            logger.warning(
+                "RedisEventBus: subscribe loop error for company %s: %s",
+                company_id, e,
+            )
         finally:
             try:
                 await pubsub.unsubscribe(channel)
