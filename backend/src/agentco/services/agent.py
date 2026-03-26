@@ -79,6 +79,11 @@ class AgentService:
         Returns agents as a nested tree structure.
         Each node: {id, name, role, model, hierarchy_level, parent_agent_id, children: [...]}
         POST-006 AC5.
+
+        ALEX-TD-252 (known limitation): loads ALL agents for the company without a limit.
+        Pagination for tree structures is non-trivial (a partial tree is semantically broken).
+        Mitigated by: rate limiting at 30/minute on the endpoint (handlers/agents.py).
+        Future fix: add a max_depth parameter or cap total agents per company at the service level.
         """
         self._check_company_owner(company_id, owner_id)
         agents = self._repo.list_by_company(company_id)

@@ -33,13 +33,23 @@ class CompanyService:
             raise NotFoundError(f"Company {company_id!r} not found")
         return company
 
-    def list_all(self, owner_id: str | None = None) -> list[Company]:
+    def list_all(
+        self,
+        owner_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[Company]:
+        """List companies, optionally filtered by owner.
+
+        ALEX-TD-251: added limit/offset for pagination. Previously returned all companies
+        in an unbounded SELECT — risk of OOM with many companies per user.
+        """
         from ..orm.company import CompanyORM
         # ALEX-TD-096: ORDER BY created_at for deterministic pagination
         order = CompanyORM.created_at.asc()
         if owner_id is not None:
-            return self._repo.list(order_by=order, owner_id=owner_id)
-        return self._repo.list(order_by=order)
+            return self._repo.list(order_by=order, limit=limit, offset=offset, owner_id=owner_id)
+        return self._repo.list(order_by=order, limit=limit, offset=offset)
 
     def update(self, company_id: str, name: str, owner_id: str | None = None) -> Company:
         """Update company name. If owner_id provided, validates ownership in one DB hit.

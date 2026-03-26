@@ -592,9 +592,11 @@ class RunService:
                     update_session.commit()
             except Exception as db_exc:
                 # ALEX-TD-104: catch DB errors so run.failed event is always published below.
+                # ALEX-TD-253: added exc_info=True so stacktrace is visible in production logs.
                 logger.warning(
                     "execute_run: DB update failed in error branch for run_id=%s: %s",
                     run_id, db_exc,
+                    exc_info=True,
                 )
             finally:
                 if session_factory is not None:

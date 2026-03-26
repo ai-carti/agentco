@@ -2,7 +2,7 @@ import logging
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from ..db.session import get_session
@@ -66,11 +66,21 @@ def _to_out(company) -> CompanyOut:
 @limiter.limit(_RATE_LIMIT_COMPANIES_READ)
 def list_companies(
     request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
-    """List all companies owned by the current user."""
-    return [_to_out(c) for c in CompanyService(session).list_all(owner_id=current_user.id)]
+    """List all companies owned by the current user.
+
+    ALEX-TD-251: added limit/offset pagination (le=100, consistent with ALEX-TD-236/238).
+    Previously returned all companies in a single unbounded SELECT — risk of OOM with many companies.
+    """
+    return [_to_out(c) for c in CompanyService(session).list_all(
+        owner_id=current_user.id,
+        limit=limit,
+        offset=offset,
+    )]
 
 
 @router.post("/", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
