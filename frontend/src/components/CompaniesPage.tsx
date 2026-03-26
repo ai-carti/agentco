@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -40,7 +40,8 @@ export default function CompaniesPage() {
   }, [])
 
   // SIRI-UX-179: accept optional AbortSignal so fetch is cancellable from useEffect cleanup
-  const load = async (signal?: AbortSignal) => {
+  // SIRI-UX-372: memoize load so it's stable in handleCreate's dep array
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     setLoadError(null)
     try {
@@ -69,7 +70,7 @@ export default function CompaniesPage() {
       setLoading(false)
       setHasLoadedOnce(true)
     }
-  }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const controller = new AbortController()
@@ -77,7 +78,8 @@ export default function CompaniesPage() {
     return () => controller.abort()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleCreate = async () => {
+  // SIRI-UX-372: wrap in useCallback to avoid recreating on every render
+  const handleCreate = useCallback(async () => {
     if (!newName.trim()) return
     // SIRI-UX-183: abort any previous in-flight create request
     createAbortRef.current?.abort()
@@ -117,7 +119,7 @@ export default function CompaniesPage() {
         createAbortRef.current = null
       }
     }
-  }
+  }, [toast, newName, load])
 
   // M3-003: First visit with no companies → show onboarding (but not when there's a fetch error)
   if (hasLoadedOnce && !loading && companies.length === 0 && !loadError) {
@@ -150,6 +152,7 @@ export default function CompaniesPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Companies</h1>
         <button
+          data-testid="new-company-btn"
           onClick={() => setShowNewModal(true)}
           style={{
             padding: '0.4rem 0.9rem',
@@ -252,6 +255,7 @@ export default function CompaniesPage() {
                 Cancel
               </button>
               <button
+                data-testid="new-company-create-btn"
                 onClick={handleCreate}
                 disabled={creating || !newName.trim()}
                 style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
