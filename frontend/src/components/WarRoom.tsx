@@ -14,6 +14,9 @@ import { BASE_URL } from '../api/client'
 const MAX_BACKOFF_MS = 30_000
 const INITIAL_BACKOFF_MS = 1_000
 
+// SIRI-UX-351: module-level constant — was inside connect() (recalculated on every reconnect)
+const BASE_WS_URL = BASE_URL.replace(/^http/, 'ws')
+
 interface Run {
   run_id: string
   agent_name: string
@@ -96,7 +99,6 @@ export default function WarRoom() {
       setIsConnecting(false)
       return
     }
-    const BASE_WS_URL = BASE_URL.replace(/^http/, 'ws')
     const ws = new WebSocket(
       `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
     )
