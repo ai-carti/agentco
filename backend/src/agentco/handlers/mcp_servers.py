@@ -63,7 +63,8 @@ class MCPServerCreate(BaseModel):
             hostname = parsed.hostname or ""
         except Exception as parse_exc:
             # ALEX-TD-227: log parse failure so SSRF validation errors are diagnosable
-            logger.debug("urlparse failed for SSRF check on %r: %s", v, parse_exc)
+            # BUG-082: use WARNING so admins see URL rejection reason at LOG_LEVEL=INFO
+            logger.warning("urlparse failed for SSRF check on %r: %s", v, parse_exc)
             raise ValueError("server_url is not a valid URL")
         # Block by hostname string
         _blocked_names = {"localhost", "localhost."}
