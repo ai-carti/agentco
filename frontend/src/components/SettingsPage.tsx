@@ -146,7 +146,8 @@ export default function SettingsPage() {
     return () => controller.abort()
   }, [selectedCompanyId])
 
-  const handleSubmit = async (e: FormEvent) => {
+  // SIRI-UX-385: useCallback prevents recreation on every render — passed as onSubmit to form
+  const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault()
     if (!selectedCompanyId) return
     const trimmedKey = apiKey.trim()
@@ -228,7 +229,8 @@ export default function SettingsPage() {
         submitAbortRef.current = null
       }
     }
-  }
+  // SIRI-UX-385: deps — selectedCompanyId, provider, apiKey read inside; toast stable
+  }, [selectedCompanyId, provider, apiKey, toast]) // SIRI-UX-385
 
   const handleDelete = useCallback(async (id: string) => {
     if (!selectedCompanyId) return

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -62,7 +62,8 @@ export default function CompanySettingsPage() {
     }
   }, [])
 
-  const handleSave = async () => {
+  // SIRI-UX-384: useCallback prevents recreation on every render — passed as onClick to Save button
+  const handleSave = useCallback(async () => {
     saveAbortRef.current?.abort()
     const controller = new AbortController()
     saveAbortRef.current = controller
@@ -96,9 +97,11 @@ export default function CompanySettingsPage() {
         setSaving(false)
       }
     }
-  }
+  // SIRI-UX-384: deps — name, description are state values read inside; toast stable
+  }, [companyId, name, description, toast]) // SIRI-UX-384
 
-  const handleDelete = async () => {
+  // SIRI-UX-384: useCallback prevents recreation on every render
+  const handleDelete = useCallback(async () => {
     // SIRI-UX-309: AbortController to guard toast/setState on unmounted component
     deleteAbortRef.current?.abort()
     const controller = new AbortController()
@@ -127,7 +130,8 @@ export default function CompanySettingsPage() {
         setIsDeleting(false)
       }
     }
-  }
+  // SIRI-UX-384: deps — companyId, company.name (for confirm validation), navigate, toast
+  }, [companyId, navigate, toast]) // SIRI-UX-384
 
   return (
     <div data-testid="company-settings-page" style={{ padding: '1.5rem', maxWidth: 560 }}>

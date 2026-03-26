@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { Bot } from 'lucide-react'
@@ -68,7 +68,10 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
     return () => controller.abort()
   }, [])
 
-  const handleFork = async (companyId: string) => {
+  // SIRI-UX-383: useCallback prevents new function reference on every ForkModal render.
+  // handleFork is passed as onClick to N company buttons — without memoization it causes
+  // unnecessary closures on every render cycle.
+  const handleFork = useCallback(async (companyId: string) => {
     // SIRI-UX-193: AbortController to guard setState on unmounted ForkModal
     forkAbortRef.current?.abort()
     const controller = new AbortController()
@@ -111,7 +114,8 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
         forkAbortRef.current = null
       }
     }
-  }
+  // SIRI-UX-383: deps — agentId, onForked, onClose from props; toast stable
+  }, [agentId, onClose, onForked, toast]) // SIRI-UX-383
 
   return (
     <div
@@ -208,7 +212,8 @@ export default function LibraryPage() {
   const [loadError, setLoadError] = useState(false)
   const [forkTarget, setForkTarget] = useState<string | null>(null)
 
-  const loadAgents = (signal?: AbortSignal) => {
+  // SIRI-UX-386: useCallback so Retry button click uses stable reference
+  const loadAgents = useCallback((signal?: AbortSignal) => {
     setLoadError(false)
     const token = getStoredToken()
     // SIRI-UX-069: use limit param now that backend supports pagination (ALEX-TD-040)
@@ -227,13 +232,14 @@ export default function LibraryPage() {
         setLoadError(true)
         setLoading(false)
       })
-  }
+  // SIRI-UX-386: no deps — only reads stable setState functions
+  }, []) // SIRI-UX-386
 
   useEffect(() => {
     const controller = new AbortController()
     loadAgents(controller.signal)
     return () => controller.abort()
-  }, [])
+  }, [loadAgents])
 
   return (
     <div
