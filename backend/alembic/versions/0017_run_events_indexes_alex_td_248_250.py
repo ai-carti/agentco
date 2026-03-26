@@ -26,6 +26,14 @@ depends_on = None
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    # Guard: run_events table may not exist in all migration paths
+    # (it can be created via ORM create_all rather than migrations).
+    # This mirrors the same pattern used in migration 0010.
+    if "run_events" not in existing_tables:
+        return
+
     existing_indexes = {idx["name"] for idx in inspector.get_indexes("run_events")}
 
     # ALEX-TD-248: drop the redundant standalone single-column index on run_id
@@ -43,6 +51,11 @@ def upgrade() -> None:
 def downgrade() -> None:
     bind = op.get_bind()
     inspector = inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    if "run_events" not in existing_tables:
+        return
+
     existing_indexes = {idx["name"] for idx in inspector.get_indexes("run_events")}
 
     # Restore standalone run_id index (ALEX-TD-248 rollback)
