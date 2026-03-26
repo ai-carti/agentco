@@ -181,7 +181,7 @@ def list_mcp_servers(
     request: Request,
     company_id: uuid.UUID,
     agent_id: uuid.UUID,
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-244: le=200→100 consistent with ALEX-TD-238
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
