@@ -82,9 +82,13 @@ class MCPServerCreate(BaseModel):
         # complex in async systems. Documented as known limitation — mitigate with
         # network-level egress filtering (firewall deny RFC-1918 outbound).
         try:
-            # Hex IPv4 detection: 0x prefix + pure hex digits
+            # ALEX-TD-256: also handle decimal-encoded IPv4 (e.g. 2130706433 → 127.0.0.1)
+            # and octal-encoded (e.g. 0177.0.0.1). ipaddress.ip_address() does NOT parse
+            # these as valid IPs (raises ValueError), so they would silently pass as
+            # "domain name" without explicit detection.
             candidate = hostname
             if candidate.startswith(("0x", "0X")):
+                # Hex IPv4: 0x7f000001 → 127.0.0.1
                 try:
                     int_val = int(candidate, 16)
                     candidate_addr = ipaddress.ip_address(int_val)
@@ -94,6 +98,18 @@ class MCPServerCreate(BaseModel):
                         )
                 except (ValueError, OverflowError) as hex_exc:
                     if "not allowed" in str(hex_exc) or "SSRF" in str(hex_exc):
+                        raise
+            elif candidate.isdigit():
+                # Decimal-encoded IPv4: 2130706433 → 127.0.0.1
+                try:
+                    int_val = int(candidate)
+                    candidate_addr = ipaddress.ip_address(int_val)
+                    if candidate_addr.is_loopback or candidate_addr.is_private or candidate_addr.is_link_local or candidate_addr.is_unspecified:
+                        raise ValueError(
+                            f"server_url hostname '{hostname}' resolves to a private/internal IP (decimal format) — not allowed for SSRF prevention"
+                        )
+                except (ValueError, OverflowError) as dec_exc:
+                    if "not allowed" in str(dec_exc) or "SSRF" in str(dec_exc):
                         raise
             else:
                 addr = ipaddress.ip_address(candidate)

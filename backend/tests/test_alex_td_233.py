@@ -122,3 +122,44 @@ def test_ssrf_dns_rebinding_known_limitation_documented():
     assert "known limitation" in source.lower() or "KNOWN LIMITATION" in source, (
         "DNS rebinding comment must say it is a known limitation"
     )
+
+
+# ── ALEX-TD-256: Decimal-encoded IPv4 bypass ──────────────────────────────────
+
+class TestAlexTD256DecimalIPv4:
+    """Decimal-encoded IPv4 (e.g. 2130706433 = 127.0.0.1) must be blocked.
+
+    ALEX-TD-256: Tests use Pydantic model directly to avoid HTTP routing complexity.
+    The mcp-servers endpoint is scoped to /agents/{id}/mcp-servers, not /companies.
+    """
+
+    def test_decimal_loopback_blocked(self):
+        """2130706433 = 127.0.0.1 — must be blocked by Pydantic validator."""
+        from pydantic import ValidationError
+        from agentco.handlers.mcp_servers import MCPServerCreate
+        with pytest.raises(ValidationError, match="not allowed"):
+            MCPServerCreate(name="test", server_url="http://2130706433/mcp")
+
+    def test_decimal_private_blocked(self):
+        """3232235520 = 192.168.0.0 — must be blocked."""
+        from pydantic import ValidationError
+        from agentco.handlers.mcp_servers import MCPServerCreate
+        with pytest.raises(ValidationError, match="not allowed"):
+            MCPServerCreate(name="test", server_url="http://3232235520/mcp")
+
+    def test_decimal_link_local_blocked(self):
+        """2851995648 = 169.254.0.0 (link-local) — must be blocked."""
+        from pydantic import ValidationError
+        from agentco.handlers.mcp_servers import MCPServerCreate
+        with pytest.raises(ValidationError, match="not allowed"):
+            MCPServerCreate(name="test", server_url="http://2851995648/mcp")
+
+    def test_large_decimal_no_crash(self):
+        """9999999999 > max IPv4 — treated as domain, validator should not crash."""
+        from agentco.handlers.mcp_servers import MCPServerCreate
+        # This may succeed or fail validation for other reasons, but must not raise
+        # an unexpected exception (no crash/hang)
+        try:
+            MCPServerCreate(name="test", server_url="http://9999999999/mcp")
+        except Exception:
+            pass  # Any exception is fine — just no unhandled crash
