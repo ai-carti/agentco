@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Button from './Button'
 import { getStoredToken, BASE_URL } from '../api/client'
@@ -183,7 +183,9 @@ export default function AgentPage() {
   // SIRI-UX-329: deps — agentId and toast are stable; savedToLibrary excluded (not read inside)
   }, [agentId, toast]) // SIRI-UX-329
 
-  const visibleHistory = history.slice(0, visibleCount)
+  // SIRI-UX-380: memoize visibleHistory so it's not re-computed on every render
+  // when history and visibleCount haven't changed
+  const visibleHistory = useMemo(() => history.slice(0, visibleCount), [history, visibleCount])
   const hasMore = history.length > visibleCount
 
   // SIRI-UX-059: show error state when agent fails to load
