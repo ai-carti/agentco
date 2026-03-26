@@ -421,6 +421,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: canRun ? '0.5rem' : 0 }}>
         <div
           data-testid={`assignee-avatar-${task.id}`}
+          // SIRI-UX-356: aria-label provides accessible name — initials alone are not self-descriptive
+          aria-label={assigneeName}
+          title={assigneeName}
           style={{
             width: 24, height: 24, borderRadius: '50%', background: avatarColor,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -664,7 +667,7 @@ function FilterBar({
   // SIRI-UX-023: close dropdowns on mousedown outside FilterBar
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node | null)) {
         setAgentDropdownOpen(false)
         setPriorityDropdownOpen(false)
       }

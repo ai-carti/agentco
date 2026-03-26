@@ -142,8 +142,11 @@ if _is_postgres(_DB_URL):
             _async_engine, class_=AsyncSession, expire_on_commit=False
         )
     except Exception as e:
-        # asyncpg not installed — async engine unavailable
-        _log.debug("async engine unavailable: %s", e)
+        # ALEX-TD-225: raise to WARNING so init failures are visible in prod logs (INFO+).
+        # Previously logged at DEBUG only — asyncpg installed but broken (bad DB URL,
+        # auth fail) would be invisible in prod, and get_async_session() would raise
+        # AttributeError on first request with no diagnosable cause.
+        _log.warning("async engine init failed (async DB sessions unavailable): %s", e, exc_info=True)
 
 
 async def get_async_session():

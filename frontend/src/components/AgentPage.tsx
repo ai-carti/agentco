@@ -298,7 +298,7 @@ export default function AgentPage() {
         {!memoriesLoaded ? (
           <SkeletonCard variant="task" count={2} />
         ) : memoriesError ? (
-          <p data-testid="memory-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+          <p role="alert" data-testid="memory-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
             ⚠ Failed to load memories
           </p>
         ) : memories.length === 0 ? (

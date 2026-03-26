@@ -15,8 +15,19 @@ from .handlers import companies_router, agents_router, tasks_router, auth_router
 logger = logging.getLogger(__name__)
 
 # ALEX-TD-001 fix: CORS origins from env — critical for prod deployment
+# ALEX-TD-224 fix: warn when CORS_ORIGINS is not set in production.
+# Previously _DEFAULT_CORS_ORIGINS included localhost:5173/3000 as implicit fallback —
+# in a production deployment without CORS_ORIGINS set, dev origins were silently whitelisted.
+# Now: log a WARNING so ops teams notice missing CORS config; dev defaults still apply
+# for local development convenience but the warning makes it diagnosable.
 _DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,http://localhost:3000"
-_cors_origins_raw = os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS)
+_cors_origins_env = os.getenv("CORS_ORIGINS")
+if _cors_origins_env is None:
+    logger.warning(
+        "CORS_ORIGINS env var is not set — using localhost dev defaults. "
+        "In production, set CORS_ORIGINS to your frontend URL(s) to restrict cross-origin access."
+    )
+_cors_origins_raw = _cors_origins_env or _DEFAULT_CORS_ORIGINS
 _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
 
 
