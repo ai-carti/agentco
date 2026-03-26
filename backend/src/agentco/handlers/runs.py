@@ -152,7 +152,7 @@ VALID_RUN_STATUSES = {"pending", "running", "completed", "failed", "stopped", "d
 async def list_runs(
     request: Request,
     company_id: uuid.UUID,
-    limit: int = Query(default=20, ge=1, le=500),
+    limit: int = Query(default=20, ge=1, le=100),  # ALEX-TD-236: le=500→100, consistent with ALEX-TD-238
     offset: int = Query(default=0, ge=0),
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: Session = Depends(get_session),
@@ -316,7 +316,7 @@ async def list_task_runs(
     request: Request,
     company_id: uuid.UUID,
     task_id: uuid.UUID,
-    limit: int = Query(default=50, ge=1, le=500),
+    limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-238: le=500→100
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),

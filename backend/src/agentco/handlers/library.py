@@ -99,7 +99,9 @@ def save_to_library(
     # Check ownership via company
     company = session.get(CompanyORM, agent.company_id)
     if company is None or company.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        # ALEX-TD-239: use 404 instead of 403 — uniform with all ownership checks in codebase.
+        # 403 would reveal that the agent exists (info leak). 404 is OPSEC-safe.
+        raise HTTPException(status_code=404, detail="Agent not found")
 
     lib_entry = AgentLibraryORM(
         id=str(uuid.uuid4()),
@@ -121,7 +123,7 @@ def save_to_library(
 @limiter.limit(_RATE_LIMIT_LIBRARY_READ)
 def list_library(
     request: Request,
-    limit: int = Query(default=50, ge=1, le=500),
+    limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-238: le=500→100 consistent with ALEX-TD-236
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),  # just requires auth
@@ -145,7 +147,7 @@ def list_library(
 def get_portfolio(
     request: Request,
     library_id: str,
-    limit: int = Query(default=50, ge=1, le=500),
+    limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-238: le=500→100 consistent with ALEX-TD-236
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
