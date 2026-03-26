@@ -151,6 +151,11 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
       // SIRI-UX-356: only create a new Set when we actually need to add a flash entry.
       // Returning the same reference when shouldFlash=false avoids triggering a re-render
       // in WarRoomPage (which uses useShallow, relying on Object.is comparison).
+      //
+      // BUG-081: also guard when shouldFlash=true but agentId is already in the set.
+      // Without this guard, a double flash creates new Set([...same]) — same contents,
+      // new reference — which useShallow treats as a state change → redundant re-render.
+      if (shouldFlash && state.flashingAgents.has(agentId)) return state
       const flashingAgents = shouldFlash
         ? new Set([...state.flashingAgents, agentId])
         : state.flashingAgents

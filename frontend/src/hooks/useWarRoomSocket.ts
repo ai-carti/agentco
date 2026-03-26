@@ -39,6 +39,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
 
     // SIRI-UX-096: pass auth token as query param — backend requires ?token=<jwt>
     // Without it, backend closes with code 4001 (unauthorized), wiping mock data
+    // TODO(SIRI-UX-360): JWT in WS URL leaks to server logs. Full fix requires backend to support WS auth handshake (send token in first WS message). Tracked in ROADMAP.md SIRI-UX-360.
     const token = getStoredToken()
     const url = token
       ? `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${encodeURIComponent(token)}`
