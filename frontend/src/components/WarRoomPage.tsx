@@ -68,8 +68,8 @@ export default function WarRoomPage() {
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
   const isMobile = useIsMobile()
 
-  // WebSocket connection for real-time events
-  const { isConnected, error: wsError } = useWarRoomSocket(companyId ?? 'mock-company')
+  // SIRI-UX-376: guard undefined companyId — pass empty string to skip WS connection
+  const { isConnected, error: wsError } = useWarRoomSocket(companyId ?? '')
 
   // SIRI-UX-025: isConnecting — true until first data arrives or 3s timeout
   const [isConnecting, setIsConnecting] = useState(true)
@@ -322,6 +322,38 @@ export default function WarRoomPage() {
 
   // SIRI-UX-294: extracted from Stop button — was duplicated in `disabled` and `style.opacity`
   const isStopDisabled = stopping || runStatus === 'idle' || runStatus === 'done' || runStatus === 'failed' || runStatus === 'stopped'
+
+  // SIRI-UX-376: guard — if companyId is undefined/null, show error state and skip WS connection
+  if (!companyId) {
+    return (
+      <div
+        data-testid="war-room-no-company"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          minHeight: 360,
+          background: '#0a0f1a',
+          color: '#e2e8f0',
+          gap: '1rem',
+        }}
+      >
+        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171' }}>Company not found</div>
+        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+          No company selected. Please navigate to a company first.
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/')}
+          style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }}
+        >
+          Go Home
+        </Button>
+      </div>
+    )
+  }
 
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
   if (agents.length === 0 && isConnecting) {

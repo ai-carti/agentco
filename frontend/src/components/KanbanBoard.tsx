@@ -1361,11 +1361,13 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               >
                 Cancel
               </Button>
+              {/* SIRI-UX-377: aria-disabled mirrors disabled so AT users know why button is inactive */}
               <Button
                 data-testid="create-task-submit-btn"
                 variant="primary"
                 onClick={handleCreateTask}
                 disabled={creating || !newTaskTitle.trim()}
+                aria-disabled={creating || !newTaskTitle.trim()}
                 style={{ padding: '0.4rem 0.9rem' }}
               >
                 {creating ? 'Creating…' : 'Create'}
