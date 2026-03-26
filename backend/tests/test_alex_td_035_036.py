@@ -12,10 +12,13 @@ from fastapi.testclient import TestClient
 
 def test_ws_events_session_closed_before_accept():
     """
-    ws_events.py должен явно закрывать DB session до websocket.accept().
+    ws_events.py должен явно закрывать DB session до начала долгоживущего WS loop.
 
     Статический анализ: хендлер должен вызывать session.close() в finally-блоке
-    ДО await websocket.accept() — чтобы не держать DB connection на весь WS lifetime.
+    после DB ownership check — чтобы не держать DB connection на весь WS lifetime.
+
+    NOTE: После ALEX-TD-055 + SIRI-UX-360 websocket.accept() идёт ПЕРВЫМ,
+    поэтому session.close() вызывается после accept() но до входа в event loop.
     """
     import inspect
     from agentco.handlers import ws_events as ws_module
@@ -36,7 +39,17 @@ def test_ws_events_session_closed_before_accept():
 
 def test_ws_events_accept_after_close():
     """
-    websocket.accept() должен вызываться ПОСЛЕ session.close() в теле функции.
+    Документирует новый порядок операций после ALEX-TD-055 + SIRI-UX-360:
+
+        1. websocket.accept()     ← ПЕРВЫМ (ALEX-TD-055: proper WS handshake)
+        2. [receive auth message] ← only if no ?token= query param (SIRI-UX-360)
+        3. session.close()        ← освобождаем DB до долгоживущего WS loop (ALEX-TD-035)
+
+    Старый порядок (session.close() ДО websocket.accept()) нарушал протокол:
+    прокси Nginx/HAProxy логировали close-before-accept как connection error.
+
+    ALEX-TD-055 + SIRI-UX-360 требуют accept первым — чтобы получить первый
+    auth-message от клиента (receive_text() работает только на accepted сокете).
     """
     import inspect
     from agentco.handlers.ws_events import ws_company_events
@@ -49,8 +62,12 @@ def test_ws_events_accept_after_close():
 
     assert close_pos != -1, "session.close() не найден в ws_company_events"
     assert accept_pos != -1, "websocket.accept() не найден в ws_company_events"
-    assert close_pos < accept_pos, (
-        f"session.close() (pos={close_pos}) должен быть ДО websocket.accept() (pos={accept_pos})"
+
+    # ALEX-TD-055 + SIRI-UX-360: accept() теперь идёт ПЕРВЫМ.
+    # session.close() вызывается ПОСЛЕ accept() — когда ownership check завершён.
+    assert accept_pos < close_pos, (
+        f"websocket.accept() (pos={accept_pos}) должен быть ДО session.close() (pos={close_pos}). "
+        f"Новая архитектура (ALEX-TD-055 + SIRI-UX-360): accept → auth-message → DB check → session.close()."
     )
 
 
