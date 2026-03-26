@@ -59,8 +59,9 @@ class TestLoginConstantTime:
         result = verify_password("any-password", DUMMY_HASH)
         assert result is False, "verify_password with DUMMY_HASH should always return False"
 
-    def test_login_nonexistent_user_calls_bcrypt(self, auth_client: TestClient):
+    def test_login_nonexistent_user_calls_bcrypt(self, auth_client):
         """When user doesn't exist, bcrypt verify_password must still be called."""
+        client, _ = auth_client
         from agentco.auth import security as sec_module
         call_count = {"n": 0}
         original = sec_module.verify_password
@@ -69,41 +70,40 @@ class TestLoginConstantTime:
             call_count["n"] += 1
             return original(plain, hashed)
 
-        with patch.object(sec_module, "verify_password", side_effect=spy_verify):
-            # Patch handler import too
-            import agentco.handlers.auth as auth_handler
-            with patch.object(auth_handler, "verify_password", side_effect=spy_verify):
-                resp = auth_client.post(
-                    "/auth/login",
-                    json={"email": "notfound@example.com", "password": "testpass123"},
-                )
+        import agentco.handlers.auth as auth_handler
+        with patch.object(auth_handler, "verify_password", side_effect=spy_verify):
+            resp = client.post(
+                "/auth/login",
+                json={"email": "notfound@example.com", "password": "testpass123"},
+            )
 
         assert resp.status_code == 401
         # verify_password must have been called (constant-time path)
-        # Note: may be called once (in handler) — just needs to be non-zero
-        assert call_count["n"] >= 1 or True, \
-            "verify_password should be called even for non-existent users"
+        assert call_count["n"] >= 1, \
+            "verify_password should be called even for non-existent users (ALEX-TD-229)"
 
-    def test_login_wrong_password_returns_401(self, auth_client: TestClient):
+    def test_login_wrong_password_returns_401(self, auth_client):
         """Existing user + wrong password → 401."""
+        client, _ = auth_client
         # Register user first
-        auth_client.post(
+        client.post(
             "/auth/register",
             json={"email": "timing@example.com", "password": "correctpass123"},
         )
-        resp = auth_client.post(
+        resp = client.post(
             "/auth/login",
             json={"email": "timing@example.com", "password": "wrongpass123"},
         )
         assert resp.status_code == 401
 
-    def test_login_correct_credentials_returns_token(self, auth_client: TestClient):
+    def test_login_correct_credentials_returns_token(self, auth_client):
         """Regression: valid credentials still return a token after timing fix."""
-        auth_client.post(
+        client, _ = auth_client
+        client.post(
             "/auth/register",
             json={"email": "valid@example.com", "password": "validpass123"},
         )
-        resp = auth_client.post(
+        resp = client.post(
             "/auth/login",
             json={"email": "valid@example.com", "password": "validpass123"},
         )
@@ -175,16 +175,18 @@ class TestUsersEmailIndex:
 class TestJWTRevocation:
     """ALEX-TD-231: document token revocation gap. No logout endpoint exists currently."""
 
-    def test_no_logout_endpoint_currently(self, auth_client: TestClient):
+    def test_no_logout_endpoint_currently(self, auth_client):
         """Confirm that /auth/logout does not exist yet (documenting the gap)."""
-        resp = auth_client.post("/auth/logout", json={})
+        client, _ = auth_client
+        resp = client.post("/auth/logout", json={})
         # 404 or 405 — endpoint doesn't exist
         assert resp.status_code in (404, 405), \
             f"Expected 404/405 (no logout endpoint), got {resp.status_code}. " \
             "If logout was added, update this test and close ALEX-TD-231."
 
-    def test_expired_token_is_rejected(self, auth_client: TestClient):
+    def test_expired_token_is_rejected(self, auth_client):
         """JWT expiry is enforced — expired tokens cannot access /auth/me."""
+        client, _ = auth_client
         import jwt
         from agentco.auth.security import SECRET_KEY, ALGORITHM
         from datetime import datetime, timezone, timedelta
@@ -196,7 +198,7 @@ class TestJWTRevocation:
         }
         expired_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-        resp = auth_client.get(
+        resp = client.get(
             "/auth/me",
             headers={"Authorization": f"Bearer {expired_token}"},
         )

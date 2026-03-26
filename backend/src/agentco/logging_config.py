@@ -10,12 +10,22 @@ import structlog
 
 
 def setup_logging(level: str = "INFO") -> None:
-    """Configure structlog for structured JSON logging."""
+    """Configure structlog for structured JSON logging.
+
+    ALEX-TD-232 fix: removed `add_logger_name` from processors.
+    `structlog.stdlib.add_logger_name` requires a `logging.Logger` object with a
+    `.name` attribute, but `PrintLoggerFactory` creates `PrintLogger` (no `.name`).
+    This caused `AttributeError: 'PrintLogger' object has no attribute 'name'` on
+    every structlog call — crashing all JSON logging in production silently.
+    Logger name context is not critical for structured JSON (level + timestamp
+    + message are sufficient for filtering); removed to fix the crash.
+    """
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
-            structlog.stdlib.add_logger_name,
+            # ALEX-TD-232: add_logger_name removed — incompatible with PrintLoggerFactory
+            # (PrintLogger has no .name attr). Use stdlib logging name via basicConfig instead.
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,

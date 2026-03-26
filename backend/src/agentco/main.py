@@ -57,6 +57,9 @@ async def lifespan(app: FastAPI):
             if not task.done():
                 task.cancel()
         await asyncio.gather(*active, return_exceptions=True)
+    # ALEX-TD-235: explicitly clear the dict after cancellation so no stale Task
+    # references remain (prevents memory leak on hot-reload / multiple lifespan cycles).
+    RunService._active_tasks.clear()
     logger.info("Shutdown complete")
 
 
@@ -74,6 +77,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ALEX-TD-234: ProxyHeadersMiddleware so uvicorn trusts X-Forwarded-For from Railway/nginx.
+# Without this, request.client.host = proxy IP (127.0.0.1) → all unauthenticated users
+# share a single slowapi rate-limit bucket → one client can DoS all others.
+# TRUSTED_PROXY_IPS env: comma-separated trusted proxy IPs (default "*" = trust all,
+# safe when Railway manages the network boundary and no direct internet access).
+_trusted_proxy_ips: list[str] | str = os.getenv("TRUSTED_PROXY_IPS", "*")
+if isinstance(_trusted_proxy_ips, str) and _trusted_proxy_ips != "*":
+    _trusted_proxy_ips = [ip.strip() for ip in _trusted_proxy_ips.split(",") if ip.strip()]
+try:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=_trusted_proxy_ips)
+    logger.info("ProxyHeadersMiddleware enabled (trusted_hosts=%r)", _trusted_proxy_ips)
+except ImportError:
+    logger.warning("uvicorn not available — ProxyHeadersMiddleware not applied. Rate limiting may use proxy IP.")
 
 app.include_router(auth_router)
 app.include_router(companies_router)
