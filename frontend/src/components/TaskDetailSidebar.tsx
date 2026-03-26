@@ -137,7 +137,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           toast.error('Something went wrong...')
         }
       }
-    } catch {
+    } catch (err) {
+      // SIRI-UX-362: log error object so it's visible in devtools / error reporters
+      console.error('handleRun failed:', err)
       if (!signal.aborted) {
         toast.error('Something went wrong...')
       }

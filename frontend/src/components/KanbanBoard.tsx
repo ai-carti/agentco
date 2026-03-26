@@ -112,7 +112,9 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [menuOpen, editOpen, deleteOpen, assignOpen])
 
-  const handleRun = async (e: React.MouseEvent) => {
+  // SIRI-UX-354: wrap in useCallback to prevent new references on every render → avoid
+  // unnecessary re-renders of children that receive these handlers as props/onClick.
+  const handleRun = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation()
     runAbortRef.current?.abort()
     const controller = new AbortController()
@@ -156,9 +158,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         setRunning(false)
       }
     }
-  }
+  }, [companyId, task.id, task.title, setTasks, toast]) // SIRI-UX-354
 
-  const handleEdit = async () => {
+  // SIRI-UX-354: wrap in useCallback
+  const handleEdit = useCallback(async () => {
     if (saving) return
     editAbortRef.current?.abort()
     const controller = new AbortController()
@@ -195,9 +198,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         setSaving(false)
       }
     }
-  }
+  }, [companyId, task.id, editTitle, editDesc, saving, setTasks, toast]) // SIRI-UX-354
 
-  const handleDelete = async () => {
+  // SIRI-UX-354: wrap in useCallback
+  const handleDelete = useCallback(async () => {
     if (deleting) return
     deleteAbortRef.current?.abort()
     const controller = new AbortController()
@@ -230,9 +234,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         setDeleting(false)
       }
     }
-  }
+  }, [companyId, task.id, task.title, deleting, setTasks, toast]) // SIRI-UX-354
 
-  const handleAssign = async (agentId: string, agentName: string) => {
+  // SIRI-UX-354: wrap in useCallback
+  const handleAssign = useCallback(async (agentId: string, agentName: string) => {
     if (assigning) return
     assignAbortRef.current?.abort()
     const controller = new AbortController()
@@ -269,7 +274,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
         setAssigning(false)
       }
     }
-  }
+  }, [companyId, task.id, assigning, setTasks, toast]) // SIRI-UX-354
 
   const handleMenuAction = (action: string) => {
     setMenuOpen(false)
@@ -905,7 +910,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     return () => { dropAbortRef.current?.abort() }
   }, [])
 
-  const handleCreateTask = async () => {
+  // SIRI-UX-361: wrap in useCallback to prevent new reference on every render
+  const handleCreateTask = useCallback(async () => {
     if (!newTaskTitle.trim()) {
       // SIRI-UX-111: show validation error when submitting empty title
       setTitleTouched(true)
@@ -953,7 +959,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
         createTaskAbortRef.current = null
       }
     }
-  }
+  }, [companyId, newTaskTitle, newTaskDesc, newTaskPriority, setTasks, toast]) // SIRI-UX-361
 
   // Filter state
   const [searchInput, setSearchInput] = useState('')

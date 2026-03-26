@@ -99,6 +99,10 @@ export default function WarRoom() {
       setIsConnecting(false)
       return
     }
+    // TODO: SIRI-UX-360 — JWT token passed as query param leaks into server access logs
+    // (nginx/Railway log the full URL including ?token=eyJ...).
+    // Fix requires backend support for auth handshake over WebSocket first message.
+    // Until then, this is a known issue. Track: ROADMAP.md Bugs > SIRI-UX-360.
     const ws = new WebSocket(
       `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
     )
