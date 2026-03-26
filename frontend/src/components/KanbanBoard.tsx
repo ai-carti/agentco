@@ -1021,6 +1021,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   const handleClose = useCallback(() => setSelectedTaskId(null), [])
   // SIRI-UX-339: stable callback — avoids creating N new function refs per render inside filteredTasks.map
   const handleCardClick = useCallback((task: Task) => setSelectedTaskId(task.id), [])
+  // SIRI-UX-388: stable callbacks for FilterBar's onRemoveAgent/onRemovePriority — inline
+  // arrow functions in JSX would create new references on every render, causing FilterBar to re-render
+  const removeAgent = useCallback((id: string) => setSelectedAgents((prev) => prev.filter((a) => a !== id)), [])
+  const removePriority = useCallback((p: TaskPriority) => setSelectedPriorities((prev) => prev.filter((x) => x !== p)), [])
 
   // SIRI-UX-119: reset filters when company changes so stale filters don't persist
   useEffect(() => {
@@ -1188,8 +1192,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           selectedPriorities={selectedPriorities}
           onTogglePriority={togglePriority}
           onClearAll={clearAllFilters}
-          onRemoveAgent={(id) => setSelectedAgents((prev) => prev.filter((a) => a !== id))}
-          onRemovePriority={(p) => setSelectedPriorities((prev) => prev.filter((x) => x !== p))}
+          onRemoveAgent={removeAgent}
+          onRemovePriority={removePriority}
           hasActiveFilters={hasActiveFilters}
         />
       )}

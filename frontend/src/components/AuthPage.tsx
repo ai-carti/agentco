@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
@@ -18,7 +18,9 @@ export default function AuthPage() {
   const rawFrom = (location.state as { from?: Location })?.from?.pathname
   const from = rawFrom && rawFrom !== '/auth' ? rawFrom : '/'
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // SIRI-UX-391: wrap in useCallback — handleSubmit is recreated on every render
+  // (when email/password/tab/isLoading state changes) and passed as onSubmit to <form>
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (tab === 'signin') {
       await login(email, password)
@@ -31,7 +33,7 @@ export default function AuthPage() {
     if (token) {
       navigate(from, { replace: true })
     }
-  }
+  }, [tab, email, password, login, register, navigate, from]) // SIRI-UX-391
 
   const styles = {
     page: {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -54,7 +54,9 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
     return () => { launchAbortRef.current?.abort() }
   }, [])
 
-  const handleUseTemplate = async () => {
+  // SIRI-UX-390: wrap in useCallback — handleUseTemplate perse-created on every render
+  // and passed as onClick/onKeyDown to two buttons
+  const handleUseTemplate = useCallback(async () => {
     if (!companyName.trim()) return
     // SIRI-UX-187: abort any previous in-flight launch; guard setState on unmounted component
     launchAbortRef.current?.abort()
@@ -131,7 +133,8 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         launchAbortRef.current = null
       }
     }
-  }
+  // SIRI-UX-390: deps — companyName, navigate, onCompanyCreated, template, toast
+  }, [companyName, navigate, onCompanyCreated, template, toast]) // SIRI-UX-390
 
   return (
     <div

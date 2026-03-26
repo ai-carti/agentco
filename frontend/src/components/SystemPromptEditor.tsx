@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import type React from 'react'
 
 const CEO_TEMPLATE = 'You are a CEO of a tech startup. Your role is to set vision, drive strategy, and lead the team toward product-market fit. Make high-level decisions with clarity and confidence.'
@@ -24,17 +25,19 @@ export default function SystemPromptEditor({ value, onChange, id }: SystemPrompt
   const tokens = countTokens(value)
   const isOverLimit = tokens > 2000
 
-  const handleTemplateClick = (templateText: string) => {
+  // SIRI-UX-389: wrap in useCallback — both functions perse-created on every render;
+  // handleTemplateClick passed as onClick to N template buttons, handleChange as onChange to textarea
+  const handleTemplateClick = useCallback((templateText: string) => {
     if (value.trim() !== '') {
       const confirmed = window.confirm('Replace current prompt?')
       if (!confirmed) return
     }
     onChange(templateText)
-  }
+  }, [value, onChange])
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value)
-  }
+  }, [onChange])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

@@ -15,6 +15,13 @@ function getIsMac(): boolean {
   return /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 }
 
+// SIRI-UX-387: module-level constant — was inside component body (recreated on every render)
+const GROUP_LABELS: Record<string, string> = {
+  company: 'Companies',
+  agent: 'Agents',
+  task: 'Tasks',
+}
+
 interface SearchResult {
   id: string
   type: 'company' | 'agent' | 'task'
@@ -182,12 +189,6 @@ export default function GlobalSearch() {
     }
   }, [activeIndex])
 
-  const groupLabels: Record<string, string> = {
-    company: 'Companies',
-    agent: 'Agents',
-    task: 'Tasks',
-  }
-
   if (!open) {
     return (
       <button
@@ -291,7 +292,7 @@ export default function GlobalSearch() {
                 return (
                   <div key={type} data-testid={`search-group-${type}s`}>
                     <div style={{ padding: '0.35rem 1rem', fontSize: '0.7rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {groupLabels[type]}
+                      {GROUP_LABELS[type]}
                     </div>
                     {group.map((result) => {
                       const flatIdx = results.indexOf(result)
