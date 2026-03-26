@@ -86,13 +86,38 @@ class MCPServerCreate(BaseModel):
             # and octal-encoded (e.g. 0177.0.0.1). ipaddress.ip_address() does NOT parse
             # these as valid IPs (raises ValueError), so they would silently pass as
             # "domain name" without explicit detection.
+            # ALEX-TD-261: also handle hex-dotted (0x7f.0.0.1) and octal-dotted (0177.0.0.1)
+            # bypass formats. Python socket/ipaddress do NOT parse these, so each dotted
+            # octet must be normalised manually before the private-range check.
             candidate = hostname
-            if candidate.startswith(("0x", "0X")):
+
+            def _is_private_ip(addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+                return addr.is_loopback or addr.is_private or addr.is_link_local or addr.is_unspecified
+
+            def _try_parse_dotted_octet(octet: str) -> int | None:
+                """Parse a single IPv4 octet that may be hex (0x..) or octal (0..)."""
+                octet = octet.strip()
+                if octet.startswith(("0x", "0X")):
+                    try:
+                        return int(octet, 16)
+                    except ValueError:
+                        return None
+                if len(octet) > 1 and octet.startswith("0"):
+                    try:
+                        return int(octet, 8)
+                    except ValueError:
+                        return None
+                try:
+                    return int(octet, 10)
+                except ValueError:
+                    return None
+
+            if candidate.startswith(("0x", "0X")) and "." not in candidate:
                 # Hex IPv4: 0x7f000001 → 127.0.0.1
                 try:
                     int_val = int(candidate, 16)
                     candidate_addr = ipaddress.ip_address(int_val)
-                    if candidate_addr.is_loopback or candidate_addr.is_private or candidate_addr.is_link_local or candidate_addr.is_unspecified:
+                    if _is_private_ip(candidate_addr):
                         raise ValueError(
                             f"server_url hostname '{hostname}' resolves to a private/internal IP (hex format) — not allowed for SSRF prevention"
                         )
@@ -104,7 +129,7 @@ class MCPServerCreate(BaseModel):
                 try:
                     int_val = int(candidate)
                     candidate_addr = ipaddress.ip_address(int_val)
-                    if candidate_addr.is_loopback or candidate_addr.is_private or candidate_addr.is_link_local or candidate_addr.is_unspecified:
+                    if _is_private_ip(candidate_addr):
                         raise ValueError(
                             f"server_url hostname '{hostname}' resolves to a private/internal IP (decimal format) — not allowed for SSRF prevention"
                         )
@@ -112,11 +137,40 @@ class MCPServerCreate(BaseModel):
                     if "not allowed" in str(dec_exc) or "SSRF" in str(dec_exc):
                         raise
             else:
-                addr = ipaddress.ip_address(candidate)
-                if addr.is_loopback or addr.is_private or addr.is_link_local or addr.is_unspecified:
-                    raise ValueError(
-                        f"server_url hostname '{hostname}' is a private/internal IP — not allowed for SSRF prevention"
-                    )
+                # First try: standard ipaddress parse (handles plain dotted-decimal + IPv6)
+                parsed_std = None
+                try:
+                    parsed_std = ipaddress.ip_address(candidate)
+                except ValueError:
+                    pass
+
+                if parsed_std is not None:
+                    # Standard dotted-decimal or IPv6
+                    if _is_private_ip(parsed_std):
+                        raise ValueError(
+                            f"server_url hostname '{hostname}' is a private/internal IP — not allowed for SSRF prevention"
+                        )
+                else:
+                    # ALEX-TD-261: attempt to parse as 4-octet dotted notation where each
+                    # octet may use hex (0x..) or octal (0..) encoding. Python's ipaddress
+                    # rejects these, so normalise each octet explicitly.
+                    parts = candidate.split(".")
+                    if len(parts) == 4:
+                        octets = [_try_parse_dotted_octet(p) for p in parts]
+                        if all(o is not None and 0 <= o <= 255 for o in octets):
+                            # Valid 4-part dotted address with non-standard octet encoding
+                            dotted = ".".join(str(o) for o in octets)
+                            try:
+                                norm_addr = ipaddress.ip_address(dotted)
+                                if _is_private_ip(norm_addr):
+                                    raise ValueError(
+                                        f"server_url hostname '{hostname}' resolves to a private/internal IP "
+                                        f"(normalised: {dotted}) — not allowed for SSRF prevention"
+                                    )
+                            except ValueError as v_exc:
+                                if "not allowed" in str(v_exc) or "SSRF" in str(v_exc):
+                                    raise
+                    # If none of the above matched, treat as domain name — fine.
         except ValueError as ip_exc:
             # If it's already a ValueError from our SSRF check, re-raise
             if "not allowed" in str(ip_exc) or "private" in str(ip_exc) or "SSRF" in str(ip_exc):
