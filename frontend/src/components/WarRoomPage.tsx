@@ -131,6 +131,9 @@ export default function WarRoomPage() {
       setExpandedMessages(new Set())
       // SIRI-UX-223: reset mobile agent panel open state when switching companies
       setAgentPanelOpen(false)
+      // SIRI-UX-363: reset isConnecting to true so the connecting spinner shows for new company
+      // Without this, switching companies skips the connecting state (stays false from previous company)
+      setIsConnecting(true)
     }
     prevCompanyIdRef.current = companyId
     return () => {

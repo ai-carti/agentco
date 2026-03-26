@@ -101,7 +101,15 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
   const Component = variant === 'agent' ? AgentSkeleton : variant === 'task' ? TaskSkeleton : CompanySkeleton
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    // SIRI-UX-364: role="status" + aria-label so screen readers announce loading state.
+    // aria-busy="true" additionally signals to AT that the region is updating.
+    // Without this, 9+ usage sites across the app give no feedback to screen reader users.
+    <div
+      role="status"
+      aria-label="Loading..."
+      aria-busy={true}
+      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+    >
       {Array.from({ length: count }, (_, i) => (
         <Component key={i} />
       ))}

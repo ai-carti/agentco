@@ -6,6 +6,12 @@ import asyncio
 import logging
 import os
 
+# ALEX-TD-228: activate structured logging (structlog JSON) at startup.
+# setup_logging() was defined in logging_config.py but never called — in production
+# all logs fell back to stdlib plain-text format, defeating ALEX-POST-004 structlog setup.
+from .logging_config import setup_logging
+setup_logging(level=os.getenv("LOG_LEVEL", "INFO"))
+
 from slowapi.errors import RateLimitExceeded
 
 from .core.rate_limiting import limiter, rate_limit_exceeded_handler

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..db.session import get_session
 from ..orm.user import UserORM
-from ..auth.security import hash_password, verify_password, create_access_token
+from ..auth.security import hash_password, verify_password, create_access_token, DUMMY_HASH
 from ..auth.dependencies import get_current_user
 from ..core.rate_limiting import limiter
 
@@ -100,7 +100,14 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
     """Authenticate user and return JWT access token."""
     # ALEX-TD-005 fix: modern select() API
     user = session.scalars(select(UserORM).where(UserORM.email == body.email)).first()
-    if not user or not verify_password(body.password, user.hashed_password):
+    # ALEX-TD-229: constant-time path to prevent email enumeration via timing.
+    # Always run bcrypt verify — even when user is not found — so response time
+    # is ~100ms regardless of whether the email is registered.
+    # Without this, `not user or not verify_password(...)` short-circuits when user=None
+    # (bcrypt skipped → ~1ms response) vs found+wrong-password (~100ms) → timing leak.
+    candidate_hash = user.hashed_password if user else DUMMY_HASH
+    password_ok = verify_password(body.password, candidate_hash)
+    if not user or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",

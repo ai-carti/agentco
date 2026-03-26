@@ -1007,7 +1007,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   }, [tasks, debouncedSearch, selectedAgents, selectedPriorities])
 
   // SIRI-UX-346: extracted to avoid duplicating 5 setState calls in Escape handler, backdrop, Cancel button
+  // SIRI-UX-368: abort in-flight createTask POST when modal is closed mid-flight so the
+  // completed response doesn't call setTasks/toast.success on a closed modal.
   const closeCreateModal = useCallback(() => {
+    createTaskAbortRef.current?.abort() // SIRI-UX-368: cancel any pending create request
     setShowCreateModal(false)
     setTitleTouched(false)
     setNewTaskTitle('')

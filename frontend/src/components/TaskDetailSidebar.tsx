@@ -279,6 +279,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <div
                 data-testid="sidebar-assignee-avatar"
+                // SIRI-UX-369: aria-label provides accessible name — initials alone are not self-descriptive
+                aria-label={assigneeName}
+                title={assigneeName}
                 style={{
                   width: 32,
                   height: 32,

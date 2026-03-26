@@ -63,6 +63,9 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
       {/* Avatar */}
       <div
         data-testid="company-avatar"
+        // SIRI-UX-370: aria-label provides accessible name — initials alone are not self-descriptive
+        aria-label={name}
+        title={name}
         style={{
           width: 32,
           height: 32,

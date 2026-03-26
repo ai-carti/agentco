@@ -64,8 +64,13 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
         // Update warRoomStore based on event type
         if (data.type === 'llm_token') {
           // SIRI-POST-004: aggregate real cost from WS events
+          // SIRI-UX-366: log when cost field is missing/wrong type so billing issues are diagnosable
           if (typeof data.cost === 'number') {
             store.addCost(data.cost)
+          } else if (import.meta.env.DEV) {
+            // Only log in dev — avoids noise in production while making WS debugging possible
+            // eslint-disable-next-line no-console
+            console.debug('[useWarRoomSocket] llm_token event missing numeric cost field:', data)
           }
         } else if (data.type === 'message') {
           // SIRI-UX-126: validate payload shape before addMessage to avoid undefined fields in Activity Feed

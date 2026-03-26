@@ -25,6 +25,15 @@ def hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
 
 
+# ALEX-TD-229: pre-computed dummy hash for constant-time login path.
+# When a user is not found, we still run verify_password(submitted_password, DUMMY_HASH)
+# to ensure the response time is indistinguishable from a real failed login.
+# Without this, `not user or not verify_password(...)` short-circuits when user=None,
+# returning in ~1ms vs ~100ms for bcrypt — leaking whether an email is registered.
+# bcrypt.hashpw is called once at import time (module-level) so it has no runtime cost per request.
+DUMMY_HASH: str = bcrypt.hashpw(b"dummy-constant-time-password", bcrypt.gensalt()).decode()
+
+
 def verify_password(plain: str, hashed: str) -> bool:
     """Check a plaintext password against its bcrypt hash."""
     return bcrypt.checkpw(plain.encode(), hashed.encode())
