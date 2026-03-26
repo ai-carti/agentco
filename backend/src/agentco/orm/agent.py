@@ -17,7 +17,8 @@ class AgentORM(Base):
     model: Mapped[str] = mapped_column(Text, default="gpt-4o-mini")
     library_agent_id: Mapped[str | None] = mapped_column(Text)
     # POST-006: hierarchical agents support
-    parent_agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"), nullable=True)
+    # ALEX-TD-243: index=True for future WHERE parent_agent_id = ? queries (consistency with all other FK columns)
+    parent_agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"), nullable=True, index=True)
     hierarchy_level: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

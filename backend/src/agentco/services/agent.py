@@ -70,7 +70,7 @@ class AgentService:
             agent_orm.system_prompt = system_prompt
         if model is not None:
             agent_orm.model = model
-        self._session.flush()
+        # ALEX-TD-246: commit() already flushes internally — no need for explicit flush()
         self._session.commit()
         return self._repo._to_domain(agent_orm)
 
@@ -129,6 +129,6 @@ class AgentService:
             .where(TaskORM.agent_id == agent_id)
             .values(agent_id=None)
         )
-        self._session.flush()
+        # ALEX-TD-246: flush() is implicit in commit() — removed redundant round-trip
         self._session.delete(agent_orm)
         self._session.commit()

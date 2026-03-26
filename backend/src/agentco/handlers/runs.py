@@ -266,12 +266,19 @@ async def list_run_events(
     request: Request,
     company_id: uuid.UUID,
     run_id: uuid.UUID,
+    # ALEX-TD-245: le=1000 intentional for run_events (unlike le=100 for other lists).
+    # Run events are granular streaming chunks (1 event ≈ 50-200 chars of LLM text).
+    # A single agent response can produce 200-500 events. Capping at 100 would require
+    # 5-10 requests to reconstruct one agent turn — poor UX for log replay.
+    # Risk mitigation: events are read-only + rate-limited (RATE_LIMIT_RUNS_READ=120/min).
     limit: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
 ):
     """List events for a run with pagination (default limit=100, max=1000).
+
+    ALEX-TD-245: le=1000 is intentional — see comment above for rationale.
 
     ALEX-TD-207: company_id and run_id are uuid.UUID.
     """

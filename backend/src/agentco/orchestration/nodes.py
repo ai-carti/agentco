@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import os
 import uuid
 from typing import Any
@@ -34,6 +35,9 @@ from typing import Any
 import litellm
 
 from agentco.orchestration.state import AgentState, TaskMessage, TaskResult
+
+# ALEX-TD-247: add module-level logger for diagnostics
+logger = logging.getLogger(__name__)
 
 # ─── Константы loop detection ─────────────────────────────────────────────────
 
@@ -84,18 +88,28 @@ async def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[st
         # Real LLM path — used in production when AGENTCO_USE_REAL_LLM=true
         # ALEX-TD-185: wrap in wait_for to prevent hung LLM call from blocking event loop.
         # agent_node.py already does this (ALEX-TD-158) — mirror that pattern here.
+        _model = os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini")
         _timeout = float(os.environ.get("LLM_CALL_TIMEOUT_SEC", "120"))
-        response = await asyncio.wait_for(
-            litellm.acompletion(
-                model=os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini"),
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                max_tokens=500,
-            ),
-            timeout=_timeout,
-        )
+        # ALEX-TD-247: log real LLM call for diagnostics
+        logger.debug("_mock_llm_call: real LLM path, model=%s", _model)
+        try:
+            response = await asyncio.wait_for(
+                litellm.acompletion(
+                    model=_model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    max_tokens=500,
+                ),
+                timeout=_timeout,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("_mock_llm_call: LLM timeout after %ss for model=%s", _timeout, _model)
+            raise
+        except Exception as e:
+            logger.warning("_mock_llm_call: LLM error for model=%s: %s", _model, e, exc_info=True)
+            raise
         content = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 50
         cost = tokens * 0.00015 / 1000  # gpt-4o-mini rate
@@ -118,6 +132,12 @@ async def ceo_node(state: AgentState) -> dict:
     2. Если уже есть results (subagent завершил работу) → синтезирует финальный ответ, status=completed
     3. Иначе → делегирует задачу одному subagent-у через pending_tasks
     """
+    # ALEX-TD-247: log node entry for diagnostics
+    logger.debug(
+        "ceo_node: run_id=%s iteration=%d tokens=%d cost=%.4f",
+        state.get("run_id"), state.get("iteration_count", 0),
+        state.get("total_tokens", 0), state.get("total_cost_usd", 0.0),
+    )
     max_iter = _get_max_iterations()
     max_cost = _get_max_cost_usd()
 
