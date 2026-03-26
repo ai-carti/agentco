@@ -300,8 +300,14 @@ class RunService:
         events_count = self._repo.get_events_count(run_id)
         return {**run.model_dump(), "events_count": events_count}
 
-    def list_by_company(self, company_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
-        """Список ранов компании с пагинацией."""
+    def _list_by_company(self, company_id: str, limit: int = 100, offset: int = 0) -> list[Run]:
+        """Внутренний метод: список ранов компании без проверки ownership.
+
+        ALEX-TD-240: помечен как internal (_) — вызывать только из методов этого
+        класса, которые сами проверяют ownership. Публичный доступ без ownership
+        check создаёт риск утечки данных при рефакторинге. Используй
+        list_by_company_owned() для внешних вызовов.
+        """
         return self._repo.list_by_company(company_id, limit=limit, offset=offset)
 
     def list_by_company_owned(

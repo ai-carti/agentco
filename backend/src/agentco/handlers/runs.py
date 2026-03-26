@@ -161,6 +161,12 @@ async def list_runs(
     """Список ранов компании с пагинацией. Опциональный фильтр по статусу: ?status=running
 
     ALEX-TD-207: company_id is uuid.UUID — FastAPI returns 422 for non-UUID values.
+
+    # TODO(ALEX-TD-242): offset-based pagination деградирует при большом количестве ранов.
+    # При >1000 ранов на компанию SELECT ... OFFSET N сканирует и пропускает N строк
+    # на каждый запрос — O(offset) time complexity. Known limitation.
+    # Future work: cursor-based pagination на (started_at, id) для O(log N) lookups.
+    # Пример: ?cursor=<base64(started_at,id)> вместо ?offset=N.
     """
     if status_filter is not None and status_filter not in VALID_RUN_STATUSES:
         raise HTTPException(
