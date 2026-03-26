@@ -236,6 +236,7 @@ export default function CompaniesPage() {
             <input
               autoFocus
               data-testid="new-company-name-input"
+              aria-label="Company name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}

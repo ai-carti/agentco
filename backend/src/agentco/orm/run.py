@@ -45,10 +45,13 @@ class RunEventORM(Base):
     )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
-    # ALEX-TD-004 fix: index for list_events(run_id) query (single-col kept for backward compat)
-    run_id: Mapped[str] = mapped_column(Text, ForeignKey("runs.id"), nullable=False, index=True)
-    agent_id: Mapped[str | None] = mapped_column(Text)
-    task_id: Mapped[str | None] = mapped_column(Text)
+    # ALEX-TD-248: removed index=True — compound ix_run_events_run_created (run_id, created_at)
+    # covers all WHERE run_id = ? queries. Standalone ix_run_events_run_id was redundant
+    # and slowed INSERTs during streaming.
+    run_id: Mapped[str] = mapped_column(Text, ForeignKey("runs.id"), nullable=False)
+    # ALEX-TD-250: added index=True for analytics queries ("all events for agent X")
+    agent_id: Mapped[str | None] = mapped_column(Text, index=True)
+    task_id: Mapped[str | None] = mapped_column(Text, index=True)
     event_type: Mapped[str] = mapped_column(Text, nullable=False)
     payload: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime | None] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

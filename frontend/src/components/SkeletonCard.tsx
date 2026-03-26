@@ -111,7 +111,7 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
       style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
     >
       {Array.from({ length: count }, (_, i) => (
-        <Component key={i} />
+        <Component key={`skeleton-${variant}-${i}`} />
       ))}
     </div>
   )

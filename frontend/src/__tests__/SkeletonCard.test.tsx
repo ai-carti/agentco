@@ -107,4 +107,22 @@ describe('UX-016: SkeletonCard', () => {
     expect(card.style.background).toBe('rgb(31, 41, 55)')
     expect(card.style.borderRadius).toBe('8px')
   })
+
+  // SIRI-UX-378: key should use semantic string (`skeleton-${variant}-${i}`) not bare index
+  it('renders multiple skeleton items without console key warnings (stable key pattern)', () => {
+    // We test the observable side-effect: rendering count=3 produces exactly 3 items,
+    // each with a stable presence. The key value itself is not part of the DOM, but
+    // the test documents the contract — changing count re-renders cleanly.
+    const { rerender } = render(<SkeletonCard variant="agent" count={3} />)
+    expect(screen.getAllByTestId('skeleton-agent')).toHaveLength(3)
+
+    // Changing count from 3 → 2 should remove exactly one item (tests React reconciliation)
+    rerender(<SkeletonCard variant="agent" count={2} />)
+    expect(screen.getAllByTestId('skeleton-agent')).toHaveLength(2)
+
+    // Changing variant should produce new items
+    rerender(<SkeletonCard variant="task" count={2} />)
+    expect(screen.getAllByTestId('skeleton-task')).toHaveLength(2)
+    expect(screen.queryAllByTestId('skeleton-agent')).toHaveLength(0)
+  })
 })

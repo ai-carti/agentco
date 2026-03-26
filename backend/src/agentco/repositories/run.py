@@ -3,8 +3,9 @@ from typing import Optional
 from sqlalchemy import select, or_, func
 
 from ..orm.run import RunORM, RunEventORM
+from ..orm.company import CompanyORM
 from ..models.run import Run, RunEvent
-from .base import BaseRepository
+from .base import BaseRepository, NotFoundError
 
 
 class RunRepository(BaseRepository[RunORM, Run]):
@@ -80,6 +81,26 @@ class RunRepository(BaseRepository[RunORM, Run]):
         )
         row = self._session.scalars(stmt).first()
         return self._to_domain(row) if row else None
+
+    def get_owned(self, run_id: str, company_id: str, owner_id: str) -> Run:
+        """ALEX-TD-249: single-query ownership check via JOIN.
+
+        Replaces the 2-step pattern: company_repo.get() + self.get(company_id, run_id).
+        Executes one SELECT with a JOIN on companies to validate both company
+        membership and owner_id in a single DB round-trip.
+        Raises NotFoundError if run not found or ownership check fails.
+        """
+        stmt = (
+            select(RunORM)
+            .join(CompanyORM, RunORM.company_id == CompanyORM.id)
+            .where(RunORM.id == run_id)
+            .where(RunORM.company_id == company_id)
+            .where(CompanyORM.owner_id == owner_id)
+        )
+        row = self._session.scalars(stmt).first()
+        if row is None:
+            raise NotFoundError(f"Run {run_id!r} not found")
+        return self._to_domain(row)
 
     def get_events_count(self, run_id: str) -> int:
         stmt = select(func.count(RunEventORM.id)).where(RunEventORM.run_id == run_id)

@@ -363,12 +363,13 @@ class RunService:
         limit: int = 100,
         offset: int = 0,
     ) -> list[RunEvent]:
-        """Events list for a run. Validates ownership. Supports pagination."""
-        company = self._company_repo.get(company_id)
-        if company.owner_id != owner_id:
-            raise NotFoundError(f"Company {company_id!r} not found")
-        # Validate run belongs to company
-        self.get(company_id, run_id)
+        """Events list for a run. Validates ownership. Supports pagination.
+
+        ALEX-TD-249: replaced 2-step company_repo.get() + self.get() with a single
+        get_owned() call — saves 1 DB round-trip per GET /runs/{id}/events request.
+        """
+        # Single JOIN query: validates run exists, belongs to company, and owner matches.
+        self._repo.get_owned(run_id, company_id, owner_id)
         return self._repo.list_events(run_id, limit=limit, offset=offset)
 
     async def execute_run(
