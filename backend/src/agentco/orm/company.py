@@ -12,7 +12,9 @@ class CompanyORM(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     # ALEX-TD-095: index on owner_id — every auth'd API call filters by owner_id
-    owner_id: Mapped[str | None] = mapped_column(Text, ForeignKey("users.id"), nullable=True, index=True)
+    # ALEX-TD-258: nullable=False — every company must have an owner; nullable allowed orphan
+    # companies that would silently fail all ownership checks (owner_id != user_id always False for NULL)
+    owner_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id"), nullable=False, index=True)
 
     agents: Mapped[list["AgentORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821
     tasks: Mapped[list["TaskORM"]] = relationship(back_populates="company", cascade="all, delete-orphan")  # noqa: F821

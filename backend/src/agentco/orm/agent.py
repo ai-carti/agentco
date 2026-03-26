@@ -14,7 +14,7 @@ class AgentORM(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[str | None] = mapped_column(Text)
     system_prompt: Mapped[str | None] = mapped_column(Text)
-    model: Mapped[str] = mapped_column(Text, default="gpt-4o-mini")
+    model: Mapped[str] = mapped_column(Text, default="gpt-4o-mini", server_default="gpt-4o-mini")  # ALEX-TD-260: server_default for direct SQL INSERTs
     library_agent_id: Mapped[str | None] = mapped_column(Text)
     # POST-006: hierarchical agents support
     # ALEX-TD-243: index=True for future WHERE parent_agent_id = ? queries (consistency with all other FK columns)

@@ -40,7 +40,7 @@ def get_agent_memory(
     request: Request,
     company_id: uuid.UUID,
     agent_id: uuid.UUID,
-    limit: int = Query(default=50, ge=1, le=500),
+    limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-259: le=100 consistent with ALEX-TD-238 policy
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),
