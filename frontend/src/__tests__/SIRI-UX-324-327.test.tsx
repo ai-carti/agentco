@@ -109,7 +109,6 @@ describe('SIRI-UX-325: WarRoomPage empty feed message by runStatus', () => {
       cost: 0,
       runStatus: 'idle',
       flashingAgents: new Set(),
-      prevStatuses: {},
     })
   })
 

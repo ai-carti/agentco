@@ -12,7 +12,7 @@
  *  2. Use the first company (or let user pick via selector if >1)
  *  3. Load/save/delete credentials scoped to that company
  */
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
@@ -230,7 +230,7 @@ export default function SettingsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!selectedCompanyId) return
     // SIRI-UX-194: AbortController to guard setState on unmounted SettingsPage
     deleteAbortRef.current?.abort()
@@ -264,7 +264,7 @@ export default function SettingsPage() {
         deleteAbortRef.current = null
       }
     }
-  }
+  }, [selectedCompanyId, toast])
 
   return (
     <div data-testid="settings-page" style={{ padding: '1rem', maxWidth: 560 }}>

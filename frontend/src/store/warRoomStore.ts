@@ -33,8 +33,7 @@ interface WarRoomState {
   messages: FeedMessage[]
   cost: number
   runStatus: RunStatus
-  // Track previous statuses for flash detection
-  prevStatuses: Record<string, WarRoomAgentStatus>
+  // SIRI-UX-371: prevStatuses removed — was never consumed, pure dead state
   flashingAgents: Set<string>
   setAgents: (agents: WarRoomAgent[]) => void
   addMessage: (msg: FeedMessage) => void
@@ -45,6 +44,9 @@ interface WarRoomState {
   reset: () => void
   clearFlash: (agentId: string) => void
 }
+
+// SIRI-UX-371: prevStatuses removed — it was never read by any component or selector,
+// only accumulated entries. Removing it eliminates the spread on every updateAgentStatus call.
 
 const MOCK_AGENTS: WarRoomAgent[] = [
   { id: 'agent-1', name: 'Alex', role: 'CEO', status: 'thinking', avatar: '👔', level: 0 },
@@ -127,7 +129,7 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
   cost: 0,
   // SIRI-UX-121: start in 'idle' so Stop button is disabled until real run starts
   runStatus: 'idle' as RunStatus,
-  prevStatuses: {},
+  // SIRI-UX-371: prevStatuses removed
   flashingAgents: new Set<string>(),
 
   setAgents: (agents) => set({ agents }),
@@ -164,7 +166,7 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
         agents: state.agents.map((a) =>
           a.id === agentId ? { ...a, status } : a,
         ),
-        prevStatuses: { ...state.prevStatuses, [agentId]: prev?.status ?? 'idle' },
+        // SIRI-UX-371: prevStatuses removed — was dead state
         flashingAgents,
       }
     }),
@@ -192,7 +194,7 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
       messages: [],
       cost: 0,
       runStatus: 'idle' as RunStatus,
-      prevStatuses: {},
+      // SIRI-UX-371: prevStatuses removed
       flashingAgents: new Set<string>(),
     })
   },

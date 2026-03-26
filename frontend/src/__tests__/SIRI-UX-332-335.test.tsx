@@ -63,22 +63,28 @@ describe('SIRI-UX-332: LIVE indicator visibility', () => {
   })
 })
 
-// ── SIRI-UX-333: warRoomStore.reset() clears prevStatuses ──────────────────
-describe('SIRI-UX-333: warRoomStore prevStatuses cleared on reset', () => {
-  it('accumulates prevStatuses during updateAgentStatus', () => {
+// ── SIRI-UX-333: warRoomStore.reset() — prevStatuses removed (SIRI-UX-371) ──────────────────
+// prevStatuses was dead state — never consumed by any component. Removed in SIRI-UX-371.
+// Verify that reset() still clears all live state correctly (agents, messages, cost).
+describe('SIRI-UX-333: warRoomStore reset clears live state', () => {
+  it('updateAgentStatus correctly changes agent status', () => {
     const store = useWarRoomStore.getState()
     store.setAgents([{ id: 'a1', name: 'Alex', role: 'CEO', status: 'idle', avatar: '👔', level: 0 }])
     store.updateAgentStatus('a1', 'thinking')
     store.updateAgentStatus('a1', 'done')
-    expect(useWarRoomStore.getState().prevStatuses).not.toEqual({})
+    expect(useWarRoomStore.getState().agents[0].status).toBe('done')
   })
 
-  it('reset() clears prevStatuses to empty object', () => {
+  it('reset() clears agents, messages, and cost', () => {
     const store = useWarRoomStore.getState()
     store.setAgents([{ id: 'a1', name: 'Alex', role: 'CEO', status: 'idle', avatar: '👔', level: 0 }])
-    store.updateAgentStatus('a1', 'thinking')
+    store.addMessage({ id: 'm1', senderName: 'Alex', targetName: 'CEO', content: 'hi', timestamp: new Date().toISOString() })
+    store.addCost(0.05)
     store.reset()
-    expect(useWarRoomStore.getState().prevStatuses).toEqual({})
+    const state = useWarRoomStore.getState()
+    expect(state.agents).toEqual([])
+    expect(state.messages).toEqual([])
+    expect(state.cost).toBe(0)
   })
 })
 

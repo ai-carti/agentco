@@ -73,7 +73,6 @@ describe('PRE-DEMO-POLISH: War Room LIVE indicator', () => {
       ],
       cost: 0.042,
       runStatus: 'active',
-      prevStatuses: {},
       flashingAgents: new Set(),
     })
   })
@@ -126,7 +125,6 @@ describe('PRE-DEMO-POLISH: Agent thinking animation', () => {
       messages: [],
       cost: 0.01,
       runStatus: 'active',
-      prevStatuses: {},
       flashingAgents: new Set(),
     })
   })

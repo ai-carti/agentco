@@ -118,6 +118,10 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
     }
 
     ws.onerror = () => {
+      // SIRI-UX-375: set isConnected=false on error so WarRoomPage doesn't show
+      // LIVE badge + ws-error-banner simultaneously (contradictory state).
+      // onclose fires after onerror, but there's a brief window in between.
+      setIsConnected(false)
       setError('WebSocket error')
     }
 
