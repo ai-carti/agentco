@@ -28,13 +28,15 @@ def upgrade() -> None:
     inspector = inspect(op.get_bind())
 
     # ALEX-TD-257: add UniqueConstraint(agent_id, name) on mcp_servers — idempotent
+    # SQLite does not support ALTER TABLE ADD CONSTRAINT, must use batch mode (copy-and-move)
     existing_constraints = {
         uc["name"]
         for uc in inspector.get_unique_constraints("mcp_servers")
         if uc.get("name")
     }
     if "uq_mcp_servers_agent_name" not in existing_constraints:
-        op.create_unique_constraint("uq_mcp_servers_agent_name", "mcp_servers", ["agent_id", "name"])
+        with op.batch_alter_table("mcp_servers") as batch_op:
+            batch_op.create_unique_constraint("uq_mcp_servers_agent_name", ["agent_id", "name"])
 
     # ALEX-TD-258: make companies.owner_id NOT NULL — idempotent via column recreation
     # SQLite doesn't support ALTER COLUMN, so we need to check the nullable flag
@@ -60,11 +62,12 @@ def downgrade() -> None:
             nullable=True,
         )
 
-    # Drop the unique constraint
+    # Drop the unique constraint — use batch mode for SQLite
     existing_constraints = {
         uc["name"]
         for uc in inspector.get_unique_constraints("mcp_servers")
         if uc.get("name")
     }
     if "uq_mcp_servers_agent_name" in existing_constraints:
-        op.drop_constraint("uq_mcp_servers_agent_name", "mcp_servers", type_="unique")
+        with op.batch_alter_table("mcp_servers") as batch_op:
+            batch_op.drop_constraint("uq_mcp_servers_agent_name", type_="unique")

@@ -33,7 +33,7 @@ def db_session():
 
 def _make_company(session, name="TestCo") -> str:
     import uuid
-    company = CompanyORM(id=str(uuid.uuid4()), name=name)
+    company = CompanyORM(id=str(uuid.uuid4()), name=name, owner_id="test-user-id")
     session.add(company)
     session.flush()
     return company.id
