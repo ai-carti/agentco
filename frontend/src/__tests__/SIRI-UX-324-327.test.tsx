@@ -7,7 +7,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { formatTimeHMS } from '../utils/taskUtils'
 import { useWarRoomStore } from '../store/warRoomStore'
 import { useAgentStore } from '../store/agentStore'
@@ -112,23 +112,25 @@ describe('SIRI-UX-325: WarRoomPage empty feed message by runStatus', () => {
     })
   })
 
-  it('shows "Waiting for agent activity..." when runStatus is idle', () => {
-    useWarRoomStore.setState({ runStatus: 'idle', messages: [] })
-    render(
+  function renderWithRoute() {
+    return render(
       <MemoryRouter initialEntries={['/companies/c1']}>
-        <WarRoomPage />
+        <Routes>
+          <Route path="/companies/:id" element={<WarRoomPage />} />
+        </Routes>
       </MemoryRouter>
     )
+  }
+
+  it('shows "Waiting for agent activity..." when runStatus is idle', () => {
+    useWarRoomStore.setState({ runStatus: 'idle', messages: [] })
+    renderWithRoute()
     expect(screen.getByText(/Waiting for agent activity/)).toBeInTheDocument()
   })
 
   it('shows stopped message when runStatus is stopped', () => {
     useWarRoomStore.setState({ runStatus: 'stopped', messages: [] })
-    render(
-      <MemoryRouter initialEntries={['/companies/c1']}>
-        <WarRoomPage />
-      </MemoryRouter>
-    )
+    renderWithRoute()
     // activity-feed empty state shows stop-specific message
     expect(screen.getByText('⏹ Run stopped — no activity recorded')).toBeInTheDocument()
     expect(screen.queryByText(/Waiting for agent activity/)).not.toBeInTheDocument()
@@ -136,21 +138,13 @@ describe('SIRI-UX-325: WarRoomPage empty feed message by runStatus', () => {
 
   it('shows completed message when runStatus is done', () => {
     useWarRoomStore.setState({ runStatus: 'done', messages: [] })
-    render(
-      <MemoryRouter initialEntries={['/companies/c1']}>
-        <WarRoomPage />
-      </MemoryRouter>
-    )
+    renderWithRoute()
     expect(screen.getByText('✓ Run completed — all messages shown')).toBeInTheDocument()
   })
 
   it('shows failed message when runStatus is failed', () => {
     useWarRoomStore.setState({ runStatus: 'failed', messages: [] })
-    render(
-      <MemoryRouter initialEntries={['/companies/c1']}>
-        <WarRoomPage />
-      </MemoryRouter>
-    )
+    renderWithRoute()
     expect(screen.getByText('✗ Run failed — no messages were sent')).toBeInTheDocument()
   })
 })

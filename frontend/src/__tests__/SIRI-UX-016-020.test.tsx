@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { useAgentStore, type AgentStore } from '../store/agentStore'
 
 // ─── Mock stores & context ───────────────────────────────────────────────────
@@ -76,8 +76,11 @@ describe('SIRI-UX-016: WarRoomPage auto-scroll anchor', () => {
   it('renders feed-end scroll anchor div', async () => {
     const { default: WarRoomPage } = await import('../components/WarRoomPage')
     const { container } = render(
+      // SIRI-UX-376: WarRoomPage requires :id param via Route
       <MemoryRouter initialEntries={['/companies/co1']}>
-        <WarRoomPage />
+        <Routes>
+          <Route path="/companies/:id" element={<WarRoomPage />} />
+        </Routes>
       </MemoryRouter>
     )
     // The scroll anchor is the last child of the feed container

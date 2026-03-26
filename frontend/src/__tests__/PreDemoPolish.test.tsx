@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AuthPage from '../components/AuthPage'
 import WarRoomPage from '../components/WarRoomPage'
 import { useWarRoomStore } from '../store/warRoomStore'
@@ -79,8 +79,11 @@ describe('PRE-DEMO-POLISH: War Room LIVE indicator', () => {
 
   it('renders a LIVE indicator in the activity feed header', () => {
     render(
-      <MemoryRouter>
-        <WarRoomPage />
+      // SIRI-UX-376: WarRoomPage requires :id param
+      <MemoryRouter initialEntries={['/companies/c1']}>
+        <Routes>
+          <Route path="/companies/:id" element={<WarRoomPage />} />
+        </Routes>
       </MemoryRouter>,
     )
     const liveIndicator = screen.getByTestId('live-indicator')
@@ -131,8 +134,11 @@ describe('PRE-DEMO-POLISH: Agent thinking animation', () => {
 
   it('shows thinking animation element for thinking agents', () => {
     render(
-      <MemoryRouter>
-        <WarRoomPage />
+      // SIRI-UX-376: WarRoomPage requires :id param
+      <MemoryRouter initialEntries={['/companies/c1']}>
+        <Routes>
+          <Route path="/companies/:id" element={<WarRoomPage />} />
+        </Routes>
       </MemoryRouter>,
     )
     // Should have animated thinking indicator (at least one for a thinking agent)

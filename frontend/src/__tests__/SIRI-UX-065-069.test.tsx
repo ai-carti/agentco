@@ -98,7 +98,15 @@ describe('SIRI-UX-068: WarRoomPage activity feed aria-live', () => {
       onclose: (() => void) | null = null
       close() {}
     })
-    render(<MemoryRouter><WarRoomPage /></MemoryRouter>)
+    // SIRI-UX-376: WarRoomPage requires :id param via Route
+    const { Route, Routes } = await import('react-router-dom')
+    render(
+      <MemoryRouter initialEntries={['/companies/co1']}>
+        <Routes>
+          <Route path="/companies/:id" element={<WarRoomPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
     // activity-feed is rendered when agents exist (mock data loads)
     const feed = await screen.findByTestId('activity-feed')
     const liveRegion = feed.querySelector('[aria-live="polite"]')

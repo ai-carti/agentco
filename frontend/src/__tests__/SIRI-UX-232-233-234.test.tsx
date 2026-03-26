@@ -175,8 +175,9 @@ describe('SIRI-UX-234: CompanyPage activeTab resets to war-room on company chang
     )
 
     // The war-room tabpanel should be visible (not hidden)
+    // SIRI-UX-381: IDs are now namespaced with companyId
     await waitFor(() => {
-      const warRoomPanel = document.getElementById('tabpanel-war-room')
+      const warRoomPanel = document.getElementById('tabpanel-co-1-war-room')
       expect(warRoomPanel).not.toBeNull()
       // hidden prop means display:none — if active it should NOT be hidden
       expect(warRoomPanel?.hidden).toBe(false)

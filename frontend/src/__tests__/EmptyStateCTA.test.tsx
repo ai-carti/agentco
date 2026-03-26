@@ -135,15 +135,21 @@ describe('WarRoomPage empty state (no agents)', () => {
     // Import dynamically to avoid circular deps
     const { default: WarRoomPage } = await import('../components/WarRoomPage')
     const { useWarRoomStore } = await import('../store/warRoomStore')
+    const { Route, Routes } = await import('react-router-dom')
     // Stub loadMockData to prevent agents from being populated on mount
     const originalLoad = useWarRoomStore.getState().loadMockData
     useWarRoomStore.setState({ agents: [], messages: [], cost: 0, loadMockData: () => {} } as any)
 
     render(
-      <MemoryRouter>
-        <ToastProvider>
-          <WarRoomPage />
-        </ToastProvider>
+      // SIRI-UX-376: WarRoomPage requires :id route param — provide proper route
+      <MemoryRouter initialEntries={['/companies/c1']}>
+        <Routes>
+          <Route path="/companies/:id" element={
+            <ToastProvider>
+              <WarRoomPage />
+            </ToastProvider>
+          } />
+        </Routes>
       </MemoryRouter>,
     )
     expect(screen.getByTestId('war-room-page')).toBeInTheDocument()

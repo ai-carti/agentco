@@ -372,10 +372,10 @@ export default function CompanyPage() {
           return (
             <button
               key={tab.id}
-              id={`tab-${tab.id}`}
+              id={`tab-${id}-${tab.id}`}
               role="tab"
               aria-selected={isActive}
-              aria-controls={`tabpanel-${tab.id}`}
+              aria-controls={`tabpanel-${id}-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
               onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
               onKeyDown={handleKeyDown}
@@ -404,8 +404,8 @@ export default function CompanyPage() {
         {/* War Room panel */}
         <div
           role="tabpanel"
-          id="tabpanel-war-room"
-          aria-labelledby="tab-war-room"
+          id={`tabpanel-${id}-war-room`}
+          aria-labelledby={`tab-${id}-war-room`}
           hidden={activeTab !== 'war-room'}
           style={{ height: '100%' }}
         >
@@ -428,8 +428,8 @@ export default function CompanyPage() {
         {/* Board panel */}
         <div
           role="tabpanel"
-          id="tabpanel-board"
-          aria-labelledby="tab-board"
+          id={`tabpanel-${id}-board`}
+          aria-labelledby={`tab-${id}-board`}
           hidden={activeTab !== 'board'}
           style={{ height: '100%', overflowY: 'auto' }}
         >
@@ -446,8 +446,8 @@ export default function CompanyPage() {
         {/* Agents panel */}
         <div
           role="tabpanel"
-          id="tabpanel-agents"
-          aria-labelledby="tab-agents"
+          id={`tabpanel-${id}-agents`}
+          aria-labelledby={`tab-${id}-agents`}
           hidden={activeTab !== 'agents'}
           style={{ height: '100%', overflowY: 'auto', padding: '1.25rem' }}
         >

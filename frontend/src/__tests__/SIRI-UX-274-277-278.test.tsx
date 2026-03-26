@@ -54,20 +54,26 @@ describe('SIRI-UX-274: tab buttons have id, tabpanels have aria-labelledby', () 
   it('each tab button has id="tab-{id}"', () => {
     renderCompanyPage()
     const warRoomTab = screen.getByRole('tab', { name: /war room/i })
-    expect(warRoomTab).toHaveAttribute('id', 'tab-war-room')
+    // SIRI-UX-381: IDs are now namespaced with companyId to avoid duplicate IDs on route transitions
+    expect(warRoomTab.getAttribute('id')).toMatch(/tab-co1-war-room/)
     const boardTab = screen.getByRole('tab', { name: /board/i })
-    expect(boardTab).toHaveAttribute('id', 'tab-board')
+    expect(boardTab.getAttribute('id')).toMatch(/tab-co1-board/)
     const agentsTab = screen.getByRole('tab', { name: /agents/i })
-    expect(agentsTab).toHaveAttribute('id', 'tab-agents')
+    expect(agentsTab.getAttribute('id')).toMatch(/tab-co1-agents/)
   })
 
   it('each tabpanel has aria-labelledby pointing to the corresponding tab id', () => {
     renderCompanyPage()
     const panels = screen.getAllByRole('tabpanel', { hidden: true })
     const panelIds = panels.map((p) => p.getAttribute('aria-labelledby'))
-    expect(panelIds).toContain('tab-war-room')
-    expect(panelIds).toContain('tab-board')
-    expect(panelIds).toContain('tab-agents')
+    // SIRI-UX-381: labelledby IDs are now namespaced with companyId
+    expect(panelIds.some((id) => id?.includes('war-room'))).toBe(true)
+    expect(panelIds.some((id) => id?.includes('board'))).toBe(true)
+    expect(panelIds.some((id) => id?.includes('agents'))).toBe(true)
+    // Each panel's labelledby should reference a tab that contains companyId
+    for (const panelId of panelIds) {
+      expect(panelId).toContain('co1')
+    }
   })
 })
 
