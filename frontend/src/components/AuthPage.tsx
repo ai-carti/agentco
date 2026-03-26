@@ -241,7 +241,7 @@ export default function AuthPage() {
             </button>
           </div>
 
-          <button style={styles.button} type="submit" disabled={isLoading}>
+          <button style={styles.button} type="submit" disabled={isLoading} aria-busy={isLoading}>
             {isLoading ? 'Loading…' : tab === 'signin' ? 'Sign In' : 'Sign Up'}
           </button>
         </form>

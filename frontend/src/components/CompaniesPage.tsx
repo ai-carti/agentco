@@ -259,6 +259,7 @@ export default function CompaniesPage() {
                 data-testid="new-company-create-btn"
                 onClick={handleCreate}
                 disabled={creating || !newName.trim()}
+                aria-busy={creating}
                 style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
               >
                 {creating ? 'Creating…' : 'Create'}

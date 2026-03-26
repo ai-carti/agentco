@@ -326,8 +326,9 @@ export default function SettingsPage() {
               style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}
             >
               <div>
-                <label style={labelStyle}>Provider</label>
+                <label htmlFor="settings-provider" style={labelStyle}>Provider</label>
                 <select
+                  id="settings-provider"
                   data-testid="llm-provider-select"
                   value={provider}
                   onChange={(e) => setProvider(e.target.value)}
@@ -342,8 +343,9 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>API Key</label>
+                <label htmlFor="settings-api-key" style={labelStyle}>API Key</label>
                 <input
+                  id="settings-api-key"
                   data-testid="llm-api-key-input"
                   type="password"
                   value={apiKey}

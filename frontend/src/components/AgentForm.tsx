@@ -128,6 +128,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
           onChange={(e) => setModel(e.target.value)}
           className="input-focus-ring"
           disabled={loadingModels}
+          aria-busy={loadingModels}
           required
           style={{
             ...inputStyle,
