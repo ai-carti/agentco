@@ -25,6 +25,9 @@ export interface Task {
   assignee_name?: string
   due_date?: string
   priority?: TaskPriority
+  // SIRI-UX-397: backend TaskOut now includes result and created_at (ALEX-TD-203)
+  result?: string | null
+  created_at?: string | null
 }
 
 export interface Company {

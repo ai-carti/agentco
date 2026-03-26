@@ -358,8 +358,11 @@ export default function WarRoomPage() {
   // SIRI-UX-025: Connecting state — show spinner while waiting for first WS data
   if (agents.length === 0 && isConnecting) {
     return (
+      // SIRI-UX-397: role="status" + aria-label so screen readers announce connecting state
       <div
         data-testid="war-room-connecting"
+        role="status"
+        aria-label="Connecting to War Room…"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -374,6 +377,7 @@ export default function WarRoomPage() {
       >
         {/* SIRI-UX-209: use CSS class instead of inline animation so prefers-reduced-motion can override */}
         <div
+          aria-hidden="true"
           className="war-room-connecting-spinner"
           style={{
             width: 36, height: 36, borderRadius: '50%',

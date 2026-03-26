@@ -521,13 +521,15 @@ export default function CompanyPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#f1f5f9', fontWeight: 700 }}>Add Agent</h3>
+              {/* SIRI-UX-399: aria-label on close button so screen reader doesn't read literal "×" */}
               <Button
                 data-testid="agent-form-modal-close"
                 variant="secondary"
+                aria-label="Close Add Agent dialog"
                 onClick={() => setIsAgentFormOpen(false)}
                 style={{ padding: '0.25rem 0.5rem', fontSize: '1.2rem' }}
               >
-                ×
+                <span aria-hidden="true">×</span>
               </Button>
             </div>
             <AgentForm onSubmit={handleCreateAgent} />

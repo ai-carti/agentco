@@ -20,6 +20,10 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   in_progress: { bg: '#1d4ed8', text: '#bfdbfe' },
   done: { bg: '#065f46', text: '#a7f3d0' },
   failed: { bg: '#7f1d1d', text: '#fca5a5' },
+  // SIRI-UX-400: backend can return status='error' (loop_detected, cost_limit_exceeded) —
+  // without this entry STATUS_COLORS[task.status] returns undefined → fallback colors used
+  // but explicit entry provides consistent styling with 'failed'
+  error: { bg: '#7f1d1d', text: '#fca5a5' },
 }
 
 export const AVATAR_COLORS = [

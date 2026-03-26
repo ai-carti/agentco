@@ -194,13 +194,15 @@ export default function GlobalSearch() {
       <button
         data-testid="global-search-trigger"
         onClick={() => setOpen(true)}
+        aria-label="Open search"
         style={{
           background: 'transparent', border: '1px solid #374151', borderRadius: 6,
           color: '#9ca3af', padding: '0.3rem 0.7rem', fontSize: '0.8rem', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: '0.4rem',
         }}
       >
-        <span style={{ fontSize: '0.85rem' }}>&#x1F50D;</span>
+        {/* SIRI-UX-396: aria-hidden so screen reader doesn't announce raw emoji glyph name */}
+        <span aria-hidden="true" style={{ fontSize: '0.85rem' }}>&#x1F50D;</span>
         <span>Search</span>
         {/* SIRI-UX-285: platform-adaptive shortcut hint — ⌘K on Mac, Ctrl+K elsewhere */}
         <kbd style={{ fontSize: '0.65rem', color: '#6b7280', marginLeft: '0.25rem' }}>{getIsMac() ? '⌘K' : 'Ctrl+K'}</kbd>
@@ -255,9 +257,12 @@ export default function GlobalSearch() {
           />
 
           {/* SIRI-UX-314: search scope hint so user understands what's being searched */}
+          {/* SIRI-UX-400: role="status" + aria-live="polite" so screen reader announces state changes */}
           {debouncedQuery.length < 2 && (
             <p
               data-testid="global-search-scope-hint"
+              role="status"
+              aria-live="polite"
               style={{ textAlign: 'center', color: '#6b7280', padding: '0.75rem 1rem', fontSize: '0.8rem' }}
             >
               {currentCompany
@@ -268,6 +273,8 @@ export default function GlobalSearch() {
           {debouncedQuery.length >= 2 && results.length === 0 && (
             <p
               data-testid="global-search-empty"
+              role="status"
+              aria-live="polite"
               style={{ textAlign: 'center', color: '#6b7280', padding: '1rem 0' }}
             >
               {currentCompany

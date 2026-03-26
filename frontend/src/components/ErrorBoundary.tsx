@@ -33,6 +33,8 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div
           data-testid="error-boundary-fallback"
+          role="alert"
+          aria-live="assertive"
           style={{
             padding: '3rem 1.5rem',
             textAlign: 'center',

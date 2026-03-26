@@ -17,8 +17,9 @@ export default function NotFoundPage() {
         justifyContent: 'center',
       }}
     >
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>404</div>
-      <div
+      {/* SIRI-UX-399: use semantic h1 for screen reader heading navigation */}
+      <div style={{ fontSize: '4rem', marginBottom: '1rem' }} aria-hidden="true">404</div>
+      <h1
         style={{
           fontSize: '1.25rem',
           fontWeight: 700,
@@ -27,7 +28,7 @@ export default function NotFoundPage() {
         }}
       >
         Page not found
-      </div>
+      </h1>
       <div
         style={{
           fontSize: '0.875rem',

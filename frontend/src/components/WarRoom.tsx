@@ -203,8 +203,11 @@ export default function WarRoom() {
       <h1 className="text-xl font-bold mb-4">War Room</h1>
 
       {/* SIRI-UX-158: show skeleton while connecting so user gets feedback instead of blank area */}
+      {/* SIRI-UX-398: role="status" wrapper so screen readers announce loading state */}
       {isConnecting && runs.length === 0 ? (
-        <SkeletonCard variant="task" count={3} />
+        <div role="status" aria-label="Loading runs…">
+          <SkeletonCard variant="task" count={3} />
+        </div>
       ) : runs.length === 0 ? (
         <EmptyState
           icon={<Moon className="w-12 h-12 text-gray-400" />}
