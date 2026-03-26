@@ -101,13 +101,20 @@ export default function WarRoom() {
       setIsConnecting(false)
       return
     }
-    // TODO(SIRI-UX-360): JWT in WS URL leaks to server logs. Full fix requires backend to support WS auth handshake (send token in first WS message). Tracked in ROADMAP.md SIRI-UX-360.
+    // SIRI-UX-360: Use first-message auth instead of query param to prevent JWT
+    // leaking into nginx/Railway access logs. Backend now supports:
+    //   - No ?token= in URL (preferred — JWT stays out of logs)
+    //   - After accept(), client sends first message: { type: 'auth', token: '<jwt>' }
+    //   - Backend has 5s timeout to receive the auth message
+    // Backward compat: ?token= still works but is deprecated.
     const ws = new WebSocket(
-      `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${token}`,
+      `${BASE_WS_URL}/ws/companies/${companyId}/events`,
     )
 
     // BUG-043: track connecting state — hide empty state until WS is open
     ws.onopen = () => {
+      // SIRI-UX-360: send auth token as first message (not in URL query param)
+      ws.send(JSON.stringify({ type: 'auth', token }))
       setIsConnecting(false)
       // SIRI-UX-292: reset backoff on successful connect — mirrors useWarRoomSocket.ts
       retryDelayRef.current = INITIAL_BACKOFF_MS

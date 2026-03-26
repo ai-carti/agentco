@@ -516,6 +516,10 @@ class RunService:
             # ALEX-TD-024: use fresh session for final update (checkpointer context is closed)
             # ALEX-TD-088: also persist total_tokens and total_cost_usd from final_state.
             # Previously these were never written to DB — GET /runs/{id} always returned 0.
+            # BUG-DETACHED: initialize metric locals before try so logger.info always has values
+            # even if run_orm is None or session raises an error.
+            _log_tokens: int = int(final_state.get("total_tokens", 0))
+            _log_cost: float = float(final_state.get("total_cost_usd", 0.0))
             update_session = _get_session_for_update()
             try:
                 run_orm = update_session.get(self._repo.orm_model, run_id)
@@ -545,12 +549,29 @@ class RunService:
                     # Without this, run_orm.error stays None in DB → frontend shows empty error field.
                     run_orm.error = final_state.get("error")
                     update_session.commit()
+                    # ALEX-TD-268/271 + BUG-DETACHED: capture metrics BEFORE session.close().
+                    # After session.close(), SQLAlchemy expires the ORM object — accessing
+                    # run_orm.total_tokens raises DetachedInstanceError.
+                    # Read the values while the session is still open (inside the try block).
+                    _log_tokens = run_orm.total_tokens
+                    _log_cost = run_orm.total_cost_usd
                 else:
                     # BUG-068: run was deleted while graph was running — metrics are lost
                     logger.warning("execute_run: run_orm not found for run_id=%s, metrics lost", run_id)
+                    _log_tokens = int(final_state.get("total_tokens", 0))
+                    _log_cost = float(final_state.get("total_cost_usd", 0.0))
             finally:
                 if session_factory is not None:
                     update_session.close()
+
+            # ALEX-TD-268 + ALEX-TD-271: log successful run completion with metrics.
+            # Observability gap: prod logs were silent on success — operators couldn't
+            # distinguish "completed" from "hung" without querying the DB.
+            # Include run_id, status, tokens, and cost so expensive runs are visible in logs.
+            logger.info(
+                "execute_run: run_id=%s completed status=%s company_id=%s tokens=%d cost=%.4f",
+                run_id, final_status, company_id, _log_tokens, _log_cost,
+            )
 
             # ALEX-TD-084: publish run.failed when graph returns status=failed/error.
             # Previously run.completed was published regardless of final_status,

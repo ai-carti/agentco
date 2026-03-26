@@ -43,6 +43,7 @@ beforeEach(() => {
         onmessage: null as ((e: MessageEvent) => void) | null,
         onerror: null as (() => void) | null,
         close: vi.fn(),
+        send: vi.fn(),
         readyState: 1,
       }
       wsInstances.push(ws)

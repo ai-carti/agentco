@@ -68,8 +68,10 @@ class AgentState(TypedDict):
     # POST-006: max hierarchy depth (optional for backward compat)
     max_depth: NotRequired[int]      # максимально допустимая глубина делегирования
 
-    # Управление выполнением
-    status: Literal["running", "completed", "failed", "error"]
+    # ALEX-TD-267: added "done" to Literal — ceo_node/subagent_node/hierarchical_node
+    # return status="done" on successful completion; execute_run defaults to "done".
+    # Without "done", mypy/pyright silently accepted out-of-range values (no runtime check).
+    status: Literal["running", "completed", "failed", "error", "done"]
     error: str | None
     final_result: str | None
 

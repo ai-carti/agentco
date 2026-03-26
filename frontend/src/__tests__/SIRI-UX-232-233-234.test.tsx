@@ -57,6 +57,7 @@ class MockWebSocket {
   onclose: ((e: { code: number; wasClean: boolean }) => void) | null = null
   onerror: (() => void) | null = null
   _closed = false
+  send = vi.fn()
 
   constructor() {
     wsInstances.push(this as unknown as MockWsInstance)

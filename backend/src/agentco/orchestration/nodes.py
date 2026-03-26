@@ -53,6 +53,17 @@ def _get_max_tokens() -> int:
     return int(os.environ.get("MAX_RUN_TOKENS", "100000"))
 
 
+def _get_max_pending_tasks() -> int:
+    """ALEX-TD-270: max allowed pending_tasks count to prevent unbounded queue growth.
+
+    Without a limit, a buggy goal or adversarial input could cause CEO to add hundreds
+    of tasks in a single iteration → memory bloat + excessive LLM calls + checkpointer
+    DB growth (each large state = large msgpack blob at each checkpoint).
+    Configurable via AGENT_MAX_PENDING_TASKS env var (default: 20).
+    """
+    return int(os.environ.get("AGENT_MAX_PENDING_TASKS", "20"))
+
+
 # ─── Mock LLM helper ──────────────────────────────────────────────────────────
 
 def _sync_mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
@@ -194,6 +205,26 @@ async def ceo_node(state: AgentState) -> dict:
             "total_cost_usd": state["total_cost_usd"] + cost,
             "final_result": final_answer,
             "status": "completed",
+        }
+
+    # ALEX-TD-270: guard against unbounded pending_tasks growth.
+    # Without this check, a buggy goal or adversarial input could cause CEO to add
+    # hundreds of tasks → memory bloat + excessive LLM calls + checkpointer DB growth.
+    max_pending = _get_max_pending_tasks()
+    if len(state["pending_tasks"]) >= max_pending:
+        logger.warning(
+            "ceo_node: max_pending_tasks_exceeded run_id=%s pending=%d limit=%d",
+            state.get("run_id"), len(state["pending_tasks"]), max_pending,
+        )
+        return {
+            "status": "failed",
+            "error": "max_pending_tasks_exceeded",
+            "error_detail": (
+                f"Pending tasks limit {max_pending} exceeded "
+                f"(current: {len(state['pending_tasks'])})"
+            ),
+            # ALEX-TD-145: clear pending_tasks to avoid stale state in checkpointer
+            "pending_tasks": [],
         }
 
     # ── Делегирование задачи subagent-у ───────────────────────────────────────

@@ -45,6 +45,9 @@ class LibraryAgentOut(BaseModel):
     system_prompt: str | None
     model: str
     use_count: int
+    # ALEX-TD-269: expose owner_id so frontend can implement "My Library" and
+    # operators can audit who saved each agent. nullable because legacy entries have no owner.
+    owner_id: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -110,6 +113,8 @@ def save_to_library(
         system_prompt=agent.system_prompt,
         model=agent.model,
         use_count=0,
+        # ALEX-TD-269: store owner_id for audit trail and future "My Library" filtering.
+        owner_id=current_user.id,
     )
     session.add(lib_entry)
     session.commit()

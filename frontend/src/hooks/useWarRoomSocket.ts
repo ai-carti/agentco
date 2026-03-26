@@ -41,18 +41,21 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
     // which is a malformed URL that causes confusing backend errors
     if (!companyId || companyId.trim() === '') return
 
-    // SIRI-UX-096: pass auth token as query param — backend requires ?token=<jwt>
-    // Without it, backend closes with code 4001 (unauthorized), wiping mock data
-    // TODO(SIRI-UX-360): JWT in WS URL leaks to server logs. Full fix requires backend to support WS auth handshake (send token in first WS message). Tracked in ROADMAP.md SIRI-UX-360.
+    // SIRI-UX-360: use first-message auth instead of ?token= query param.
+    // Backend now accepts connections without token in URL, then waits up to 5s
+    // for: { type: 'auth', token: '<jwt>' } as the first WS message.
+    // This prevents the JWT from appearing in nginx/Railway access logs.
     const token = getStoredToken()
-    const url = token
-      ? `${BASE_WS_URL}/ws/companies/${companyId}/events?token=${encodeURIComponent(token)}`
-      : `${BASE_WS_URL}/ws/companies/${companyId}/events`
+    const url = `${BASE_WS_URL}/ws/companies/${companyId}/events`
     const ws = new WebSocket(url)
     wsRef.current = ws
 
     ws.onopen = () => {
       if (unmountedRef.current) { ws.close(); return }
+      // SIRI-UX-360: send auth token as first WS message (not in URL)
+      if (token) {
+        ws.send(JSON.stringify({ type: 'auth', token }))
+      }
       setIsConnected(true)
       setError(null)
       retryDelayRef.current = 1000 // reset backoff on successful connect

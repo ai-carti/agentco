@@ -19,3 +19,7 @@ class AgentLibraryORM(Base):
     use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, index=True)
     # ALEX-TD-119: index on created_at — used in ORDER BY created_at DESC in GET /api/library
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+    # ALEX-TD-269: track who saved the agent for audit trail and future "My Library" filtering.
+    # nullable=True for backward compat with existing rows (pre-migration entries have no owner).
+    # Index on owner_id for future "GET /api/library?mine=true" queries.
+    owner_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)

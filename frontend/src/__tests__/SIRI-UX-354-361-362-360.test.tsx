@@ -24,9 +24,10 @@ vi.mock('../store/agentStore', () => {
     setTasks,
     setAgents: vi.fn(),
   }
+  const useAgentStore = (sel: (s: typeof state) => unknown) => sel(state)
+  useAgentStore.getState = () => state
   return {
-    useAgentStore: (sel: (s: typeof state) => unknown) => sel(state),
-    // expose getState for mutations
+    useAgentStore,
     __esModule: true,
   }
 })
@@ -259,16 +260,20 @@ describe('SIRI-UX-362 / SIRI-UX-401: TaskDetailSidebar handleRun catch — no co
   })
 })
 
-// ─── SIRI-UX-360: JWT token in WS URL documented ────────────────────────────
-describe('SIRI-UX-360: WarRoom.tsx has TODO comment about JWT in WS URL', () => {
-  it('WarRoom.tsx source contains TODO comment about JWT token in WS URL', async () => {
+// ─── SIRI-UX-360: JWT token sent as first WS message, not in URL ────────────
+describe('SIRI-UX-360: WarRoom.tsx sends auth token as first WS message', () => {
+  it('WarRoom.tsx source sends token as first message on WS open (not in URL)', async () => {
     const modules = import.meta.glob('../components/WarRoom.tsx', {
       query: '?raw',
       import: 'default',
       eager: true,
     })
     const src = Object.values(modules)[0] as string
-    // Should contain a TODO comment explaining the security concern
-    expect(src).toMatch(/TODO.*SIRI-UX-360|SIRI-UX-360.*TODO/i)
+    // SIRI-UX-360 fixed: token is sent in first message on onopen, not as ?token= in URL
+    expect(src).toContain('SIRI-UX-360')
+    expect(src).toContain('ws.send(JSON.stringify({ type: \'auth\', token }')
+    // WS URL construction must NOT include token (only comments may mention ?token=)
+    // Verify new WebSocket() call does not include token in URL
+    expect(src).not.toMatch(/new WebSocket\([^)]*token/)
   })
 })

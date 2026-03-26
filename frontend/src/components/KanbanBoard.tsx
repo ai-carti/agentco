@@ -15,11 +15,14 @@ import { STATUS_COLORS, PRIORITY_COLORS, getAvatarColor, getInitials as _getInit
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
 
+// SIRI-UX-406: added 'failed' column — backend TaskStatus includes 'failed' (task FSM: in_progress → failed)
+// Without this column, tasks with failed status are invisible in the Kanban view
 const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
   { id: 'todo', label: 'Todo' },
   { id: 'in_progress', label: 'In Progress' },
   { id: 'done', label: 'Done' },
+  { id: 'failed', label: 'Failed' },
 ]
 
 // SIRI-UX-049: getInitials imported from taskUtils (alias to avoid breaking existing usages)
@@ -279,8 +282,13 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
   const handleMenuAction = (action: string) => {
     setMenuOpen(false)
     if (action === 'Edit') {
-      setEditTitle(task.title)
-      setEditDesc(task.description ?? '')
+      // SIRI-UX-365: read fresh task from store to avoid stale prop values.
+      // useState(task.title) captures value at mount; by the time user opens Edit,
+      // the store may have been updated (e.g. drag-and-drop status change). Using
+      // getState().tasks.find() guarantees we always pre-fill with current data.
+      const freshTask = useAgentStore.getState().tasks.find((t) => t.id === task.id)
+      setEditTitle(freshTask?.title ?? task.title)
+      setEditDesc(freshTask?.description ?? task.description ?? '')
       setEditOpen(true)
     } else if (action === 'Delete') {
       setDeleteOpen(true)
@@ -526,8 +534,10 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
               <Button
                 variant="secondary"
                 onClick={() => {
-                  setEditTitle(task.title)
-                  setEditDesc(task.description ?? '')
+                  // SIRI-UX-365: reset to store values (not stale prop) on Cancel
+                  const freshTask = useAgentStore.getState().tasks.find((t) => t.id === task.id)
+                  setEditTitle(freshTask?.title ?? task.title)
+                  setEditDesc(freshTask?.description ?? task.description ?? '')
                   setEditOpen(false)
                 }}
                 style={{ padding: '0.4rem 0.9rem' }}

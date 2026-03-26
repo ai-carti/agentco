@@ -18,6 +18,7 @@ class MockWS {
   onmessage: ((e: { data: string }) => void) | null = null
   onclose: (() => void) | null = null
   close = vi.fn()
+  send = vi.fn()
   constructor() { MockWS.instances.push(this) }
 }
 

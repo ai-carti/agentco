@@ -21,6 +21,7 @@ class MockWebSocket {
   onclose: ((event: CloseEvent) => void) | null = null
   onerror: (() => void) | null = null
   close = vi.fn()
+  send = vi.fn()
 
   constructor(url: string) {
     this.url = url
@@ -51,9 +52,10 @@ describe('WarRoom', () => {
   it('creates WebSocket with correct URL on mount', () => {
     renderWarRoom()
     expect(MockWebSocket.instances.length).toBe(1)
-    // URL should use ws:// scheme and include the correct path
+    // SIRI-UX-360: token is sent as first WS message, NOT in URL query param
     expect(lastWs().url).toMatch(/^ws:\/\//)
-    expect(lastWs().url).toContain('/ws/companies/comp-1/events?token=jwt-tok-123')
+    expect(lastWs().url).toContain('/ws/companies/comp-1/events')
+    expect(lastWs().url).not.toContain('token=')
   })
 
   it('shows empty state when no runs after WS connected', () => {
@@ -160,14 +162,15 @@ describe('WarRoom', () => {
   })
 
   // BUG-038: WS URL built from VITE_API_URL (not hardcoded)
+  // SIRI-UX-360: token is sent as first message, not in URL
   it('builds WS URL using ws:// protocol derived from env', () => {
     renderWarRoom()
     // URL must use ws:// protocol (derived from http:// via replace)
     expect(lastWs().url).toMatch(/^ws:\/\//)
     // URL must include the correct WS path
     expect(lastWs().url).toContain('/ws/companies/comp-1/events')
-    // URL must include auth token
-    expect(lastWs().url).toContain('token=jwt-tok-123')
+    // SIRI-UX-360: token must NOT be in URL (sent as first WS message instead)
+    expect(lastWs().url).not.toContain('token=')
   })
 
   it('reconnects after onclose with delay', () => {

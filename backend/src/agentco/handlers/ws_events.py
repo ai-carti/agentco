@@ -1,7 +1,16 @@
 """
 WebSocket endpoint for real-time events (M2-005).
 
-GET /ws/companies/{company_id}/events?token=<jwt>
+GET /ws/companies/{company_id}/events?token=<jwt>   ← legacy (logs JWT in nginx)
+GET /ws/companies/{company_id}/events               ← preferred (SIRI-UX-360 fix)
+
+SIRI-UX-360 fix: support auth via first WS message instead of query param.
+When no ?token= is provided, the backend accepts the WS connection and waits
+up to WS_AUTH_TIMEOUT_SEC (default 5) seconds for the first message:
+  {"type": "auth", "token": "<jwt>"}
+If the message is received within the timeout, it is used for authentication.
+This prevents the JWT from appearing in server access logs as a query param.
+Backward compatibility: ?token= query param still works (legacy fallback).
 
 ALEX-TD-011 fix: After JWT validation, verify that the authenticated user
 actually owns the requested company. Without this check, any valid user
@@ -20,6 +29,7 @@ close-before-accept as a connection error). Use custom codes 4001/4003 instead
 of 1008 — better browser compatibility.
 """
 import asyncio
+import json
 import logging
 import os
 import uuid
@@ -38,6 +48,11 @@ from ..orm.company import CompanyORM
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# SIRI-UX-360: when client connects without ?token= query param, wait up to
+# WS_AUTH_TIMEOUT_SEC seconds for a first message: {"type": "auth", "token": "<jwt>"}
+# This prevents JWT leaking into nginx/Railway access logs as a query param.
+_WS_AUTH_TIMEOUT_SEC: float = float(os.environ.get("WS_AUTH_TIMEOUT_SEC", "5"))
 
 # ALEX-TD-149: per-user WebSocket connection limit to prevent DoS.
 # Each WS connection subscribes to InProcessEventBus + runs 2 asyncio tasks.
@@ -61,6 +76,17 @@ def _get_ws_lock(user_id: str) -> asyncio.Lock:
     return _ws_connection_locks[user_id]
 
 
+def _decode_token_safe(token: str) -> str | None:
+    """Decode a JWT token and return user_id, or None on any error."""
+    try:
+        return decode_access_token(token)
+    except pyjwt.PyJWTError:
+        return None  # expected: invalid/expired token
+    except Exception as exc:
+        logger.warning("Unexpected error decoding JWT token: %s", exc)
+        return None
+
+
 @router.websocket("/ws/companies/{company_id}/events")
 async def ws_company_events(
     websocket: WebSocket,
@@ -68,19 +94,43 @@ async def ws_company_events(
     token: str = Query(default=""),
     session: Session = Depends(get_session),
 ):
-    # 1. Authenticate — decode JWT (no DB required)
-    user_id: str | None = None
-    if token:
-        try:
-            user_id = decode_access_token(token)
-        except pyjwt.PyJWTError:
-            pass  # expected: invalid/expired token → user_id stays None → unauthorized
-        except Exception as exc:
-            logger.warning("Unexpected error decoding JWT token: %s", exc)
+    # SIRI-UX-360: support two auth modes:
+    #   a) Legacy: ?token=<jwt> in query param (logs JWT in nginx — deprecated)
+    #   b) Preferred: no query param; wait for first WS message {"type":"auth","token":"<jwt>"}
+    #
+    # ALEX-TD-055: websocket.accept() must come before websocket.close().
+    # ALEX-TD-035: session must be released before the long-lived WS connection starts.
 
-    # 2. ALEX-TD-011: Verify company ownership via DB.
-    # ALEX-TD-035: session.close() in finally — DB released before websocket.accept().
-    # This prevents holding DB connections open for the entire WebSocket lifetime.
+    # Step 1: Accept the WS connection unconditionally (ALEX-TD-055).
+    await websocket.accept()
+
+    # Step 2: Resolve the auth token — from query param or first message.
+    auth_token: str = token  # may be empty if client uses first-message auth
+
+    if not auth_token:
+        # SIRI-UX-360: no query-param token → wait for first message auth
+        try:
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=_WS_AUTH_TIMEOUT_SEC)
+            msg = json.loads(raw)
+            if isinstance(msg, dict) and msg.get("type") == "auth" and isinstance(msg.get("token"), str):
+                auth_token = msg["token"]
+            else:
+                await websocket.close(code=4001, reason="Expected auth message {type:'auth', token:'...'}")
+                session.close()
+                return
+        except asyncio.TimeoutError:
+            await websocket.close(code=4001, reason="Auth timeout — send {type:'auth', token:'<jwt>'} within 5s")
+            session.close()
+            return
+        except (WebSocketDisconnect, json.JSONDecodeError, Exception):
+            session.close()
+            return
+
+    # Step 3: Authenticate — decode JWT (no DB required)
+    user_id: str | None = _decode_token_safe(auth_token)
+
+    # Step 4: ALEX-TD-011: Verify company ownership via DB.
+    # ALEX-TD-035: session.close() in finally — DB released before event loop.
     authorized = False
     if user_id is not None:
         try:
@@ -89,15 +139,11 @@ async def ws_company_events(
             ).first()
             authorized = company is not None and company.owner_id == user_id
         finally:
-            session.close()  # ← released before websocket.accept() (ALEX-TD-035)
+            session.close()  # ← released before long-lived WS loop (ALEX-TD-035)
     else:
         session.close()  # always release
 
-    # 3. ALEX-TD-055: accept() always comes before close() — correct WS handshake.
-    # Proxies (Nginx, HAProxy) log close-before-accept as a connection error.
-    await websocket.accept()
-
-    if not token or user_id is None:
+    if user_id is None:
         # 4001 = Unauthorized (missing/invalid token)
         await websocket.close(code=4001, reason="Missing or invalid token")
         return
