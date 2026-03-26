@@ -78,7 +78,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           setLogsError(true)
         }
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
+        // SIRI-UX-355: catch receives `unknown` — guard with instanceof before accessing .name
+        // DOMException is not instanceof Error in some environments (e.g. jsdom), so check both
+        const errName = err instanceof Error || err instanceof DOMException ? err.name : ''
+        if (errName !== 'AbortError') {
           // SIRI-UX-109: network error — show error state, not empty state
           setLogsError(true)
         }

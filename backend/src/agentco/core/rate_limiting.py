@@ -83,7 +83,9 @@ def rate_limit_exceeded_handler(request: Request, exc) -> JSONResponse:
     """Return 429 with {"error": "rate_limit_exceeded", "retry_after": N}."""
     try:
         retry_after = int(exc.limit.limit.get_expiry())
-    except Exception:
+    except Exception as _expiry_exc:
+        # ALEX-TD-223: log unexpected failures so Retry-After miscalculation is diagnosable
+        logger.warning("rate_limit_exceeded_handler: get_expiry() failed, defaulting to 60s: %s", _expiry_exc)
         retry_after = 60
     return JSONResponse(
         status_code=429,

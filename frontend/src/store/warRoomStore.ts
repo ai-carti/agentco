@@ -148,17 +148,19 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
       const isDone = status === 'done'
       const shouldFlash = wasThinking && isDone
 
-      const newFlashing = new Set(state.flashingAgents)
-      if (shouldFlash) {
-        newFlashing.add(agentId)
-      }
+      // SIRI-UX-356: only create a new Set when we actually need to add a flash entry.
+      // Returning the same reference when shouldFlash=false avoids triggering a re-render
+      // in WarRoomPage (which uses useShallow, relying on Object.is comparison).
+      const flashingAgents = shouldFlash
+        ? new Set([...state.flashingAgents, agentId])
+        : state.flashingAgents
 
       return {
         agents: state.agents.map((a) =>
           a.id === agentId ? { ...a, status } : a,
         ),
         prevStatuses: { ...state.prevStatuses, [agentId]: prev?.status ?? 'idle' },
-        flashingAgents: newFlashing,
+        flashingAgents,
       }
     }),
 
@@ -192,6 +194,8 @@ export const useWarRoomStore = create<WarRoomState>((set) => ({
 
   clearFlash: (agentId) =>
     set((state) => {
+      // SIRI-UX-356: if agent is not in the set, return same reference to avoid re-render
+      if (!state.flashingAgents.has(agentId)) return {}
       const newFlashing = new Set(state.flashingAgents)
       newFlashing.delete(agentId)
       return { flashingAgents: newFlashing }

@@ -54,7 +54,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await api.getMe(access_token)
       set({ token: access_token, user, isLoading: false })
     } catch (err) {
-      set({ isLoading: false, error: (err as Error).message })
+      // SIRI-UX-354: catch receives `unknown` — guard with instanceof before accessing .message
+      set({ isLoading: false, error: err instanceof Error ? err.message : String(err) })
     }
   },
 
@@ -67,7 +68,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await api.getMe(access_token)
       set({ token: access_token, user, isLoading: false })
     } catch (err) {
-      set({ isLoading: false, error: (err as Error).message })
+      // SIRI-UX-354: catch receives `unknown` — guard with instanceof before accessing .message
+      set({ isLoading: false, error: err instanceof Error ? err.message : String(err) })
     }
   },
 

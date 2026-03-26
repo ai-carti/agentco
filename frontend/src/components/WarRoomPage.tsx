@@ -199,10 +199,14 @@ export default function WarRoomPage() {
 
   // SIRI-UX-149: prune expandedMessages Set when messages are evicted by the 300-cap
   // Prevents unbounded growth of stale message IDs in long sessions
+  // SIRI-UX-357: moved early-return guard inside functional updater so it reads `prev.size`
+  // (always fresh) instead of closing over `expandedMessages.size` from the outer scope
+  // which can be stale when the Set is cleared between effect runs.
   useEffect(() => {
-    if (expandedMessages.size === 0) return
     const currentIds = new Set(messages.map((m) => m.id))
     setExpandedMessages((prev) => {
+      // Guard inside updater — reads fresh `prev` not stale outer scope
+      if (prev.size === 0) return prev
       let changed = false
       const next = new Set<string>()
       for (const id of prev) {
