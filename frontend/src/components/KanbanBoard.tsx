@@ -726,11 +726,15 @@ function FilterBar({
             Agent {selectedAgents.length > 0 && `(${selectedAgents.length})`}
           </button>
           {agentDropdownOpen && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
-              border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 160,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-            }}>
+            // SIRI-UX-402: role="menu" required — button trigger declares aria-haspopup="menu",
+            // so the dropdown container must have role="menu" for correct ARIA ownership
+            <div
+              role="menu"
+              style={{
+                position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
+                border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 160,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}>
               {agents.map((agent) => (
                 <button
                   key={agent.id}
@@ -772,11 +776,14 @@ function FilterBar({
             Priority {selectedPriorities.length > 0 && `(${selectedPriorities.length})`}
           </button>
           {priorityDropdownOpen && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
-              border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 140,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-            }}>
+            // SIRI-UX-402: role="menu" required — button trigger declares aria-haspopup="menu"
+            <div
+              role="menu"
+              style={{
+                position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
+                border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 140,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}>
               {PRIORITIES.map((p) => (
                 <button
                   key={p}
@@ -1009,8 +1016,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
   // SIRI-UX-346: extracted to avoid duplicating 5 setState calls in Escape handler, backdrop, Cancel button
   // SIRI-UX-368: abort in-flight createTask POST when modal is closed mid-flight so the
   // completed response doesn't call setTasks/toast.success on a closed modal.
+  // SIRI-UX-405: reset creating=false unconditionally — if AbortError fires, finally block
+  // guards with !signal.aborted and skips setCreating(false), leaving modal stuck disabled on reopen.
   const closeCreateModal = useCallback(() => {
     createTaskAbortRef.current?.abort() // SIRI-UX-368: cancel any pending create request
+    setCreating(false) // SIRI-UX-405: force reset so reopen doesn't find creating=true
     setShowCreateModal(false)
     setTitleTouched(false)
     setNewTaskTitle('')

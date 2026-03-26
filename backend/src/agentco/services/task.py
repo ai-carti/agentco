@@ -70,7 +70,7 @@ class TaskService:
             task_orm.title = title
         if description is not None:
             task_orm.description = description
-        self._session.flush()
+        # ALEX-TD-263: removed redundant flush() — commit() auto-flushes (mirrors ALEX-TD-246 fix for AgentService)
         self._session.commit()
         return self._repo._to_domain(task_orm)
 
@@ -89,7 +89,7 @@ class TaskService:
                 f"Allowed: {allowed or 'none (terminal state)'}"
             )
         task_orm.status = new_status
-        self._session.flush()
+        # ALEX-TD-263: removed redundant flush() — commit() auto-flushes
         self._session.commit()
         return self._repo._to_domain(task_orm)
 

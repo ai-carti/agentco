@@ -45,7 +45,7 @@ export interface AgentStore {
   setCurrentCompany: (company: Company | null) => void
   setActiveCompanyTab: (tab: string | null) => void
   updateAgentStatus: (id: string, status: AgentStatus) => void
-  updateTaskStatus: (id: string, status: TaskStatus) => void
+  // SIRI-UX-403: updateTaskStatus removed — dead code, never used by any component
 }
 
 export const useAgentStore = create<AgentStore>((set) => ({
@@ -61,8 +61,5 @@ export const useAgentStore = create<AgentStore>((set) => ({
     set((state) => ({
       agents: state.agents.map((a) => (a.id === id ? { ...a, status } : a)),
     })),
-  updateTaskStatus: (id, status) =>
-    set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? { ...t, status } : t)),
-    })),
+  // SIRI-UX-403: updateTaskStatus removed — dead code, never consumed by any component
 }))

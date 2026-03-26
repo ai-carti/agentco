@@ -15,6 +15,7 @@ class AgentLibraryORM(Base):
     role: Mapped[str | None] = mapped_column(Text)
     system_prompt: Mapped[str | None] = mapped_column(Text)
     model: Mapped[str] = mapped_column(Text, default="gpt-4o-mini")
-    use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # ALEX-TD-266: index=True for future ORDER BY use_count DESC (popularity ranking) queries
+    use_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, index=True)
     # ALEX-TD-119: index on created_at — used in ORDER BY created_at DESC in GET /api/library
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)

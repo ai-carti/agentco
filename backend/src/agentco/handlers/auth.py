@@ -80,13 +80,17 @@ class MeResponse(BaseModel):
 def register(request: Request, body: RegisterRequest, session: Session = Depends(get_session)):
     """Register a new user. Returns user id."""
     # ALEX-TD-005 fix: modern select() API
-    existing = session.scalars(select(UserORM).where(UserORM.email == body.email)).first()
+    # ALEX-TD-265: normalize email to lowercase before lookup and storage.
+    # SQLite text compare is case-sensitive → Test@Example.COM ≠ test@example.com.
+    # RFC 5321 domain part is case-insensitive; almost all providers treat full email as case-insensitive.
+    normalized_email = body.email.lower()
+    existing = session.scalars(select(UserORM).where(UserORM.email == normalized_email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = UserORM(
         id=str(uuid.uuid4()),
-        email=body.email,
+        email=normalized_email,
         hashed_password=hash_password(body.password),
     )
     session.add(user)
@@ -99,7 +103,8 @@ def register(request: Request, body: RegisterRequest, session: Session = Depends
 def login(request: Request, body: LoginRequest, session: Session = Depends(get_session)):
     """Authenticate user and return JWT access token."""
     # ALEX-TD-005 fix: modern select() API
-    user = session.scalars(select(UserORM).where(UserORM.email == body.email)).first()
+    # ALEX-TD-265: normalize email to lowercase for case-insensitive lookup
+    user = session.scalars(select(UserORM).where(UserORM.email == body.email.lower())).first()
     # ALEX-TD-229: constant-time path to prevent email enumeration via timing.
     # Always run bcrypt verify — even when user is not found — so response time
     # is ~100ms regardless of whether the email is registered.
@@ -116,9 +121,16 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
     return TokenResponse(access_token=create_access_token(user.id))
 
 
+_RATE_LIMIT_LOGOUT = os.getenv("RATE_LIMIT_AUTH_LOGOUT", "30/minute")
+
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
-def logout():
+@limiter.limit(_RATE_LIMIT_LOGOUT)
+def logout(request: Request):
     """Logout is client-side only — token remains valid until expiry.
+
+    ALEX-TD-264: added rate limiting (30/min) — consistent with /auth/* policy.
+    Event loop protection against DDoS (even no-op endpoints can exhaust event loop).
 
     This endpoint is a no-op on the backend. JWT tokens are stateless and
     cannot be invalidated server-side without a token revocation store (e.g. Redis

@@ -59,8 +59,10 @@ export default function WarRoom() {
 
   // BUG-043: initial REST fetch to populate runs on mount / page refresh
   // SIRI-UX-163: use AbortController to prevent setState on unmounted component
+  // SIRI-UX-404: reset runs immediately on companyId change to avoid showing stale runs from previous company
   useEffect(() => {
     if (!token || !companyId) return
+    setRuns([]) // SIRI-UX-404: clear before fetch so user never sees another company's run history
     const controller = new AbortController()
     fetch(`${BASE_URL}/api/companies/${companyId}/runs`, {
       headers: { Authorization: `Bearer ${token}` },

@@ -194,8 +194,10 @@ describe('SIRI-UX-361: handleCreateTask in KanbanBoard is useCallback-wrapped', 
   })
 })
 
-// ─── SIRI-UX-362: TaskDetailSidebar.handleRun logs error in catch ────────────
-describe('SIRI-UX-362: TaskDetailSidebar handleRun catch logs error', () => {
+// ─── SIRI-UX-362 / SIRI-UX-401: TaskDetailSidebar.handleRun catch — no console.error ────
+// SIRI-UX-401 removed the console.error from handleRun (violated SIRI-POST-002 baseline).
+// Error is surfaced via toast.error instead. Tests updated accordingly.
+describe('SIRI-UX-362 / SIRI-UX-401: TaskDetailSidebar handleRun catch — no console.error', () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -203,23 +205,22 @@ describe('SIRI-UX-362: TaskDetailSidebar handleRun catch logs error', () => {
     }) as unknown as typeof fetch
   })
 
-  it('TaskDetailSidebar.tsx source: catch block in handleRun calls console.error', async () => {
+  it('TaskDetailSidebar.tsx source: catch block in handleRun does NOT call console.error (SIRI-UX-401)', async () => {
     const modules = import.meta.glob('../components/TaskDetailSidebar.tsx', {
       query: '?raw',
       import: 'default',
       eager: true,
     })
     const src = Object.values(modules)[0] as string
-    // The handleRun catch must log the error
-    expect(src).toContain("console.error('handleRun failed:'")
+    // SIRI-UX-401: console.error removed — toast.error is the only error channel
+    const hasConsoleError = src
+      .split('\n')
+      .some((l) => l.includes('console.error') && !l.trim().startsWith('//'))
+    expect(hasConsoleError).toBe(false)
   })
 
-  it('console.error is called when handleRun fetch throws a network error', async () => {
-    // Make the run fetch throw after the logs fetch succeeds
-    let fetchCallCount = 0
+  it('console.error is NOT called when handleRun fetch throws a network error (SIRI-UX-401)', async () => {
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-      fetchCallCount++
-      // First call is logs (GET), second is run (POST)
       if (url.includes('/run')) {
         return Promise.reject(new Error('Network error'))
       }
@@ -245,15 +246,16 @@ describe('SIRI-UX-362: TaskDetailSidebar handleRun catch logs error', () => {
     const runBtn = screen.getByTestId('sidebar-run-btn')
     await act(async () => { fireEvent.click(runBtn) })
 
-    await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith(
-        'handleRun failed:',
-        expect.any(Error),
-      )
-    })
+    // Wait a tick to allow any async side-effects to settle
+    await new Promise((r) => setTimeout(r, 100))
+
+    // SIRI-UX-401: console.error should NOT be called — toast handles the error
+    expect(errorSpy).not.toHaveBeenCalledWith(
+      'handleRun failed:',
+      expect.any(Error),
+    )
 
     errorSpy.mockRestore()
-    expect(fetchCallCount).toBeGreaterThan(0)
   })
 })
 

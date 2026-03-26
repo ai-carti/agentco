@@ -138,8 +138,9 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
         }
       }
     } catch (err) {
-      // SIRI-UX-362: log error object so it's visible in devtools / error reporters
-      console.error('handleRun failed:', err)
+      // SIRI-UX-401: removed console.error — error already shown via toast.error
+      // AbortError is not a user-facing error
+      if (err instanceof Error && err.name === 'AbortError') return
       if (!signal.aborted) {
         toast.error('Something went wrong...')
       }
