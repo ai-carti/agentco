@@ -775,3 +775,57 @@ class TestStreamingTimeout:
 
         assert "messages" in result
         assert result["messages"][0]["content"] == "Hello world"
+
+
+# ─── ALEX-TD-221: guard messages=None in _build_messages_with_memory ─────────
+
+class TestBuildMessagesWithNoneMessages:
+    """ALEX-TD-221: коммит 33391ab пофиксил `or []` но не добавил тест."""
+
+    @pytest.mark.asyncio
+    async def test_build_messages_with_none_messages_does_not_raise(self):
+        """
+        Если state["messages"] = None, _build_messages_with_memory не должна
+        бросать TypeError и должна возвращать валидный список (без None-элементов).
+        """
+        from agentco.orchestration.agent_node import _build_messages_with_memory
+
+        state = {
+            "messages": None,
+            "system_prompt": "You are an assistant.",
+            "agent_id": "ceo",
+            "input": "Do something",
+            "total_tokens": 0,
+        }
+
+        # Should not raise TypeError
+        result = await _build_messages_with_memory(state)
+
+        assert isinstance(result, list), "Должен возвращаться list, а не None"
+        # system message присутствует, None из messages не добавлен
+        for msg in result:
+            assert msg is not None
+            assert isinstance(msg, dict)
+
+    @pytest.mark.asyncio
+    async def test_build_messages_with_missing_messages_key_does_not_raise(self):
+        """
+        Если ключ "messages" отсутствует в state полностью,
+        _build_messages_with_memory не должна бросать исключение.
+        """
+        from agentco.orchestration.agent_node import _build_messages_with_memory
+
+        state = {
+            # "messages" key is absent
+            "system_prompt": "You are an assistant.",
+            "agent_id": "ceo",
+            "input": "Do something",
+            "total_tokens": 0,
+        }
+
+        result = await _build_messages_with_memory(state)
+
+        assert isinstance(result, list)
+        # Only the system message should be present
+        roles = [m["role"] for m in result]
+        assert "user" not in roles  # no messages were injected

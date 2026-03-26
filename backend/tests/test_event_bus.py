@@ -6,7 +6,7 @@ Unit tests for EventBus class + WebSocket integration tests.
 import asyncio
 import uuid
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 
 from starlette.testclient import TestClient
 
@@ -322,3 +322,81 @@ class TestRedisEventBusPublishErrorHandling:
                 mock_logger.warning.assert_called_once()
                 warning_args = mock_logger.warning.call_args[0]
                 assert "c3" in str(warning_args) or "llm_token" in str(warning_args)
+
+
+# ─── ALEX-TD-222: RedisEventBus.subscribe() + ConnectionError ────────────────
+
+class TestRedisEventBusSubscribeConnectionError:
+    """ALEX-TD-222: ConnectionError в pubsub.listen() не должен пробрасываться вызывающему."""
+
+    @pytest.mark.asyncio
+    async def test_subscribe_connection_error_logs_warning_and_exits(self):
+        """
+        Если pubsub.listen() бросает ConnectionError, subscribe() должен:
+        1. Залогировать warning
+        2. Выйти из генератора без re-raise
+        """
+        from agentco.core.event_bus import RedisEventBus
+
+        bus = RedisEventBus("redis://localhost:6379")
+
+        # Mock pubsub that raises ConnectionError on listen()
+        mock_pubsub = AsyncMock()
+        mock_pubsub.subscribe = AsyncMock(return_value=None)
+        mock_pubsub.unsubscribe = AsyncMock(return_value=None)
+        mock_pubsub.aclose = AsyncMock(return_value=None)
+
+        async def _listen_raises():
+            raise ConnectionError("Redis connection lost")
+            yield  # make it an async generator
+
+        mock_pubsub.listen = _listen_raises
+
+        mock_client = AsyncMock()
+        mock_client.pubsub = MagicMock(return_value=mock_pubsub)
+
+        with patch.object(bus, "_get_client", new=AsyncMock(return_value=mock_client)):
+            with patch("agentco.core.event_bus.logger") as mock_logger:
+                # Collecting all items — should exit cleanly without re-raise
+                collected = []
+                async for event in bus.subscribe("company-test"):
+                    collected.append(event)
+
+                # Warning should be logged
+                mock_logger.warning.assert_called()
+                warning_call_args = str(mock_logger.warning.call_args)
+                assert "company-test" in warning_call_args or "subscribe" in warning_call_args.lower()
+
+        # No events received (connection failed before any message)
+        assert collected == []
+
+    @pytest.mark.asyncio
+    async def test_subscribe_connection_error_does_not_reraise(self):
+        """
+        Убеждаемся что ConnectionError не пробрасывается — subscribe() выходит тихо.
+        """
+        from agentco.core.event_bus import RedisEventBus
+
+        bus = RedisEventBus("redis://localhost:6379")
+
+        mock_pubsub = AsyncMock()
+        mock_pubsub.subscribe = AsyncMock(return_value=None)
+        mock_pubsub.unsubscribe = AsyncMock(return_value=None)
+        mock_pubsub.aclose = AsyncMock(return_value=None)
+
+        async def _listen_raises():
+            raise ConnectionError("Lost connection to Redis")
+            yield
+
+        mock_pubsub.listen = _listen_raises
+
+        mock_client = AsyncMock()
+        mock_client.pubsub = MagicMock(return_value=mock_pubsub)
+
+        with patch.object(bus, "_get_client", new=AsyncMock(return_value=mock_client)):
+            # Must not raise
+            try:
+                async for _ in bus.subscribe("company-xyz"):
+                    pass
+            except ConnectionError:
+                pytest.fail("subscribe() re-raised ConnectionError — должен был поглотить")
