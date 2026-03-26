@@ -175,14 +175,15 @@ class TestUsersEmailIndex:
 class TestJWTRevocation:
     """ALEX-TD-231: document token revocation gap. No logout endpoint exists currently."""
 
-    def test_no_logout_endpoint_currently(self, auth_client):
-        """Confirm that /auth/logout does not exist yet (documenting the gap)."""
+    def test_logout_returns_200(self, auth_client):
+        """ALEX-TD-231: POST /auth/logout must return 200 with {message: logged out}."""
         client, _ = auth_client
         resp = client.post("/auth/logout", json={})
-        # 404 or 405 — endpoint doesn't exist
-        assert resp.status_code in (404, 405), \
-            f"Expected 404/405 (no logout endpoint), got {resp.status_code}. " \
-            "If logout was added, update this test and close ALEX-TD-231."
+        assert resp.status_code == 200, \
+            f"Expected 200 from /auth/logout, got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data.get("message") == "logged out", \
+            f"Expected {{message: 'logged out'}}, got {data}"
 
     def test_expired_token_is_rejected(self, auth_client):
         """JWT expiry is enforced — expired tokens cannot access /auth/me."""

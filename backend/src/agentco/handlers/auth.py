@@ -116,6 +116,20 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
     return TokenResponse(access_token=create_access_token(user.id))
 
 
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout():
+    """Logout is client-side only — token remains valid until expiry.
+
+    This endpoint is a no-op on the backend. JWT tokens are stateless and
+    cannot be invalidated server-side without a token revocation store (e.g. Redis
+    blocklist). The client must delete the token from localStorage/cookies.
+
+    Mitigation: short TTL (ACCESS_TOKEN_EXPIRE_MINUTES=60). For stronger security,
+    implement a server-side blocklist (ALEX-TD-231 full fix).
+    """
+    return {"message": "logged out"}
+
+
 @router.get("/me", response_model=MeResponse)
 @limiter.limit(_RATE_LIMIT_ME)
 def me(request: Request, current_user: UserORM = Depends(get_current_user)):

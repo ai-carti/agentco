@@ -71,17 +71,41 @@ class MCPServerCreate(BaseModel):
         if hostname.lower() in _blocked_names or hostname.lower().endswith(".localhost"):
             raise ValueError("server_url hostname is not allowed (localhost is not allowed for SSRF prevention)")
         # Block by IP address ranges
+        # ALEX-TD-233: also handle hex IPv4 (e.g. 0x7f000001 → 127.0.0.1) and
+        # full-form IPv6 loopback (0:0:0:0:0:0:0:1) which urlparse doesn't expand.
+        # ipaddress.ip_address() cannot parse hex IPv4 strings directly, so we
+        # detect the 0x prefix and convert via int() first.
+        # DNS rebinding KNOWN LIMITATION: if a hostname resolves to a public IP at
+        # validation time but an attacker controls DNS to flip it to a private IP
+        # for the actual connection, this filter is bypassed. Full protection requires
+        # re-resolving the hostname at connection time (runtime DNS check), which is
+        # complex in async systems. Documented as known limitation — mitigate with
+        # network-level egress filtering (firewall deny RFC-1918 outbound).
         try:
-            addr = ipaddress.ip_address(hostname)
-            if addr.is_loopback or addr.is_private or addr.is_link_local or addr.is_unspecified:
-                raise ValueError(
-                    f"server_url hostname '{hostname}' is a private/internal IP — not allowed for SSRF prevention"
-                )
+            # Hex IPv4 detection: 0x prefix + pure hex digits
+            candidate = hostname
+            if candidate.startswith(("0x", "0X")):
+                try:
+                    int_val = int(candidate, 16)
+                    candidate_addr = ipaddress.ip_address(int_val)
+                    if candidate_addr.is_loopback or candidate_addr.is_private or candidate_addr.is_link_local or candidate_addr.is_unspecified:
+                        raise ValueError(
+                            f"server_url hostname '{hostname}' resolves to a private/internal IP (hex format) — not allowed for SSRF prevention"
+                        )
+                except (ValueError, OverflowError) as hex_exc:
+                    if "not allowed" in str(hex_exc) or "SSRF" in str(hex_exc):
+                        raise
+            else:
+                addr = ipaddress.ip_address(candidate)
+                if addr.is_loopback or addr.is_private or addr.is_link_local or addr.is_unspecified:
+                    raise ValueError(
+                        f"server_url hostname '{hostname}' is a private/internal IP — not allowed for SSRF prevention"
+                    )
         except ValueError as ip_exc:
             # If it's already a ValueError from our SSRF check, re-raise
             if "not allowed" in str(ip_exc) or "private" in str(ip_exc) or "SSRF" in str(ip_exc):
                 raise
-            # hostname is a domain name, not an IP — that's fine
+            # hostname is a domain name or unrecognized format — that's fine
         return v
 
 
