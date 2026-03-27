@@ -220,7 +220,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             <button
               data-testid="sidebar-close-btn"
               onClick={onClose}
-              aria-label="Close"
+              aria-label="Close task details"
               style={{
                 background: 'transparent',
                 border: 'none',

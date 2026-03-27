@@ -7,6 +7,7 @@ import { getStoredToken } from '../api/client'
 const BASE_WS_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
   .replace(/^http/, 'ws')
 
+const INITIAL_BACKOFF_MS = 1_000
 const MAX_BACKOFF_MS = 30_000
 
 interface WsEvent {
@@ -25,7 +26,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
   const [error, setError] = useState<string | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
-  const retryDelayRef = useRef<number>(1000)
+  const retryDelayRef = useRef<number>(INITIAL_BACKOFF_MS)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const unmountedRef = useRef(false)
 
@@ -58,7 +59,7 @@ export function useWarRoomSocket(companyId: string): UseWarRoomSocketResult {
       }
       setIsConnected(true)
       setError(null)
-      retryDelayRef.current = 1000 // reset backoff on successful connect
+      retryDelayRef.current = INITIAL_BACKOFF_MS // reset backoff on successful connect
     }
 
     ws.onmessage = (event: MessageEvent) => {

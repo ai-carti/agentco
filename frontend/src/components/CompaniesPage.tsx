@@ -8,6 +8,7 @@ import OnboardingPage from './OnboardingPage'
 import { Building2 } from 'lucide-react'
 // SIRI-UX-170: focus trap for New Company modal
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import Button from './Button'
 
 
 interface Company {
@@ -249,21 +250,22 @@ export default function CompaniesPage() {
               }}
             />
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <button
-                onClick={() => { setShowNewModal(false); setNewName('') }}
-                style={{ padding: '0.4rem 0.9rem', background: '#374151', color: '#f8fafc', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-              >
+              {/* SIRI-UX-409: use <Button> component for consistent style — matches KanbanBoard/TaskCard modal pattern */}
+              <Button variant="secondary" onClick={() => { setShowNewModal(false); setNewName('') }} style={{ padding: '0.4rem 0.9rem' }}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              {/* SIRI-UX-409: aria-disabled mirrors disabled prop so AT announces inactive state */}
+              <Button
                 data-testid="new-company-create-btn"
+                variant="primary"
                 onClick={handleCreate}
                 disabled={creating || !newName.trim()}
+                aria-disabled={creating || !newName.trim()}
                 aria-busy={creating}
-                style={{ padding: '0.4rem 0.9rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.4rem 0.9rem', fontWeight: 600 }}
               >
                 {creating ? 'Creating…' : 'Create'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

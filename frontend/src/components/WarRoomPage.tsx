@@ -51,8 +51,7 @@ export default function WarRoomPage() {
     }))
   )
   const loadMockData = useWarRoomStore((s) => s.loadMockData)
-  const addMessage = useWarRoomStore((s) => s.addMessage)
-  const updateAgentStatus = useWarRoomStore((s) => s.updateAgentStatus)
+  // SIRI-UX-413: addMessage/updateAgentStatus accessed via getState() in mock interval — no need to subscribe
   // SIRI-UX-212: addCost removed from mock interval — cost only accumulated from real WS llm_token events
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
@@ -112,7 +111,7 @@ export default function WarRoomPage() {
         connectingTimerRef.current = null
       }
     }
-  }, [isConnected, agents.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isConnected, agents.length])
 
   // SIRI-UX-113: reset store when companyId changes (switching between companies)
   // Without this, cost/$, messages and agents from previous company persist in store
@@ -175,23 +174,21 @@ export default function WarRoomPage() {
       return
     }
 
+    // SIRI-UX-413: use getState() inside interval — avoids stale closure on addMessage/updateAgentStatus
     intervalRef.current = setInterval(() => {
       const store = useWarRoomStore.getState()
       const event = getNextMockEvent(store.agents)
-
-      addMessage(event.message)
-      // SIRI-UX-212: do NOT call addCost in mock interval — cost must only come from real WS llm_token events
-      // (per SIRI-POST-004). Fake cost values confuse developers testing the real WS path.
-
+      store.addMessage(event.message)
+      // SIRI-UX-212: no addCost here — cost only from real WS llm_token events
       if (event.statusUpdate) {
-        updateAgentStatus(event.statusUpdate.agentId, event.statusUpdate.status)
+        store.updateAgentStatus(event.statusUpdate.agentId, event.statusUpdate.status)
       }
     }, 3000)
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [agents.length, isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agents.length, isConnected])
 
   // SIRI-UX-016: Auto-scroll activity feed to latest message
   useEffect(() => {
@@ -714,11 +711,14 @@ export default function WarRoomPage() {
         </div>
 
         {/* Activity Feed */}
-        {/* SIRI-UX-340: role="region" + aria-labelledby so screen reader landmark navigation reaches activity feed */}
+        {/* SIRI-UX-340: role="region" + aria-label so screen reader landmark navigation reaches activity feed */}
+        {/* SIRI-UX-414: use aria-label directly instead of aria-labelledby — the heading div also
+            contains the LIVE badge, so the computed accessible name was "Activity Feed LIVE" when
+            a run was active, which is confusing for screen readers. aria-label="Activity Feed" is stable. */}
         <div
           data-testid="activity-feed"
           role="region"
-          aria-labelledby="activity-feed-heading"
+          aria-label="Activity Feed"
           style={{
             flex: 1,
             display: 'flex',
