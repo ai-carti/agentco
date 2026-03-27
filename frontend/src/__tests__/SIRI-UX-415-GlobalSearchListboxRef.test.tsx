@@ -5,7 +5,7 @@
  * in the rendered DOM actually carries the id expected by the getElementById call,
  * so that keyboard navigation scroll works.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import GlobalSearch from '../components/GlobalSearch'

@@ -23,44 +23,49 @@ class TestALEXTD185LLMCallTimeout:
         )
 
     def test_mock_llm_call_source_reads_llm_call_timeout_sec(self):
-        """_mock_llm_call must read LLM_CALL_TIMEOUT_SEC env var for the timeout value."""
-        from agentco.orchestration import nodes
-        src = inspect.getsource(nodes._mock_llm_call)
-        assert "LLM_CALL_TIMEOUT_SEC" in src, (
-            "ALEX-TD-185: _mock_llm_call must use LLM_CALL_TIMEOUT_SEC env var "
-            "(same as agent_node.py — ALEX-TD-158)."
+        """_mock_llm_call (or its module) must reference LLM_CALL_TIMEOUT_SEC env var."""
+        # ALEX-TD-279: timeout is now cached in _LLM_CALL_TIMEOUT module-level constant,
+        # which reads LLM_CALL_TIMEOUT_SEC at import time. Verify the module source
+        # (not just the function) references LLM_CALL_TIMEOUT_SEC.
+        import agentco.orchestration.nodes as nodes_mod
+        import inspect
+        module_src = inspect.getsource(nodes_mod)
+        assert "LLM_CALL_TIMEOUT_SEC" in module_src, (
+            "ALEX-TD-185: nodes module must use LLM_CALL_TIMEOUT_SEC env var "
+            "(either in _mock_llm_call or in module-level _LLM_CALL_TIMEOUT constant)."
         )
 
     @pytest.mark.asyncio
-    async def test_mock_llm_call_real_path_raises_on_timeout(self, monkeypatch):
+    async def test_mock_llm_call_real_path_raises_on_timeout(self):
         """When LLM hangs beyond timeout, asyncio.TimeoutError must propagate."""
-        monkeypatch.setenv("AGENTCO_USE_REAL_LLM", "true")
-        monkeypatch.setenv("LLM_CALL_TIMEOUT_SEC", "0.05")
-
+        # ALEX-TD-279: _USE_REAL_LLM and _LLM_CALL_TIMEOUT are now module-level cached —
+        # patch via patch.object instead of monkeypatch.setenv
         async def _hanging(*args, **kwargs):
             await asyncio.sleep(10)  # simulate hung LLM
 
-        with patch("litellm.acompletion", new=_hanging):
-            from agentco.orchestration.nodes import _mock_llm_call
+        import agentco.orchestration.nodes as nodes_mod
+        with patch.object(nodes_mod, "_USE_REAL_LLM", True), \
+             patch.object(nodes_mod, "_LLM_CALL_TIMEOUT", 0.05), \
+             patch.object(nodes_mod, "litellm") as mock_litellm:
+            mock_litellm.acompletion = _hanging
             with pytest.raises(asyncio.TimeoutError):
-                await _mock_llm_call(
+                await nodes_mod._mock_llm_call(
                     system="test system",
                     user="test user",
                     mock_response="unused",
                 )
 
     @pytest.mark.asyncio
-    async def test_mock_llm_call_mock_path_not_affected_by_wait_for(self, monkeypatch):
+    async def test_mock_llm_call_mock_path_not_affected_by_wait_for(self):
         """Default mock path (no AGENTCO_USE_REAL_LLM) works normally regardless."""
-        monkeypatch.delenv("AGENTCO_USE_REAL_LLM", raising=False)
-
-        # Import fresh to avoid cached env-based behavior
-        from agentco.orchestration.nodes import _mock_llm_call
-        content, tokens, cost = await _mock_llm_call(
-            system="test system",
-            user="test user",
-            mock_response="hello world",
-        )
+        # ALEX-TD-279: patch via patch.object (module-level cached bool)
+        import agentco.orchestration.nodes as nodes_mod
+        with patch.object(nodes_mod, "_USE_REAL_LLM", False):
+            content, tokens, cost = await nodes_mod._mock_llm_call(
+                system="test system",
+                user="test user",
+                mock_response="hello world",
+            )
         assert content == "hello world"
         assert tokens > 0
         assert cost >= 0.0

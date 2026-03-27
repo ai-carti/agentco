@@ -153,20 +153,21 @@ def test_nodes_ceo_node_logs_entry(caplog):
 def test_nodes_llm_error_logged_with_exc_info(monkeypatch, caplog):
     """ALEX-TD-247: _mock_llm_call with real LLM path must log errors with exc_info=True."""
     import asyncio
+    from unittest.mock import patch
     import agentco.orchestration.nodes as nodes_mod
-
-    # Simulate real LLM mode
-    monkeypatch.setenv("AGENTCO_USE_REAL_LLM", "true")
 
     # Patch litellm.acompletion to raise an error
     async def _fail_completion(*args, **kwargs):
         raise RuntimeError("simulated LLM provider error")
 
-    monkeypatch.setattr("agentco.orchestration.nodes.litellm.acompletion", _fail_completion)
+    # ALEX-TD-279: _USE_REAL_LLM is now a module-level cached bool — patch via patch.object
+    with patch.object(nodes_mod, "_USE_REAL_LLM", True), \
+         patch.object(nodes_mod, "litellm") as mock_litellm:
+        mock_litellm.acompletion = _fail_completion
 
-    with caplog.at_level(logging.WARNING, logger="agentco.orchestration.nodes"):
-        with pytest.raises(RuntimeError, match="simulated LLM provider error"):
-            asyncio.run(nodes_mod._mock_llm_call("sys", "user", "mock"))
+        with caplog.at_level(logging.WARNING, logger="agentco.orchestration.nodes"):
+            with pytest.raises(RuntimeError, match="simulated LLM provider error"):
+                asyncio.run(nodes_mod._mock_llm_call("sys", "user", "mock"))
 
     # Must have a warning log with exc_info
     warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]

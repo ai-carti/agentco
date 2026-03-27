@@ -432,6 +432,12 @@ class RunService:
             else:
                 initial_goal = ""
 
+            # ALEX-TD-283: guard against empty goal — LLM cannot act on empty input.
+            if not initial_goal.strip():
+                raise ValueError(
+                    f"Run {run_id!r} has no goal and no resolvable task — cannot start"
+                )
+
             # Обновляем статус → running
             run_orm.status = "running"
             _init_session.commit()
@@ -489,6 +495,9 @@ class RunService:
             "final_result": None,
             "agent_id": "ceo",
             "level": 0,
+            # ALEX-TD-277/280: expose max_depth so subagent/hierarchical nodes
+            # don't rely on hardcoded default — configurable via MAX_AGENT_DEPTH env var.
+            "max_depth": int(os.environ.get("MAX_AGENT_DEPTH", "2")),
         }
 
         def _get_session_for_update() -> Session:

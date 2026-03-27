@@ -64,6 +64,25 @@ def _get_max_pending_tasks() -> int:
     return int(os.environ.get("AGENT_MAX_PENDING_TASKS", "20"))
 
 
+def _get_max_depth() -> int:
+    """ALEX-TD-277: configurable max hierarchy depth via MAX_AGENT_DEPTH env var.
+
+    Subagent/hierarchical nodes use state.get("max_depth", 2) as default when
+    execute_run does not populate initial_state["max_depth"]. This getter provides
+    a consistent source of truth and env-configurable default.
+    Configurable via MAX_AGENT_DEPTH env var (default: 2).
+    """
+    return int(os.environ.get("MAX_AGENT_DEPTH", "2"))
+
+
+# ─── Module-level cached env vars (ALEX-TD-279, ALEX-TD-282) ─────────────────
+# Read once at import time; restart process to pick up env changes.
+# Avoids 60+ os.environ lookups per run in hot path.
+_USE_REAL_LLM: bool = os.environ.get("AGENTCO_USE_REAL_LLM", "").lower() in ("true", "1", "yes")
+_AGENTCO_ORCHESTRATION_MODEL: str = os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini")
+_LLM_CALL_TIMEOUT: float = float(os.environ.get("LLM_CALL_TIMEOUT_SEC", "120"))
+
+
 # ─── Mock LLM helper ──────────────────────────────────────────────────────────
 
 def _sync_mock_llm_call(system: str, user: str, mock_response: str) -> tuple[str, int, float]:
@@ -93,14 +112,13 @@ async def _mock_llm_call(system: str, user: str, mock_response: str) -> tuple[st
     Это не тест-заглушка — это production-код, по умолчанию оптимизированный
     для разработки/тестирования. Streaming/memory/tool_calls — в agent_node.py.
     """
-    use_real_llm = os.environ.get("AGENTCO_USE_REAL_LLM", "").lower() in ("true", "1", "yes")
-
-    if use_real_llm:
+    # ALEX-TD-279/282: use module-level cached values (not re-read on each call)
+    if _USE_REAL_LLM:
         # Real LLM path — used in production when AGENTCO_USE_REAL_LLM=true
         # ALEX-TD-185: wrap in wait_for to prevent hung LLM call from blocking event loop.
         # agent_node.py already does this (ALEX-TD-158) — mirror that pattern here.
-        _model = os.environ.get("AGENTCO_ORCHESTRATION_MODEL", "gpt-4o-mini")
-        _timeout = float(os.environ.get("LLM_CALL_TIMEOUT_SEC", "120"))
+        _model = _AGENTCO_ORCHESTRATION_MODEL
+        _timeout = _LLM_CALL_TIMEOUT
         # ALEX-TD-247: log real LLM call for diagnostics
         logger.debug("_mock_llm_call: real LLM path, model=%s", _model)
         try:

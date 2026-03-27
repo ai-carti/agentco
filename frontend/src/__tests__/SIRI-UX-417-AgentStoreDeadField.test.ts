@@ -22,7 +22,7 @@ describe('SIRI-UX-417: Task interface — assignedTo removed, assignee_id/name c
     expect(task.assignee_name).toBe('Alice')
     // assignedTo should NOT exist on the interface (if it's removed, accessing it is a TS error,
     // but at runtime it's simply undefined — we just verify the canonical fields work)
-    expect((task as Record<string, unknown>).assignedTo).toBeUndefined()
+    expect((task as unknown as Record<string, unknown>).assignedTo).toBeUndefined()
   })
 
   it('Task without assignee fields defaults to undefined for assignee_id', () => {

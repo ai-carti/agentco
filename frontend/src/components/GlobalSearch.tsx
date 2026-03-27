@@ -38,7 +38,7 @@ export default function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // SIRI-UX-288: scroll active item into view when navigating with arrow keys
-  const listboxRef = useRef<HTMLDivElement>(null)
+  // SIRI-UX-415: listboxRef was dead code — scrollIntoView uses document.getElementById instead
   const navigate = useNavigate()
   // SIRI-UX-270: focus trap — prevents Tab/Shift+Tab from leaving the dialog
   const dialogTrapRef = useFocusTrap(open)
@@ -287,7 +287,6 @@ export default function GlobalSearch() {
           {results.length > 0 && (
             <div
               id="global-search-listbox"
-              ref={listboxRef}
               data-testid="search-results"
               role="listbox"
               aria-label="Search results"

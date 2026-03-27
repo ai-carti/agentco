@@ -150,15 +150,9 @@ export default function WarRoomPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When WS connects (real data), clear mock data so no stale mock agents show
-  const prevConnectedRef = useRef(false)
-  useEffect(() => {
-    if (isConnected && !prevConnectedRef.current) {
-      // WS just connected — reset store so mock agents are cleared
-      // Real agents will come in via WS events
-      useWarRoomStore.getState().reset()
-    }
-    prevConnectedRef.current = isConnected
-  }, [isConnected])
+  // SIRI-UX-418: reset-on-reconnect effect removed.
+  // Store reset is already handled by companyId effect (above) — resetting on every
+  // WS reconnect caused users to lose accumulated messages/cost after a network hiccup.
 
   // Mock WS fallback: setInterval ~3 sec cycling agent statuses + adding messages
   // Only run when not connected to real WS AND VITE_MOCK_WAR_ROOM flag is enabled
