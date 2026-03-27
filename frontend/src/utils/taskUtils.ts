@@ -71,8 +71,11 @@ export function formatDateLong(iso: string): string {
 
 // SIRI-UX-268: formatDueDate extracted from KanbanBoard.tsx into shared taskUtils
 // so any component (e.g. TaskDetailSidebar) can display due date without duplicating logic
+// SIRI-UX-416: guard against invalid date strings — new Date('') returns Invalid Date;
+// toLocaleDateString on an invalid date returns the string "Invalid Date" which leaks to UI.
 export function formatDueDate(dateStr: string): { label: string; overdue: boolean } {
   const due = new Date(dateStr)
+  if (isNaN(due.getTime())) return { label: '?', overdue: false }
   const now = new Date()
   const overdue = due < now
   const label = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })

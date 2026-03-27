@@ -287,6 +287,19 @@ async def subagent_node(state: AgentState) -> dict:
     max_cost = _get_max_cost_usd()
     max_tokens = _get_max_tokens()
 
+    # ALEX-TD-275: unified order — iteration → cost → tokens (matches ceo_node)
+    if state["iteration_count"] >= max_iter:
+        return {
+            "status": "failed",
+            "error": "loop_detected",
+            "error_detail": (
+                f"Max iterations ({max_iter}) exceeded at depth {task_depth}, "
+                f"iteration {state['iteration_count']}"
+            ),
+            # ALEX-TD-145: clear pending_tasks to avoid stale state in checkpointer
+            "pending_tasks": [],
+        }
+
     if state["total_cost_usd"] >= max_cost:
         return {
             "status": "failed",
@@ -306,18 +319,6 @@ async def subagent_node(state: AgentState) -> dict:
             "error_detail": (
                 f"Token limit {max_tokens} exceeded at subagent depth {task_depth} "
                 f"(used {state['total_tokens']} tokens)"
-            ),
-            # ALEX-TD-145: clear pending_tasks to avoid stale state in checkpointer
-            "pending_tasks": [],
-        }
-
-    if state["iteration_count"] >= max_iter:
-        return {
-            "status": "failed",
-            "error": "loop_detected",
-            "error_detail": (
-                f"Max iterations ({max_iter}) exceeded at depth {task_depth}, "
-                f"iteration {state['iteration_count']}"
             ),
             # ALEX-TD-145: clear pending_tasks to avoid stale state in checkpointer
             "pending_tasks": [],

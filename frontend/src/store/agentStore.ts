@@ -20,7 +20,8 @@ export interface Task {
   title: string
   description?: string
   status: TaskStatus
-  assignedTo?: string
+  // SIRI-UX-417: removed dead field `assignedTo` — never set by any component or API response.
+  // Canonical assignee fields are assignee_id + assignee_name (from backend TaskOut schema).
   assignee_id?: string
   assignee_name?: string
   due_date?: string

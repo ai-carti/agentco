@@ -145,11 +145,21 @@ async def ws_company_events(
 
     if user_id is None:
         # 4001 = Unauthorized (missing/invalid token)
+        # ALEX-TD-278: log auth failures so brute-force / invalid token issues are visible in prod logs.
+        logger.warning(
+            "ws_auth_failed: invalid or missing token for company %s (peer=%s)",
+            str(company_id), websocket.client,
+        )
         await websocket.close(code=4001, reason="Missing or invalid token")
         return
 
     if not authorized:
         # 4003 = Forbidden (valid token but no ownership)
+        # ALEX-TD-278: log ownership failures — distinguishes "wrong company" from "no token" in logs.
+        logger.warning(
+            "ws_authz_failed: user %s denied access to company %s (not found or not owner)",
+            user_id, str(company_id),
+        )
         await websocket.close(code=4003, reason="Company not found or access denied")
         return
 
