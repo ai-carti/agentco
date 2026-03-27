@@ -231,8 +231,13 @@ class RunService:
         """
         # ALEX-TD-056: use module-level asyncio and os (no in-function import aliases)
         _MAX_RETRIES = int(os.getenv("RUN_MAX_RETRIES", "3"))
-        if _MAX_RETRIES < 1:
-            _MAX_RETRIES = 1  # ALEX-TD-048: guard against range(1, 0+1) yielding no iterations
+        # ALEX-TD-281: do NOT clamp _MAX_RETRIES to 1 here.
+        # The old ALEX-TD-048 guard (`if _MAX_RETRIES < 1: _MAX_RETRIES = 1`) prevented
+        # last_exc from staying None by forcing at least one loop iteration.
+        # That masked the real bug: if the loop body never runs, `raise last_exc`
+        # where last_exc=None produces `TypeError: exceptions must derive from BaseException`.
+        # Fix: initialise last_exc to a clear RuntimeError so that even when the loop
+        # does not execute (RUN_MAX_RETRIES=0), the caller gets a meaningful exception.
         _RETRY_BASE_DELAY = float(os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
         # ALEX-TD-146: removed "cancelled" from _NO_RETRY_ERRORS — it was dead code.
         # str(asyncio.CancelledError()) == '' → any("cancelled" in "" ...) == False → never matched.
@@ -240,7 +245,9 @@ class RunService:
         # Explicit isinstance guard below handles CancelledError clearly.
         _NO_RETRY_ERRORS = {"cost_limit_exceeded", "token_limit_exceeded"}
 
-        last_exc: Exception | None = None
+        # ALEX-TD-281: initialise to a meaningful sentinel so `raise last_exc` never hits
+        # the `raise None` → TypeError path when the loop body never executes (_MAX_RETRIES=0).
+        last_exc: Exception = RuntimeError("no retries attempted")
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
                 # ALEX-TD-024: pass session_factory so execute_run uses a fresh session
