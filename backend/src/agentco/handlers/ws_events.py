@@ -211,7 +211,7 @@ async def ws_company_events(
         except Exception as exc:
             # ALEX-TD-124: log unexpected errors (OOM, transport errors, etc.)
             # instead of silently swallowing them.
-            logger.warning("_watch_disconnect: unexpected error for company %s: %s", str(company_id), exc)
+            logger.warning("_watch_disconnect: unexpected error for company %s: %s", str(company_id), exc, exc_info=True)
 
     forward_task = asyncio.ensure_future(_forward_events())
     watch_task = asyncio.ensure_future(_watch_disconnect())

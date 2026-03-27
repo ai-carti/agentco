@@ -20,9 +20,11 @@ class RunORM(Base):
     goal: Mapped[str | None] = mapped_column(Text)
     task_id: Mapped[str | None] = mapped_column(Text, ForeignKey("tasks.id"), index=True)
     agent_id: Mapped[str | None] = mapped_column(Text, ForeignKey("agents.id"), index=True)
-    status: Mapped[str] = mapped_column(Text, default="pending")
-    total_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
-    total_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    # ALEX-TD-272: add server_default so raw SQL INSERTs (migrations, test fixtures) get correct
+    # values instead of NULL. ORM default= only applies to Python-layer INSERTs.
+    status: Mapped[str] = mapped_column(Text, default="pending", server_default="pending")
+    total_cost_usd: Mapped[float] = mapped_column(Float, default=0.0, server_default="0.0")
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     started_at: Mapped[datetime | None] = mapped_column(DateTime)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime | None] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

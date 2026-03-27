@@ -184,13 +184,15 @@ describe('SIRI-UX-340 — WarRoomPage region landmarks', () => {
     expect(feed).toHaveAttribute('role', 'region')
   })
 
-  it('activity-feed has aria-labelledby pointing to a heading id', () => {
+  it('activity-feed has accessible label (aria-label or aria-labelledby)', () => {
+    // SIRI-UX-414: changed from aria-labelledby to aria-label="Activity Feed" to avoid
+    // the computed accessible name including LIVE badge text ("Activity Feed LIVE").
     renderWarRoom()
     const feed = screen.getByTestId('activity-feed')
-    const labelId = feed.getAttribute('aria-labelledby')
-    expect(labelId).toBeTruthy()
-    const heading = document.getElementById(labelId!)
-    expect(heading).not.toBeNull()
+    const hasAriaLabel = feed.getAttribute('aria-label') === 'Activity Feed'
+    const ariaLabelledBy = feed.getAttribute('aria-labelledby')
+    const hasAriaLabelledBy = ariaLabelledBy ? !!document.getElementById(ariaLabelledBy) : false
+    expect(hasAriaLabel || hasAriaLabelledBy).toBe(true)
   })
 })
 

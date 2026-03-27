@@ -158,7 +158,7 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
                 top_k=5,
             )
         except Exception as e:
-            logger.warning("Memory inject failed for agent %s: %s", agent_id, e)
+            logger.warning("Memory inject failed for agent %s: %s", agent_id, e, exc_info=True)
 
     messages: list[dict] = []
     if system_prompt:
@@ -257,7 +257,7 @@ async def _save_result_to_memory(state: AgentState, result_text: str) -> None:
             content=result_text,
         )
     except Exception as e:
-        logger.warning("Memory save failed: %s", e)
+        logger.warning("Memory save failed: %s", e, exc_info=True)
 
 
 # ─── Основная функция ────────────────────────────────────────────────────────

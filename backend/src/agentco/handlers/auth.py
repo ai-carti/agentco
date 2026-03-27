@@ -1,4 +1,5 @@
 """Auth endpoints: register + login + protected /me."""
+import logging
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -13,6 +14,9 @@ from ..auth.dependencies import get_current_user
 from ..core.rate_limiting import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+# ALEX-TD-274: module-level logger so failed auth attempts are visible in production logs.
+# Previously handlers/auth.py had no logger — brute-force attempts were completely invisible.
+logger = logging.getLogger(__name__)
 
 # ALEX-TD-047 fix: rate limits for auth endpoints — brute-force protection
 # Configurable via env vars so production can tighten limits without code changes.
@@ -113,6 +117,9 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
     candidate_hash = user.hashed_password if user else DUMMY_HASH
     password_ok = verify_password(body.password, candidate_hash)
     if not user or not password_ok:
+        # ALEX-TD-274: log failed login attempts for brute-force detection.
+        # Use normalized email (lowercase) — consistent with how it's stored.
+        logger.warning("login failed for email=%s", body.email.lower())
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",

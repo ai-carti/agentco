@@ -19,6 +19,7 @@ import asyncio
 import logging
 import os
 import random
+import time
 from datetime import datetime, timezone
 
 
@@ -496,6 +497,10 @@ class RunService:
                 return session_factory()
             return self._session
 
+        # ALEX-TD-273: track elapsed time for observability. Operators need to see
+        # how long a run took in logs without querying the DB. time.monotonic() is
+        # immune to clock adjustments (unlike datetime.now()) — safe for durations.
+        _run_start_mono = time.monotonic()
         try:
             # ALEX-TD-063: use CHECKPOINT_DB_PATH (via get_checkpoint_db_path) instead of
             # AGENTCO_DB_PATH. Keeps checkpoints in a separate file from the main DB.
@@ -568,9 +573,12 @@ class RunService:
             # Observability gap: prod logs were silent on success — operators couldn't
             # distinguish "completed" from "hung" without querying the DB.
             # Include run_id, status, tokens, and cost so expensive runs are visible in logs.
+            # ALEX-TD-273: include elapsed_sec so slow runs are visible in logs
+            # without querying the DB (time.monotonic() set before ainvoke above).
+            _elapsed_sec = round(time.monotonic() - _run_start_mono, 2)
             logger.info(
-                "execute_run: run_id=%s completed status=%s company_id=%s tokens=%d cost=%.4f",
-                run_id, final_status, company_id, _log_tokens, _log_cost,
+                "execute_run: run_id=%s completed status=%s company_id=%s tokens=%d cost=%.4f elapsed=%.2fs",
+                run_id, final_status, company_id, _log_tokens, _log_cost, _elapsed_sec,
             )
 
             # ALEX-TD-084: publish run.failed when graph returns status=failed/error.

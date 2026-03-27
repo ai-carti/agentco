@@ -152,16 +152,19 @@ describe('SIRI-UX-057: TaskDetailSidebar close button aria-label', () => {
     return { onClose }
   }
 
-  it('close button has aria-label="Close"', () => {
+  it('close button has aria-label="Close task details"', () => {
+    // SIRI-UX-411: updated from "Close" to "Close task details" for descriptive label
     renderSidebar()
     const closeBtn = screen.getByTestId('sidebar-close-btn')
-    expect(closeBtn).toHaveAttribute('aria-label', 'Close')
+    expect(closeBtn).toHaveAttribute('aria-label', 'Close task details')
   })
 
   it('close button is accessible by aria-label role query', () => {
     renderSidebar()
-    // Use exact match to avoid matching backdrop aria-label="Close task details" (SIRI-UX-311)
-    const closeBtn = screen.getByRole('button', { name: 'Close' })
+    // SIRI-UX-411: label updated to "Close task details". Both the backdrop div and the
+    // close button share this label, so use getAllByRole to avoid "multiple elements" error.
+    const closeBtns = screen.getAllByRole('button', { name: 'Close task details' })
+    const closeBtn = closeBtns.find((el) => el.tagName === 'BUTTON')
     expect(closeBtn).toBeInTheDocument()
   })
 })
