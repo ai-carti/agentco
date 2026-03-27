@@ -78,7 +78,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         headers,
         body: JSON.stringify({ template_id: template.id, name: companyName.trim() }),
         signal,
-      }).catch(() => null)
+      }).catch((err) => { console.warn('[SIRI-UX-421] from-template endpoint failed, falling back to manual creation:', err); return null })
 
       if (templateRes?.ok) {
         const data = await templateRes.json()
