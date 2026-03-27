@@ -241,8 +241,10 @@ class RunService:
         ALEX-TD-056: imports moved to module level (asyncio, os already imported at top).
         """
         # ALEX-TD-056: use module-level asyncio and os (no in-function import aliases)
-        # ALEX-TD-285: use module-level constants (not os.getenv on every call)
-        _MAX_RETRIES = _RUN_MAX_RETRIES
+        # ALEX-TD-285: module-level constants are the default, but re-read os.getenv at
+        # call time to allow test isolation via patch.dict("os.environ", ...).
+        # This is intentional: unit tests legitimately override these per-test.
+        _MAX_RETRIES = int(os.getenv("RUN_MAX_RETRIES", str(_RUN_MAX_RETRIES)))
         # ALEX-TD-281: do NOT clamp _MAX_RETRIES to 1 here.
         # The old ALEX-TD-048 guard (`if _MAX_RETRIES < 1: _MAX_RETRIES = 1`) prevented
         # last_exc from staying None by forcing at least one loop iteration.
@@ -250,7 +252,7 @@ class RunService:
         # where last_exc=None produces `TypeError: exceptions must derive from BaseException`.
         # Fix: initialise last_exc to a clear RuntimeError so that even when the loop
         # does not execute (RUN_MAX_RETRIES=0), the caller gets a meaningful exception.
-        _RETRY_BASE_DELAY = _RUN_RETRY_BASE_DELAY
+        _RETRY_BASE_DELAY = float(os.getenv("RUN_RETRY_BASE_DELAY", str(_RUN_RETRY_BASE_DELAY)))
         # ALEX-TD-146: removed "cancelled" from _NO_RETRY_ERRORS — it was dead code.
         # str(asyncio.CancelledError()) == '' → any("cancelled" in "" ...) == False → never matched.
         # CancelledError inherits BaseException, not Exception → not caught by 'except Exception'.

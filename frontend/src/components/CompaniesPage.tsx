@@ -27,16 +27,26 @@ export default function CompaniesPage() {
   const [creating, setCreating] = useState(false)
   // Track whether this is the first load (for onboarding)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
+  // SIRI-UX-429: edit company modal state
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editCompanyId, setEditCompanyId] = useState<string | null>(null)
+  const [editCompanyName, setEditCompanyName] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
   // SIRI-UX-170: focus trap for New Company modal
   const newModalTrapRef = useFocusTrap(showNewModal)
+  // SIRI-UX-429: focus trap for Edit Company modal
+  const editModalTrapRef = useFocusTrap(showEditModal)
   // SIRI-UX-183: abort controller for handleCreate POST
   const createAbortRef = useRef<AbortController | null>(null)
   // SIRI-UX-251: abort controller for the post-create reload — prevents setState on unmount
   const reloadAbortRef = useRef<AbortController | null>(null)
+  // SIRI-UX-429: abort controller for handleEditSave PATCH
+  const editAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
     return () => {
       createAbortRef.current?.abort()
       reloadAbortRef.current?.abort()
+      editAbortRef.current?.abort()
     }
   }, [])
 
@@ -121,6 +131,56 @@ export default function CompaniesPage() {
       }
     }
   }, [toast, newName, load])
+
+  // SIRI-UX-429: open edit modal for a company
+  const handleEditOpen = useCallback((co: Company, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditCompanyId(co.id)
+    setEditCompanyName(co.name)
+    setShowEditModal(true)
+  }, [])
+
+  const handleEditClose = useCallback(() => {
+    setShowEditModal(false)
+    setEditCompanyId(null)
+    setEditCompanyName('')
+  }, [])
+
+  const handleEditSave = useCallback(async () => {
+    if (!editCompanyId || !editCompanyName.trim()) return
+    editAbortRef.current?.abort()
+    const controller = new AbortController()
+    editAbortRef.current = controller
+    const { signal } = controller
+    setEditSaving(true)
+    try {
+      const token = getStoredToken()
+      const res = await fetch(`${BASE_URL}/api/companies/${editCompanyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name: editCompanyName.trim() }),
+        signal,
+      })
+      if (res.ok) {
+        toast.success(`Company updated`)
+        setCompanies((prev) => prev.map((c) => c.id === editCompanyId ? { ...c, name: editCompanyName.trim() } : c))
+        handleEditClose()
+      } else {
+        toast.error('Failed to update company. Try again.')
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
+      toast.error('Failed to update company. Try again.')
+    } finally {
+      if (!signal.aborted) {
+        setEditSaving(false)
+        editAbortRef.current = null
+      }
+    }
+  }, [editCompanyId, editCompanyName, toast, handleEditClose])
 
   // M3-003: First visit with no companies → show onboarding (but not when there's a fetch error)
   if (hasLoadedOnce && !loading && companies.length === 0 && !loadError) {
@@ -208,11 +268,96 @@ export default function CompaniesPage() {
                 fontWeight: 500,
                 transition: 'border-color 0.15s',
                 outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              {co.name}
+              <span>{co.name}</span>
+              {/* SIRI-UX-429: edit button to open edit company modal */}
+              <button
+                data-testid={`edit-company-${co.id}-btn`}
+                onClick={(e) => handleEditOpen(co, e)}
+                style={{
+                  padding: '0.2rem 0.5rem',
+                  background: 'transparent',
+                  border: '1px solid #4b5563',
+                  borderRadius: 4,
+                  color: '#9ca3af',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                }}
+              >
+                Edit
+              </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* SIRI-UX-429: Edit Company modal */}
+      {showEditModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit Company"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) handleEditClose() }}
+          onKeyDown={(e) => { if (e.key === 'Escape') handleEditClose() }}
+        >
+          <div ref={editModalTrapRef} style={{
+            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
+            border: '1px solid #374151', position: 'relative',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontWeight: 700 }}>Edit Company</h2>
+              <button
+                aria-label="Close edit company modal"
+                onClick={handleEditClose}
+                style={{
+                  background: 'transparent', border: 'none', color: '#9ca3af',
+                  fontSize: '1.25rem', cursor: 'pointer', lineHeight: 1, padding: '0.25rem',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <input
+              autoFocus
+              data-testid="edit-company-name-input"
+              aria-label="Company name"
+              value={editCompanyName}
+              onChange={(e) => setEditCompanyName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
+              className="input-focus-ring-blue"
+              placeholder="Company name"
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
+                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
+                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <Button variant="secondary" onClick={handleEditClose} style={{ padding: '0.4rem 0.9rem' }}>
+                Cancel
+              </Button>
+              <Button
+                data-testid="edit-company-save-btn"
+                variant="primary"
+                onClick={handleEditSave}
+                disabled={editSaving || !editCompanyName.trim()}
+                aria-disabled={editSaving || !editCompanyName.trim()}
+                aria-busy={editSaving}
+                style={{ padding: '0.4rem 0.9rem', fontWeight: 600 }}
+              >
+                {editSaving ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

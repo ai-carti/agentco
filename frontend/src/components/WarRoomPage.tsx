@@ -15,6 +15,7 @@ const statusDotStyle: Record<WarRoomAgentStatus, string> = {
   thinking: 'bg-green-400 animate-pulse',
   running: 'bg-green-400 animate-pulse',
   done: 'bg-blue-500',
+  error: 'bg-red-500',
 }
 
 // SIRI-UX-335: inline background fallbacks for environments without Tailwind CSS processing
@@ -25,6 +26,7 @@ const statusDotBg: Record<WarRoomAgentStatus, string> = {
   thinking: '#4ade80',  // green-400
   running: '#4ade80',   // green-400
   done: '#3b82f6',      // blue-500
+  error: '#ef4444',     // red-500
 }
 
 const statusLabel: Record<WarRoomAgentStatus, string> = {
@@ -32,6 +34,7 @@ const statusLabel: Record<WarRoomAgentStatus, string> = {
   thinking: 'Thinking…',
   running: 'Running',
   done: 'Done',
+  error: 'Error',
 }
 
 // SIRI-UX-132: use shared debounced useIsMobile hook (was inline here, now extracted)

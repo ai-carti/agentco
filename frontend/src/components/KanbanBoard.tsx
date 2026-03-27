@@ -81,6 +81,14 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
     }
   }, [])
 
+  // SIRI-UX-365: sync editTitle/editDesc with latest task prop value so that
+  // if the store updates (e.g. via WebSocket) before the user opens Edit,
+  // the form shows the current data rather than the stale mount-time snapshot.
+  useEffect(() => {
+    setEditTitle(task.title)
+    setEditDesc(task.description ?? '')
+  }, [task])
+
   const menuRef = useRef<HTMLDivElement | null>(null)
   const menuBtnRef = useRef<HTMLButtonElement | null>(null)
 
@@ -1136,6 +1144,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     setGrabbedTaskId(null)
     const taskId = e.dataTransfer.getData('text/plain')
     if (!taskId) return
+
+    // SIRI-UX-428: block drop into 'error' column — error is a system-assigned status,
+    // not something users should be able to set manually via drag-and-drop.
+    if (newStatus === 'error') return
 
     const currentTasks = useAgentStore.getState().tasks
     const task = currentTasks.find((t) => t.id === taskId)

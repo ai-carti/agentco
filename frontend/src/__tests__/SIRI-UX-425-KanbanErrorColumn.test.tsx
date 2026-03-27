@@ -1,6 +1,6 @@
 // SIRI-UX-425: tasks with status='error' must appear in a dedicated Kanban column
 // COLUMNS array must include { id: 'error', label: 'Error' } so error tasks are visible
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 
