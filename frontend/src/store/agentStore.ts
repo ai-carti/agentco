@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 
 export type AgentStatus = 'idle' | 'running' | 'done' | 'error'
-export type TaskStatus = 'todo' | 'backlog' | 'in_progress' | 'done' | 'failed'
+// SIRI-UX-420: added 'error' — backend returns this status when loop_detected/cost_limit_exceeded
+// SIRI-UX-400: STATUS_COLORS already has 'error' entry consistent with this type
+export type TaskStatus = 'todo' | 'backlog' | 'in_progress' | 'done' | 'failed' | 'error'
 
 export interface Agent {
   id: string

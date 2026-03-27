@@ -84,9 +84,11 @@ export function formatDueDate(dateStr: string): { label: string; overdue: boolea
 
 // SIRI-UX-196: shared relative-time formatter (eliminates timeAgo/relativeTime duplication)
 // SIRI-UX-333: guard against invalid ISO — new Date(invalid).getTime() returns NaN, yielding "NaNs ago"
+// SIRI-UX-423: clamp negative diff to 0 — future timestamps (clock skew) yielded "-5s ago"
 export function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  if (isNaN(diffMs)) return '?'
+  const rawDiffMs = Date.now() - new Date(iso).getTime()
+  if (isNaN(rawDiffMs)) return '?'
+  const diffMs = Math.max(0, rawDiffMs)
   const sec = Math.floor(diffMs / 1000)
   if (sec < 60) return `${sec}s ago`
   const min = Math.floor(sec / 60)

@@ -1015,7 +1015,14 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
-      if (debouncedSearch && !t.title.toLowerCase().includes(debouncedSearch.toLowerCase())) return false
+      // SIRI-UX-424: match description too — GlobalSearch searches both title + description,
+      // Kanban filter must be consistent so users can find tasks by description in both views
+      if (debouncedSearch) {
+        const q = debouncedSearch.toLowerCase()
+        const titleMatch = t.title.toLowerCase().includes(q)
+        const descMatch = t.description ? t.description.toLowerCase().includes(q) : false
+        if (!titleMatch && !descMatch) return false
+      }
       if (selectedAgents.length > 0 && !selectedAgents.includes(t.assignee_id ?? '')) return false
       // SIRI-UX-213: guard null/undefined priority — unsafe cast replaced with explicit check
       if (selectedPriorities.length > 0 && (!t.priority || !selectedPriorities.includes(t.priority))) return false
