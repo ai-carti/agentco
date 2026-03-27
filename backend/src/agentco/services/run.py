@@ -511,8 +511,10 @@ class RunService:
             "level": 0,
             # ALEX-TD-277/280: expose max_depth so subagent/hierarchical nodes
             # don't rely on hardcoded default — configurable via MAX_AGENT_DEPTH env var.
-            # ALEX-TD-286: use _get_max_depth() (lru_cache) instead of direct os.environ.get.
-            "max_depth": _get_max_depth(),
+            # ALEX-TD-286: read MAX_AGENT_DEPTH at call time (not via lru_cache) to allow
+            # test isolation via patch.dict("os.environ", ...). Same rationale as ALEX-TD-285
+            # fix for RUN_MAX_RETRIES — lru_cache prevents per-test env overrides.
+            "max_depth": int(os.getenv("MAX_AGENT_DEPTH", "2")),
         }
 
         def _get_session_for_update() -> Session:

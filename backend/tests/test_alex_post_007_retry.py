@@ -253,15 +253,18 @@ async def test_execute_agent_max_retries_configurable_via_env():
     assert call_count == 2, f"С RUN_MAX_RETRIES=2 ожидалось 2 вызова, получено: {call_count}"
 
 
-# ── Test 7: RUN_MAX_RETRIES=0 clamped to 1 (ALEX-TD-048 regression) ──────────
+# ── Test 7: RUN_MAX_RETRIES=0 skips all attempts (ALEX-TD-048 / ALEX-TD-281) ──
 
 @pytest.mark.asyncio
 async def test_execute_agent_zero_max_retries_clamped_to_one():
     """
-    ALEX-TD-048: When RUN_MAX_RETRIES=0, the guard clamps it to 1.
-    - No TypeError raised (range(1, 0+1) → range(1,1) is empty; guard prevents this)
-    - execute_run called exactly 1 time (at least one attempt)
-    - asyncio.sleep NOT called (no retries needed after single success)
+    ALEX-TD-281: RUN_MAX_RETRIES=0 means zero attempts — range(1, 1) is empty.
+    The old ALEX-TD-048 guard clamped to 1, but ALEX-TD-281 removed the clamp
+    because it masked a real bug (raise None → TypeError). Now with RUN_MAX_RETRIES=0:
+    - No TypeError (last_exc is pre-initialised to RuntimeError("no retries attempted"))
+    - execute_run is NOT called (range is empty)
+    - A RuntimeError is raised immediately
+    - asyncio.sleep NOT called (no retries)
     """
     svc = _make_service()
     call_count = 0
@@ -274,15 +277,16 @@ async def test_execute_agent_zero_max_retries_clamped_to_one():
     with patch.object(svc, "execute_run", side_effect=mock_execute_run), \
          patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep, \
          patch.dict("os.environ", {"RUN_MAX_RETRIES": "0"}):
-        # Must not raise TypeError and must complete successfully
-        result = await svc._execute_agent(
-            run_id="run-007",
-            task_id="task-007",
-            agent_id="agent-007",
-            company_id="company-007",
-            session_factory=_noop_session_factory,
-        )
+        # ALEX-TD-281: with 0 retries the loop is skipped → raises RuntimeError sentinel,
+        # not TypeError (which was the original bug before ALEX-TD-281 fix).
+        with pytest.raises(RuntimeError, match="no retries attempted"):
+            await svc._execute_agent(
+                run_id="run-007",
+                task_id="task-007",
+                agent_id="agent-007",
+                company_id="company-007",
+                session_factory=_noop_session_factory,
+            )
 
-    assert result == "done", f"Ожидался результат 'done', получено: {result!r}"
-    assert call_count >= 1, f"execute_run должен быть вызван хотя бы 1 раз, вызван: {call_count}"
-    mock_sleep.assert_not_called()  # single attempt — no backoff sleep
+    assert call_count == 0, f"С RUN_MAX_RETRIES=0 execute_run не должен вызываться, вызван: {call_count}"
+    mock_sleep.assert_not_called()  # no attempts — no backoff sleep

@@ -1165,6 +1165,10 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     dropAbortRef.current = controller
     const { signal } = controller
 
+    // SIRI-UX-422: 'backlog' is a frontend-only status; backend TaskStatus does not include it.
+    // Map 'backlog' → 'todo' before sending PATCH so the request passes Pydantic validation.
+    const backendStatus = newStatus === 'backlog' ? 'todo' : newStatus
+
     try {
       const token = getStoredToken()
       const res = await fetch(`${BASE_URL}/api/companies/${companyId}/tasks/${taskId}`, {
@@ -1173,7 +1177,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: backendStatus }),
         signal,
       })
       if (!signal.aborted) {

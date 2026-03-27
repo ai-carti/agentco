@@ -58,6 +58,14 @@ class TestAlexTD123NodesMockVsReal:
     @pytest.mark.asyncio
     async def test_nodes_use_real_llm_when_flag_set(self, monkeypatch):
         """With AGENTCO_USE_REAL_LLM=true, nodes call litellm.acompletion."""
+        import importlib
+        import agentco.orchestration.nodes as nodes_module
+
+        # BUG-NEW-001: use patch.object instead of importlib.reload to avoid leaving
+        # _USE_REAL_LLM=True in sys.modules cache after the test exits.
+        # reload() with AGENTCO_USE_REAL_LLM=true sets _USE_REAL_LLM=True permanently
+        # in the cached module, polluting subsequent tests that expect mock LLM.
+        # patch.object is scoped to the with-block and auto-restores on exit.
         monkeypatch.setenv("AGENTCO_USE_REAL_LLM", "true")
 
         # Mock litellm.acompletion to simulate real LLM without actual API call
@@ -70,13 +78,9 @@ class TestAlexTD123NodesMockVsReal:
         mock_usage.total_tokens = 50
         mock_response.usage = mock_usage
 
-        with patch("agentco.orchestration.nodes.litellm.acompletion", new_callable=AsyncMock) as mock_llm:
-            mock_llm.return_value = mock_response
-
-            # Force reload to pick up the env change
-            import importlib
-            import agentco.orchestration.nodes as nodes_module
-            importlib.reload(nodes_module)
+        with patch.object(nodes_module, "_USE_REAL_LLM", True), \
+             patch.object(nodes_module, "litellm") as mock_litellm_obj:
+            mock_litellm_obj.acompletion = AsyncMock(return_value=mock_response)
 
             from agentco.orchestration.nodes import ceo_node
             from agentco.orchestration.state import AgentState
@@ -100,6 +104,9 @@ class TestAlexTD123NodesMockVsReal:
             result = await ceo_node(state)
             # Result should come from real LLM path
             assert result.get("status") == "completed"
+
+        # BUG-NEW-001: reload module after test to ensure clean state for subsequent tests
+        importlib.reload(nodes_module)
 
     def test_nodes_docstring_documents_mock(self):
         """nodes.py module docstring explicitly documents mock LLM usage."""
