@@ -30,6 +30,16 @@ from typing import Callable, Optional
 # Configurable via MAX_RUN_TIMEOUT_SEC env var (default 600 = 10 minutes).
 _MAX_RUN_TIMEOUT_SEC: int = int(os.getenv("MAX_RUN_TIMEOUT_SEC", "600"))
 
+# ALEX-TD-285: module-level retry constants (not re-read on every _execute_agent call).
+# Restart process to pick up env changes (same pattern as _MAX_RUN_TIMEOUT_SEC).
+_RUN_MAX_RETRIES: int = int(os.getenv("RUN_MAX_RETRIES", "3"))
+_RUN_RETRY_BASE_DELAY: float = float(os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
+
+# ALEX-TD-287: module-level memory DB path constant (not re-evaluated on every execute_run call).
+# Parses sqlite:/// URL prefix if AGENTCO_DB_PATH is a SQLAlchemy URL.
+_raw_memory_db_env: str = os.getenv("AGENTCO_MEMORY_DB", os.getenv("AGENTCO_MEMORY_DB_PATH", "./agentco_memory.db"))
+_MEMORY_DB_PATH: str = _raw_memory_db_env[len("sqlite:///"):] if _raw_memory_db_env.startswith("sqlite:///") else _raw_memory_db_env
+
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..models.run import Run, RunEvent
@@ -43,6 +53,7 @@ from ..orchestration.graph import compile as compile_graph  # noqa: F401
 from ..orchestration.checkpointer import create_checkpointer  # noqa: F401
 from ..memory.service import MemoryService  # noqa: F401
 from ..orchestration.agent_node import _memory_service_var  # noqa: F401
+from ..orchestration.nodes import _get_max_depth  # noqa: F401 — ALEX-TD-286
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +241,8 @@ class RunService:
         ALEX-TD-056: imports moved to module level (asyncio, os already imported at top).
         """
         # ALEX-TD-056: use module-level asyncio and os (no in-function import aliases)
-        _MAX_RETRIES = int(os.getenv("RUN_MAX_RETRIES", "3"))
+        # ALEX-TD-285: use module-level constants (not os.getenv on every call)
+        _MAX_RETRIES = _RUN_MAX_RETRIES
         # ALEX-TD-281: do NOT clamp _MAX_RETRIES to 1 here.
         # The old ALEX-TD-048 guard (`if _MAX_RETRIES < 1: _MAX_RETRIES = 1`) prevented
         # last_exc from staying None by forcing at least one loop iteration.
@@ -238,7 +250,7 @@ class RunService:
         # where last_exc=None produces `TypeError: exceptions must derive from BaseException`.
         # Fix: initialise last_exc to a clear RuntimeError so that even when the loop
         # does not execute (RUN_MAX_RETRIES=0), the caller gets a meaningful exception.
-        _RETRY_BASE_DELAY = float(os.getenv("RUN_RETRY_BASE_DELAY", "1.0"))
+        _RETRY_BASE_DELAY = _RUN_RETRY_BASE_DELAY
         # ALEX-TD-146: removed "cancelled" from _NO_RETRY_ERRORS — it was dead code.
         # str(asyncio.CancelledError()) == '' → any("cancelled" in "" ...) == False → never matched.
         # CancelledError inherits BaseException, not Exception → not caught by 'except Exception'.
@@ -462,16 +474,9 @@ class RunService:
         # ALEX-TD-144: create MemoryService for this run so agent_node can
         # inject past memories into system_prompt and save new memories.
         # Previously memory_service was never set → memory injection silently skipped.
-        # Using AGENTCO_MEMORY_DB env var (mirrors handlers/memory.py convention).
-        # ALEX-TD-148 fix: parse sqlite:/// URL if AGENTCO_DB_PATH contains a SQLAlchemy URL
-        # (e.g. "sqlite:///./agentco.db"). sqlite3.connect() requires a plain file path,
-        # not a SQLAlchemy URL → OperationalError: unable to open database file.
-        _raw_memory_db = os.getenv("AGENTCO_MEMORY_DB", os.getenv("AGENTCO_MEMORY_DB_PATH", "./agentco_memory.db"))
-        if _raw_memory_db.startswith("sqlite:///"):
-            _memory_db = _raw_memory_db[len("sqlite:///"):]
-        else:
-            _memory_db = _raw_memory_db
-        _memory_service = _MemoryService(_memory_db)
+        # ALEX-TD-287: use module-level _MEMORY_DB_PATH constant (not re-evaluated per run).
+        # sqlite:/// URL prefix already stripped at module import time.
+        _memory_service = _MemoryService(_MEMORY_DB_PATH)
 
         # ALEX-TD-147 fix: do NOT put memory_service into initial_state.
         # LangGraph serializes state via msgpack at each checkpoint — MemoryService
@@ -504,7 +509,8 @@ class RunService:
             "level": 0,
             # ALEX-TD-277/280: expose max_depth so subagent/hierarchical nodes
             # don't rely on hardcoded default — configurable via MAX_AGENT_DEPTH env var.
-            "max_depth": int(os.environ.get("MAX_AGENT_DEPTH", "2")),
+            # ALEX-TD-286: use _get_max_depth() (lru_cache) instead of direct os.environ.get.
+            "max_depth": _get_max_depth(),
         }
 
         def _get_session_for_update() -> Session:

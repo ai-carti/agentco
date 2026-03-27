@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
-export type WarRoomAgentStatus = 'idle' | 'thinking' | 'running' | 'done'
+// SIRI-UX-426: added 'error' — backend AgentStatus includes 'error' (loop_detected/cost_limit)
+export type WarRoomAgentStatus = 'idle' | 'thinking' | 'running' | 'done' | 'error'
 
 export interface WarRoomAgent {
   id: string

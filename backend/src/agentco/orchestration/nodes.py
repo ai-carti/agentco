@@ -41,18 +41,22 @@ logger = logging.getLogger(__name__)
 
 # ─── Константы loop detection ─────────────────────────────────────────────────
 
+@functools.lru_cache(maxsize=None)
 def _get_max_iterations() -> int:
     return int(os.environ.get("MAX_AGENT_ITERATIONS", "20"))
 
 
+@functools.lru_cache(maxsize=None)
 def _get_max_cost_usd() -> float:
     return float(os.environ.get("MAX_RUN_COST_USD", "1.0"))
 
 
+@functools.lru_cache(maxsize=None)
 def _get_max_tokens() -> int:
     return int(os.environ.get("MAX_RUN_TOKENS", "100000"))
 
 
+@functools.lru_cache(maxsize=None)
 def _get_max_pending_tasks() -> int:
     """ALEX-TD-270: max allowed pending_tasks count to prevent unbounded queue growth.
 
@@ -60,10 +64,12 @@ def _get_max_pending_tasks() -> int:
     of tasks in a single iteration → memory bloat + excessive LLM calls + checkpointer
     DB growth (each large state = large msgpack blob at each checkpoint).
     Configurable via AGENT_MAX_PENDING_TASKS env var (default: 20).
+    ALEX-TD-276: cached via lru_cache — read from os.environ only once per process.
     """
     return int(os.environ.get("AGENT_MAX_PENDING_TASKS", "20"))
 
 
+@functools.lru_cache(maxsize=None)
 def _get_max_depth() -> int:
     """ALEX-TD-277: configurable max hierarchy depth via MAX_AGENT_DEPTH env var.
 
@@ -71,6 +77,7 @@ def _get_max_depth() -> int:
     execute_run does not populate initial_state["max_depth"]. This getter provides
     a consistent source of truth and env-configurable default.
     Configurable via MAX_AGENT_DEPTH env var (default: 2).
+    ALEX-TD-276: cached via lru_cache — read from os.environ only once per process.
     """
     return int(os.environ.get("MAX_AGENT_DEPTH", "2"))
 

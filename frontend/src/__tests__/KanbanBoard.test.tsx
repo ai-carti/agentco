@@ -91,8 +91,8 @@ describe('KanbanBoard', () => {
   it('renders skeleton cards when isLoaded=false', () => {
     renderWithToast(<KanbanBoard companyId="c1" isLoaded={false} />)
     const skeletons = screen.getAllByTestId('skeleton-task')
-    // SIRI-UX-406: 5 columns (backlog, todo, in_progress, done, failed) × 3 skeletons = 15
-    expect(skeletons.length).toBe(15)
+    // SIRI-UX-406/425: 6 columns (backlog, todo, in_progress, done, failed, error) × 3 skeletons = 18
+    expect(skeletons.length).toBe(18)
   })
 
   it('does not render skeleton when isLoaded=true', () => {

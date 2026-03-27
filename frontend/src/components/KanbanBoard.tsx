@@ -23,6 +23,8 @@ const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: 'in_progress', label: 'In Progress' },
   { id: 'done', label: 'Done' },
   { id: 'failed', label: 'Failed' },
+  // SIRI-UX-425: 'error' column — backend returns status='error' on loop_detected/cost_limit_exceeded
+  { id: 'error', label: 'Error' },
 ]
 
 // SIRI-UX-049: getInitials imported from taskUtils (alias to avoid breaking existing usages)

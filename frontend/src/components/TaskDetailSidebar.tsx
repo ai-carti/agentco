@@ -154,7 +154,8 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
   const statusColor = STATUS_COLORS[task.status] ?? STATUS_COLORS.todo
   const assigneeName = task.assignee_name ?? 'Unassigned'
   const avatarColor = task.assignee_name ? getAvatarColor(task.assignee_name) : '#4b5563'
-  const canRun = task.status === 'todo' || task.status === 'backlog'
+  // SIRI-UX-427: added 'error' — tasks stuck in error state should be retryable
+  const canRun = task.status === 'todo' || task.status === 'backlog' || task.status === 'error'
   const priorityColor = task.priority ? PRIORITY_COLORS[task.priority] : null
 
   // SIRI-UX-343: memoize so new Date() is only called when due_date changes, not on every render

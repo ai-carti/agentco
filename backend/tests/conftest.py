@@ -38,6 +38,35 @@ def reset_rate_limiter():
         pass
 
 
+@pytest.fixture(autouse=True)
+def clear_nodes_lru_cache():
+    """ALEX-TD-276: clear lru_cache on _get_max_* functions before/after each test.
+
+    Tests that use monkeypatch.setenv or os.environ directly to override env vars
+    need the cache cleared so lru_cache picks up the new values.
+    Without this, the first test to run caches the default value and subsequent
+    tests that patch the env var get stale results.
+    """
+    from agentco.orchestration.nodes import (
+        _get_max_iterations,
+        _get_max_cost_usd,
+        _get_max_tokens,
+        _get_max_pending_tasks,
+        _get_max_depth,
+    )
+    _get_max_iterations.cache_clear()
+    _get_max_cost_usd.cache_clear()
+    _get_max_tokens.cache_clear()
+    _get_max_pending_tasks.cache_clear()
+    _get_max_depth.cache_clear()
+    yield
+    _get_max_iterations.cache_clear()
+    _get_max_cost_usd.cache_clear()
+    _get_max_tokens.cache_clear()
+    _get_max_pending_tasks.cache_clear()
+    _get_max_depth.cache_clear()
+
+
 def _make_test_engine():
     # StaticPool: all sessions share one in-memory connection → tables persist
     engine = create_engine(

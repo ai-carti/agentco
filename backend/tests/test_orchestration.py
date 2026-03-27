@@ -490,6 +490,92 @@ class TestAgentStateM2002:
         assert state["agent_id"] == "ceo"
 
 
+# ─── ALEX-TD-276: lru_cache on _get_max_* functions ─────────────────────────
+
+class TestGetMaxFunctionsLruCache:
+    """ALEX-TD-276: _get_max_* functions should cache via lru_cache — os.environ.get called once."""
+
+    def test_get_max_iterations_calls_environ_only_once(self):
+        """_get_max_iterations() должен читать os.environ только при первом вызове (lru_cache)."""
+        from unittest.mock import patch
+        import agentco.orchestration.nodes as nodes_module
+
+        nodes_module._get_max_iterations.cache_clear()
+        with patch.dict("os.environ", {"MAX_AGENT_ITERATIONS": "42"}, clear=False):
+            nodes_module._get_max_iterations.cache_clear()
+            r1 = nodes_module._get_max_iterations()
+            r2 = nodes_module._get_max_iterations()
+        assert r1 == 42
+        assert r2 == 42
+        info = nodes_module._get_max_iterations.cache_info()
+        assert info.hits >= 1, f"Expected at least 1 cache hit, got {info}"
+        nodes_module._get_max_iterations.cache_clear()
+
+    def test_get_max_cost_usd_calls_environ_only_once(self):
+        """_get_max_cost_usd() должен кешировать результат."""
+        from unittest.mock import patch
+        import agentco.orchestration.nodes as nodes_module
+
+        nodes_module._get_max_cost_usd.cache_clear()
+        with patch.dict("os.environ", {"MAX_RUN_COST_USD": "2.5"}, clear=False):
+            nodes_module._get_max_cost_usd.cache_clear()
+            r1 = nodes_module._get_max_cost_usd()
+            r2 = nodes_module._get_max_cost_usd()
+        assert r1 == 2.5
+        assert r2 == 2.5
+        info = nodes_module._get_max_cost_usd.cache_info()
+        assert info.hits >= 1
+        nodes_module._get_max_cost_usd.cache_clear()
+
+    def test_get_max_tokens_calls_environ_only_once(self):
+        """_get_max_tokens() должен кешировать результат."""
+        from unittest.mock import patch
+        import agentco.orchestration.nodes as nodes_module
+
+        nodes_module._get_max_tokens.cache_clear()
+        with patch.dict("os.environ", {"MAX_RUN_TOKENS": "50000"}, clear=False):
+            nodes_module._get_max_tokens.cache_clear()
+            r1 = nodes_module._get_max_tokens()
+            r2 = nodes_module._get_max_tokens()
+        assert r1 == 50000
+        assert r2 == 50000
+        info = nodes_module._get_max_tokens.cache_info()
+        assert info.hits >= 1
+        nodes_module._get_max_tokens.cache_clear()
+
+    def test_get_max_pending_tasks_calls_environ_only_once(self):
+        """_get_max_pending_tasks() должен кешировать результат."""
+        from unittest.mock import patch
+        import agentco.orchestration.nodes as nodes_module
+
+        nodes_module._get_max_pending_tasks.cache_clear()
+        with patch.dict("os.environ", {"AGENT_MAX_PENDING_TASKS": "10"}, clear=False):
+            nodes_module._get_max_pending_tasks.cache_clear()
+            r1 = nodes_module._get_max_pending_tasks()
+            r2 = nodes_module._get_max_pending_tasks()
+        assert r1 == 10
+        assert r2 == 10
+        info = nodes_module._get_max_pending_tasks.cache_info()
+        assert info.hits >= 1
+        nodes_module._get_max_pending_tasks.cache_clear()
+
+    def test_get_max_depth_calls_environ_only_once(self):
+        """_get_max_depth() должен кешировать результат."""
+        from unittest.mock import patch
+        import agentco.orchestration.nodes as nodes_module
+
+        nodes_module._get_max_depth.cache_clear()
+        with patch.dict("os.environ", {"MAX_AGENT_DEPTH": "3"}, clear=False):
+            nodes_module._get_max_depth.cache_clear()
+            r1 = nodes_module._get_max_depth()
+            r2 = nodes_module._get_max_depth()
+        assert r1 == 3
+        assert r2 == 3
+        info = nodes_module._get_max_depth.cache_info()
+        assert info.hits >= 1
+        nodes_module._get_max_depth.cache_clear()
+
+
 class TestGraphCompileFunction:
     """graph.py должен экспортировать compile() функцию."""
 
