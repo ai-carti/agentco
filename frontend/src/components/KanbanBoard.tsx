@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useAgentStore, type Task, type TaskStatus, type TaskPriority } from '../store/agentStore'
 import { getStoredToken, BASE_URL } from '../api/client'
 import TaskDetailSidebar from './TaskDetailSidebar'
@@ -39,7 +39,8 @@ interface TaskCardProps {
   isGrabbed?: boolean
 }
 
-function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrabbed }: TaskCardProps) {
+// SIRI-UX-435: wrap TaskCard in React.memo to prevent re-renders when other columns change
+const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrabbed }: TaskCardProps) {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -661,7 +662,7 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
       )}
     </div>
   )
-}
+})
 
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low']
 

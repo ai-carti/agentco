@@ -73,6 +73,28 @@ describe('Breadcrumb', () => {
     expect(agentCoLink.closest('a')).toHaveAttribute('href', '/')
   })
 
+  // SIRI-UX-434: Breadcrumb accessibility — separators hidden from screen readers
+  it('SIRI-UX-434: wraps breadcrumb in <nav> with aria-label="Breadcrumb"', () => {
+    renderBreadcrumb('/settings')
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(nav).toBeInTheDocument()
+    expect(nav).toContainElement(screen.getByTestId('breadcrumb'))
+  })
+
+  it('SIRI-UX-434: separator spans have aria-hidden="true"', () => {
+    useAgentStore.setState({ currentCompany: { id: 'c1', name: 'My Startup' } })
+    renderBreadcrumb('/companies/c1/agents/a1')
+    const breadcrumb = screen.getByTestId('breadcrumb')
+    // Find all separator spans (containing ">")
+    const separators = Array.from(breadcrumb.querySelectorAll('span')).filter(
+      (el) => el.textContent === '>'
+    )
+    expect(separators.length).toBeGreaterThan(0)
+    for (const sep of separators) {
+      expect(sep).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
   it('is visible on all protected page routes except company overview', () => {
     const visibleRoutes = ['/', '/companies/c1/agents/a1', '/settings']
     for (const route of visibleRoutes) {
