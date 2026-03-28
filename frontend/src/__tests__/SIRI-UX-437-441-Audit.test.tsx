@@ -5,7 +5,7 @@
  * SIRI-UX-440: CompanyHeader React.memo
  * SIRI-UX-441: FilterBar React.memo
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 describe('SIRI-UX-437: BillingPage has useDocumentTitle', () => {
   it('BillingPage source imports and calls useDocumentTitle', async () => {
