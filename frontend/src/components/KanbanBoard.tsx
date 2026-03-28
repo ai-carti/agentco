@@ -108,7 +108,8 @@ function TaskCard({ task, companyId, onCardClick, onDragStart, onDragEnd, isGrab
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [menuOpen])
 
-  const canRun = task.status === 'todo' || task.status === 'backlog'
+  // BUG-084: added 'error' — match TaskDetailSidebar retry behavior (SIRI-UX-427)
+  const canRun = task.status === 'todo' || task.status === 'backlog' || task.status === 'error'
 
   // BUG-050 / SIRI-UX-062 / SIRI-UX-070: close menu + modals on Escape key
   useEffect(() => {
