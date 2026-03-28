@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAutoScroll } from '../hooks/useAutoScroll'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useShallow } from 'zustand/shallow'
 import { useWarRoomStore, getNextMockEvent, type WarRoomAgentStatus } from '../store/warRoomStore'
 import { useWarRoomSocket } from '../hooks/useWarRoomSocket'
@@ -59,7 +61,8 @@ export default function WarRoomPage() {
   const clearFlash = useWarRoomStore((s) => s.clearFlash)
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const feedEndRef = useRef<HTMLDivElement | null>(null)
+  // SIRI-UX-430: smart auto-scroll — only scrolls when user is near bottom
+  const { feedEndRef, containerRef, isNearBottom, handleScroll, scrollToBottom } = useAutoScroll([messages.length])
   // SIRI-UX-175: store abort controller for handleStop so it can be cancelled on unmount
   const stopAbortRef = useRef<AbortController | null>(null)
   const navigate = useNavigate()
@@ -72,6 +75,9 @@ export default function WarRoomPage() {
 
   // SIRI-UX-376: guard undefined companyId — pass empty string to skip WS connection
   const { isConnected, error: wsError } = useWarRoomSocket(companyId ?? '')
+
+  // SIRI-UX-431: set document title for accessibility + tab distinction
+  useDocumentTitle('War Room — AgentCo')
 
   // SIRI-UX-025: isConnecting — true until first data arrives or 3s timeout
   const [isConnecting, setIsConnecting] = useState(true)
@@ -187,12 +193,8 @@ export default function WarRoomPage() {
     }
   }, [agents.length, isConnected])
 
-  // SIRI-UX-016: Auto-scroll activity feed to latest message
-  useEffect(() => {
-    if (feedEndRef.current && typeof feedEndRef.current.scrollIntoView === 'function') {
-      feedEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages.length])
+  // SIRI-UX-016 + SIRI-UX-430: Auto-scroll handled by useAutoScroll hook
+  // Only scrolls when user is near bottom — respects manual scroll position
 
   // SIRI-UX-149: prune expandedMessages Set when messages are evicted by the 300-cap
   // Prevents unbounded growth of stale message IDs in long sessions
@@ -775,6 +777,8 @@ export default function WarRoomPage() {
           </div>
           {/* SIRI-UX-068: aria-live so screen readers announce new agent messages */}
           <div
+            ref={containerRef}
+            onScroll={handleScroll}
             aria-live="polite"
             aria-label="Agent activity feed"
             style={{

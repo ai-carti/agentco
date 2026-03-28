@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { Bot } from 'lucide-react'
 import SkeletonCard from './SkeletonCard'
 import { useToast } from '../context/ToastContext'
@@ -207,6 +208,7 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
 }
 
 export default function LibraryPage() {
+  useDocumentTitle('Agent Library — AgentCo')
   const [agents, setAgents] = useState<LibraryAgent[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)

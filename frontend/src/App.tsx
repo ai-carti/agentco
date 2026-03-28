@@ -28,7 +28,7 @@ function AppLayout() {
       <Navbar />
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 49px)' }}>
         <Sidebar />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div id="main-content" role="main" style={{ flex: 1, minWidth: 0 }}>
           <Breadcrumb />
           <ErrorBoundary>
             {/* SIRI-UX-140: show inline spinner instead of null so slow-network users see feedback */}
@@ -78,6 +78,41 @@ function App() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', background: '#0f172a', minHeight: '100vh', color: '#f8fafc' }}>
+      {/* SIRI-UX-432: Skip-to-content link for keyboard/screen-reader users (WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="skip-to-content"
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          zIndex: 9999,
+          padding: '0.75rem 1.5rem',
+          background: '#2563eb',
+          color: '#fff',
+          fontWeight: 700,
+          borderRadius: '0 0 8px 0',
+          textDecoration: 'none',
+          fontSize: '0.875rem',
+        }}
+        onFocus={(e) => {
+          const el = e.currentTarget
+          el.style.left = '0'
+          el.style.width = 'auto'
+          el.style.height = 'auto'
+        }}
+        onBlur={(e) => {
+          const el = e.currentTarget
+          el.style.left = '-9999px'
+          el.style.width = '1px'
+          el.style.height = '1px'
+        }}
+      >
+        Skip to content
+      </a>
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
         <Route element={<ProtectedRoute />}>

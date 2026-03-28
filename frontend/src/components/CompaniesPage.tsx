@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useToast } from '../context/ToastContext'
 import EmptyState from './EmptyState'
 import SkeletonCard from './SkeletonCard'
@@ -19,6 +20,7 @@ interface Company {
 export default function CompaniesPage() {
   const navigate = useNavigate()
   const toast = useToast()
+  useDocumentTitle('Companies — AgentCo')
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
