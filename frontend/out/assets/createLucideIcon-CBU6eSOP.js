@@ -1,4 +1,4 @@
-import{r as s}from"./vendor-router-BZC8XLwl.js";/**
+import{r as s}from"./vendor-router-B0biuZci.js";/**
  * @license lucide-react v0.577.0 - ISC
  *
  * This source code is licensed under the ISC license.

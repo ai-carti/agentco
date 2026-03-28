@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
-import KanbanBoard from './KanbanBoard'
+// SIRI-UX-444: lazy-load KanbanBoard — Board tab is not always active, no need to bundle eagerly
+const KanbanBoard = lazy(() => import('./KanbanBoard'))
 import AgentForm, { type AgentFormData } from './AgentForm'
 import AgentCard from './AgentCard'
 import Button from './Button'
@@ -438,12 +439,25 @@ export default function CompanyPage() {
           style={{ height: '100%', overflowY: 'auto' }}
         >
           {activeTab === 'board' && (
-            <KanbanBoard
-              companyId={id ?? ''}
-              isLoaded={tasksLoaded}
-              hasMore={hasMoreTasks}
-              onLoadMore={handleLoadMoreTasks}
-            />
+            <Suspense fallback={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
+                <div
+                  className="app-suspense-spinner"
+                  style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    border: '3px solid #1e293b',
+                    borderTopColor: '#3b82f6',
+                  }}
+                />
+              </div>
+            }>
+              <KanbanBoard
+                companyId={id ?? ''}
+                isLoaded={tasksLoaded}
+                hasMore={hasMoreTasks}
+                onLoadMore={handleLoadMoreTasks}
+              />
+            </Suspense>
           )}
         </div>
 

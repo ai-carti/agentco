@@ -112,11 +112,12 @@ describe('CompanyPage Layout (UX-POLISH-003)', () => {
     expect(screen.queryByTestId('kanban-board')).not.toBeInTheDocument()
   })
 
-  it('switches to Kanban board when Board tab is clicked', () => {
+  it('switches to Kanban board when Board tab is clicked', async () => {
     renderCompanyPage()
     const boardTab = screen.getByRole('tab', { name: /board/i })
     fireEvent.click(boardTab)
-    expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
+    // SIRI-UX-444: KanbanBoard is lazy-loaded, wait for Suspense to resolve
+    await waitFor(() => expect(screen.getByTestId('kanban-board')).toBeInTheDocument())
     expect(screen.queryByTestId('war-room-page')).not.toBeInTheDocument()
   })
 
@@ -128,10 +129,11 @@ describe('CompanyPage Layout (UX-POLISH-003)', () => {
     expect(agentsSections).toHaveLength(0)
   })
 
-  it('Board tab contains kanban board', () => {
+  it('Board tab contains kanban board', async () => {
     renderCompanyPage()
     fireEvent.click(screen.getByRole('tab', { name: /board/i }))
-    expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
+    // SIRI-UX-444: KanbanBoard is lazy-loaded
+    await waitFor(() => expect(screen.getByTestId('kanban-board')).toBeInTheDocument())
   })
 
   it('tab panel has correct aria attributes', () => {

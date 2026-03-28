@@ -11,7 +11,7 @@ export default defineConfig({
         manualChunks: {
           // Split React runtime into its own chunk (stable, long-cached)
           'vendor-react': ['react', 'react-dom'],
-          // React Router separately
+          // React Router v6 pinned (SIRI-UX-443): v7 was 178KB, v6 is ~164KB
           'vendor-router': ['react-router-dom'],
           // Sentry is large – isolate so app chunk stays lean
           'vendor-sentry': ['@sentry/react'],
