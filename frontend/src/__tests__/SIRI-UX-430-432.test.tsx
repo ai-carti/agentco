@@ -1,9 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import fs from 'node:fs'
-import path from 'node:path'
+/**
+ * SIRI-UX-430: Auto-scroll respects user scroll position
+ * SIRI-UX-431: useDocumentTitle hook
+ * SIRI-UX-432: Skip-to-content link
+ *
+ * SIRI-UX-436: Uses import.meta.glob with ?raw to read source without Node.js fs/path APIs
+ * (tsconfig targets browser, no @types/node available).
+ */
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { renderHook } from '@testing-library/react'
 import { useAutoScroll } from '../hooks/useAutoScroll'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+
+// Source files via ?raw imports (no Node.js fs/path needed)
+const warRoomModules = import.meta.glob('../components/WarRoomPage.tsx', { query: '?raw', import: 'default', eager: true })
+const warRoomSrc: string = warRoomModules['../components/WarRoomPage.tsx'] as string
+
+const appModules = import.meta.glob('../App.tsx', { query: '?raw', import: 'default', eager: true })
+const appSrc: string = appModules['../App.tsx'] as string
 
 // ── SIRI-UX-430: Auto-scroll respects user scroll position ───────────────────
 describe('SIRI-UX-430: WarRoomPage auto-scroll respects user scroll position', () => {
@@ -22,15 +35,11 @@ describe('SIRI-UX-430: WarRoomPage auto-scroll respects user scroll position', (
   })
 
   it('WarRoomPage source uses useAutoScroll instead of unconditional scrollIntoView', () => {
-    const src = fs.readFileSync(
-      path.resolve(__dirname, '../components/WarRoomPage.tsx'),
-      'utf-8',
-    )
     // Should import useAutoScroll
-    expect(src).toContain('useAutoScroll')
+    expect(warRoomSrc).toContain('useAutoScroll')
     // Should NOT have unconditional scrollIntoView in a useEffect dependent only on messages.length
     // The old pattern: feedEndRef.current.scrollIntoView({ behavior: 'smooth' }) triggered every time
-    expect(src).not.toMatch(/scrollIntoView\(\{.*behavior.*smooth.*\}\)/)
+    expect(warRoomSrc).not.toMatch(/scrollIntoView\(\{.*behavior.*smooth.*\}\)/)
   })
 })
 
@@ -72,19 +81,11 @@ describe('SIRI-UX-431: useDocumentTitle hook', () => {
 // ── SIRI-UX-432: Skip-to-content link ───────────────────────────────────────
 describe('SIRI-UX-432: Skip-to-content link', () => {
   it('App.tsx source contains skip-to-content link', () => {
-    const src = fs.readFileSync(
-      path.resolve(__dirname, '../App.tsx'),
-      'utf-8',
-    )
-    expect(src).toContain('skip-to-content')
-    expect(src).toContain('#main-content')
+    expect(appSrc).toContain('skip-to-content')
+    expect(appSrc).toContain('#main-content')
   })
 
   it('AppLayout renders a main landmark with id="main-content"', () => {
-    const src = fs.readFileSync(
-      path.resolve(__dirname, '../App.tsx'),
-      'utf-8',
-    )
-    expect(src).toContain('id="main-content"')
+    expect(appSrc).toContain('id="main-content"')
   })
 })

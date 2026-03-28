@@ -248,7 +248,6 @@ describe('KanbanBoard', () => {
 
   // SIRI-UX-435: TaskCard should be wrapped in React.memo
   it('SIRI-UX-435: TaskCard is memoized (React.memo)', async () => {
-    const renderCounts = { t1: 0, t2: 0 }
     // We verify memoization indirectly: changing one task should not cause other cards to re-render.
     // Render two tasks, then update only one task's title in the store.
     useAgentStore.setState({
@@ -258,7 +257,7 @@ describe('KanbanBoard', () => {
       ],
       agents: [],
     })
-    const { rerender } = renderWithToast(<KanbanBoard companyId="c1" />)
+    renderWithToast(<KanbanBoard companyId="c1" />)
     expect(screen.getByText('Task One')).toBeInTheDocument()
     expect(screen.getByText('Task Two')).toBeInTheDocument()
 

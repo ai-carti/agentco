@@ -1,8 +1,20 @@
+/**
+ * SIRI-UX-433: All page components have useDocumentTitle (WCAG 2.4.2)
+ *
+ * SIRI-UX-436: Uses import.meta.glob with ?raw to read source without Node.js fs/path APIs
+ * (tsconfig targets browser, no @types/node available).
+ */
 import { describe, it, expect } from 'vitest'
-import fs from 'node:fs'
-import path from 'node:path'
 
-const COMPONENTS_DIR = path.resolve(__dirname, '../components')
+// Load all component sources via ?raw glob (no Node.js fs/path needed)
+const componentModules = import.meta.glob('../components/*.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+
+function getComponentSrc(fileName: string): string {
+  const key = `../components/${fileName}`
+  const src = componentModules[key]
+  if (!src) throw new Error(`Component source not found: ${key}`)
+  return src
+}
 
 const PAGES_WITH_TITLES: Array<[string, string]> = [
   ['AgentPage.tsx', 'Agent — AgentCo'],
@@ -20,7 +32,7 @@ describe('SIRI-UX-433: All pages have useDocumentTitle', () => {
   it.each(PAGES_WITH_TITLES)(
     '%s calls useDocumentTitle with expected title',
     (fileName, expectedTitle) => {
-      const src = fs.readFileSync(path.join(COMPONENTS_DIR, fileName), 'utf-8')
+      const src = getComponentSrc(fileName)
       expect(src).toContain("import { useDocumentTitle } from '../hooks/useDocumentTitle'")
       expect(src).toContain(`useDocumentTitle('${expectedTitle}')`)
     },

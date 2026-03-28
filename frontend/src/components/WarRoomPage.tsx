@@ -62,7 +62,8 @@ export default function WarRoomPage() {
   const setRunStatus = useWarRoomStore((s) => s.setRunStatus)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // SIRI-UX-430: smart auto-scroll — only scrolls when user is near bottom
-  const { feedEndRef, containerRef, isNearBottom, handleScroll, scrollToBottom } = useAutoScroll([messages.length])
+  // SIRI-UX-436: destructure only used values — isNearBottom/scrollToBottom are handled internally by the hook
+  const { feedEndRef, containerRef, handleScroll } = useAutoScroll([messages.length])
   // SIRI-UX-175: store abort controller for handleStop so it can be cancelled on unmount
   const stopAbortRef = useRef<AbortController | null>(null)
   const navigate = useNavigate()
