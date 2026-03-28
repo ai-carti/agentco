@@ -679,7 +679,9 @@ interface FilterBarProps {
   hasActiveFilters: boolean
 }
 
-function FilterBar({
+// SIRI-UX-441: React.memo — FilterBar receives stable callbacks (useCallback) from KanbanBoard
+// but re-renders on every KanbanBoard state change (drag, task selection, modal open, etc.)
+const FilterBar = React.memo(function FilterBar({
   searchQuery, onSearchChange,
   selectedAgents, onToggleAgent,
   selectedPriorities, onTogglePriority,
@@ -899,7 +901,7 @@ function FilterBar({
       )}
     </div>
   )
-}
+})
 
 interface KanbanBoardProps {
   companyId: string

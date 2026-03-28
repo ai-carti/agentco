@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WarRoomPage from './WarRoomPage'
 import KanbanBoard from './KanbanBoard'
@@ -19,7 +19,9 @@ import { useIsMobile } from '../hooks/useIsMobile'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
-function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
+// SIRI-UX-440: React.memo — CompanyHeader receives stable props (name + memoized onHomeClick)
+// but re-renders on every CompanyPage state change (tab switch, tasks loaded, etc.)
+const CompanyHeader = React.memo(function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
   // SIRI-UX-107: use shared getAvatarColor + getInitials from taskUtils
   const avatarColor = getAvatarColor(name)
   const initials = _getInitials(name)
@@ -93,7 +95,7 @@ function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () =>
       </span>
     </div>
   )
-}
+})
 
 type TabId = 'war-room' | 'board' | 'agents'
 

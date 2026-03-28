@@ -124,6 +124,8 @@ def test_nodes_has_logger():
 def test_nodes_ceo_node_logs_entry(caplog):
     """ALEX-TD-247: ceo_node must log a debug entry on entry."""
     import asyncio
+    from unittest.mock import patch
+    import agentco.orchestration.nodes as nodes_mod
     from agentco.orchestration.nodes import ceo_node
 
     state = {
@@ -142,8 +144,10 @@ def test_nodes_ceo_node_logs_entry(caplog):
         "final_result": None,
     }
 
-    with caplog.at_level(logging.DEBUG, logger="agentco.orchestration.nodes"):
-        asyncio.run(ceo_node(state))
+    # BUG-NEW-001: Ensure mock LLM path to avoid real API calls
+    with patch.object(nodes_mod, "_USE_REAL_LLM", False):
+        with caplog.at_level(logging.DEBUG, logger="agentco.orchestration.nodes"):
+            asyncio.run(ceo_node(state))
 
     assert any("ceo_node" in rec.message for rec in caplog.records), (
         "ALEX-TD-247: ceo_node must log a DEBUG message on entry containing 'ceo_node'."

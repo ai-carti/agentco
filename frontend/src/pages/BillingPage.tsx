@@ -1,4 +1,5 @@
 import React from 'react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 // POST-005: Billing UI skeleton — pre-MVP Stripe integration preparation
 
@@ -92,6 +93,8 @@ const sectionHeadingStyle: React.CSSProperties = {
 }
 
 export default function BillingPage() {
+  // SIRI-UX-437: document title for accessibility + tab distinction (missed in SIRI-UX-433)
+  useDocumentTitle('Billing — AgentCo')
   return (
     <div
       data-testid="billing-page"

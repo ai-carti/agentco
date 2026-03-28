@@ -1,3 +1,4 @@
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { type Agent } from '../store/agentStore'
 import Button from './Button'
@@ -12,7 +13,9 @@ interface AgentCardProps {
   onEdit: (agent: Agent) => void
 }
 
-export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) {
+// SIRI-UX-439: wrap AgentCard in React.memo — rendered N times in agents grid via .map(),
+// without memo all cards re-render when any CompanyPage state changes (same fix as SIRI-UX-435 for TaskCard)
+const AgentCard = React.memo(function AgentCard({ agent, companyId, onEdit }: AgentCardProps) {
   const avatarColor = getAvatarColor(agent.name)
   const initials = getInitials(agent.name)
   const isRunning = agent.status === 'running'
@@ -142,4 +145,6 @@ export default function AgentCard({ agent, companyId, onEdit }: AgentCardProps) 
       </div>
     </div>
   )
-}
+})
+
+export default AgentCard

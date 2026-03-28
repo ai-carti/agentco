@@ -92,8 +92,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ success, error, info }}>
       {children}
+      {/* SIRI-UX-438: aria-live="polite" + role="status" so screen readers announce toasts */}
       <div
         data-testid="toast-container"
+        role="status"
+        aria-live="polite"
         style={{
           position: 'fixed',
           bottom: '1rem',
