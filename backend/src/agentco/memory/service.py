@@ -10,6 +10,7 @@ memory/service.py — async сервис для управления памят�
 from __future__ import annotations
 
 import asyncio
+import functools
 import os
 from typing import Any
 
@@ -17,9 +18,15 @@ import litellm
 
 from agentco.memory.vector_store import VectorStore, SqliteVecStore
 
-_EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-# Use AGENTCO_MEMORY_DB if set, else fall back to AGENTCO_DB_PATH, else default
-_DEFAULT_DB = os.environ.get("AGENTCO_MEMORY_DB") or os.environ.get("AGENTCO_DB_PATH", "./agentco_memory.db")
+
+@functools.lru_cache(maxsize=1)
+def _get_embedding_model() -> str:
+    return os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+
+
+@functools.lru_cache(maxsize=1)
+def _get_default_db() -> str:
+    return os.environ.get("AGENTCO_MEMORY_DB") or os.environ.get("AGENTCO_DB_PATH", "./agentco_memory.db")
 
 
 class MemoryService:
@@ -32,7 +39,9 @@ class MemoryService:
     Для обратной совместимости строка db_path по-прежнему создаёт SqliteVecStore.
     """
 
-    def __init__(self, store_or_db_path: "VectorStore | str" = _DEFAULT_DB) -> None:
+    def __init__(self, store_or_db_path: "VectorStore | str | None" = None) -> None:
+        if store_or_db_path is None:
+            store_or_db_path = _get_default_db()
         if isinstance(store_or_db_path, str):
             # backward-compat: db_path string → create SqliteVecStore
             self._store: VectorStore = SqliteVecStore(db_path=store_or_db_path)
@@ -169,20 +178,20 @@ class MemoryService:
         Fix: raise ValueError with context if data is empty or embedding is missing.
         """
         response = await litellm.aembedding(
-            model=_EMBEDDING_MODEL,
+            model=_get_embedding_model(),
             input=text,
             timeout=30.0,
         )
         # ALEX-TD-138: validate response structure before accessing .embedding
         if not response.data:
             raise ValueError(
-                f"_get_embedding: LiteLLM returned empty data list for model={_EMBEDDING_MODEL!r}. "
+                f"_get_embedding: LiteLLM returned empty data list for model={_get_embedding_model()!r}. "
                 "Check that the embedding model is configured and the API key is valid."
             )
         embedding = response.data[0].embedding
         if embedding is None:
             raise ValueError(
-                f"_get_embedding: LiteLLM returned None embedding for model={_EMBEDDING_MODEL!r}. "
+                f"_get_embedding: LiteLLM returned None embedding for model={_get_embedding_model()!r}. "
                 "Provider may not support embeddings or returned an error object."
             )
         return embedding
