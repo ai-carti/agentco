@@ -4,6 +4,7 @@ import AgentForm, { type AgentFormData } from './AgentForm'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import SkeletonCard from './SkeletonCard'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 interface AgentData {
@@ -15,6 +16,7 @@ interface AgentData {
 }
 
 export default function AgentEditPage() {
+  useDocumentTitle('Edit Agent — AgentCo')
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const navigate = useNavigate()
   const toast = useToast()

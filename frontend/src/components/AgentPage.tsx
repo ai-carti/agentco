@@ -8,6 +8,7 @@ import SkeletonCard from './SkeletonCard'
 import { Brain, ScrollText } from 'lucide-react'
 // SIRI-UX-302/303: formatDateLong from shared taskUtils (replaces local toLocaleDateString)
 import { formatDateLong } from '../utils/taskUtils'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 const PAGE_SIZE = 20
@@ -54,6 +55,7 @@ const labelStyle: React.CSSProperties = {
 }
 
 export default function AgentPage() {
+  useDocumentTitle('Agent — AgentCo')
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const navigate = useNavigate()
   const [agentData, setAgentData] = useState<AgentData | null>(null)

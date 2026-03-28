@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext'
 import Button from './Button'
 // SIRI-POST-006: focus trap for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 interface CompanyData {
@@ -15,6 +16,7 @@ interface CompanyData {
 }
 
 export default function CompanySettingsPage() {
+  useDocumentTitle('Company Settings — AgentCo')
   const { id: companyId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const toast = useToast()

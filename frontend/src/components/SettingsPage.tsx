@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
 import Button from './Button'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 interface Company {
@@ -70,6 +71,7 @@ function authHeaders(): Record<string, string> {
 }
 
 export default function SettingsPage() {
+  useDocumentTitle('Settings — AgentCo')
   const toast = useToast()
 
   // ── Companies state ──────────────────────────────────────────────────────

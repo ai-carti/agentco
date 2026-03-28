@@ -5,6 +5,7 @@ import SkeletonCard from './SkeletonCard'
 // SIRI-UX-198: use shared STATUS_COLORS from taskUtils instead of local statusColors
 // SIRI-UX-305: formatDateLong for consistent en-US date format
 import { STATUS_COLORS, formatDateLong } from '../utils/taskUtils'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 interface PortfolioTask {
@@ -23,6 +24,7 @@ interface PortfolioData {
 }
 
 export default function LibraryPortfolioPage() {
+  useDocumentTitle('Portfolio — AgentCo')
   const { id } = useParams<{ id: string }>()
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null)
   const [loading, setLoading] = useState(true)

@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 type Tab = 'signin' | 'signup'
 
 export default function AuthPage() {
+  useDocumentTitle('Sign In — AgentCo')
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

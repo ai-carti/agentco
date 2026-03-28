@@ -17,6 +17,7 @@ import { getAvatarColor, getInitials as _getInitials } from '../utils/taskUtils'
 import { useIsMobile } from '../hooks/useIsMobile'
 // SIRI-UX-155: focus trap for agent creation modal
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 function CompanyHeader({ name, onHomeClick }: { name: string; onHomeClick: () => void }) {
   // SIRI-UX-107: use shared getAvatarColor + getInitials from taskUtils
@@ -107,6 +108,7 @@ const TAB_LABELS: { id: TabId; label: string }[] = [
 const TASK_LIMIT = 50
 
 export default function CompanyPage() {
+  useDocumentTitle('Company — AgentCo')
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const setCurrentCompany = useAgentStore((s) => s.setCurrentCompany)

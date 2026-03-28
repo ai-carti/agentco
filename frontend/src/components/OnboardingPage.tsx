@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredToken, BASE_URL } from '../api/client'
 import { useToast } from '../context/ToastContext'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 
 // Templates defined in code, not in DB
@@ -42,6 +43,7 @@ interface OnboardingPageProps {
 }
 
 export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps) {
+  useDocumentTitle('Onboarding — AgentCo')
   const navigate = useNavigate()
   const toast = useToast()
   const [loading, setLoading] = useState(false)
