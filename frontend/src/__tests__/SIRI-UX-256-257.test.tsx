@@ -68,14 +68,9 @@ describe('SIRI-UX-256: AgentCard wrapper uses CSS class for hover', () => {
     // not a separate borderColor value that would indicate residual JS hover management.
     // We verify the element has the CSS class which drives hover state.
     expect(card.className).toContain('agent-card')
-    // No explicit inline border-left-color (jsdom parses 'border' shorthand to sub-properties,
-    // so we check that inline style does NOT contain a separate borderColor assignment
-    // by verifying the cssText doesn't include a standalone border-color override).
-    const cssText = card.style.cssText
-    // The border shorthand is present via style prop; a JS hover would have added
-    // border-color after the fact (separate entry). As long as CSS class is present,
-    // the hover is handled by CSS.
-    expect(cssText).toBeTruthy() // style prop is set
+    // SIRI-UX-445: border migrated from inline style to Tailwind class.
+    // The hover is handled by CSS class. No inline border styles should remain on wrapper.
+    expect(card.className).toContain('border')
   })
 })
 

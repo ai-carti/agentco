@@ -31,16 +31,7 @@ const CompanyHeader = React.memo(function CompanyHeader({ name, onHomeClick }: {
   return (
     <div
       data-testid="company-header"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        background: 'rgba(17,24,39,0.8)',
-        backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-        height: 48,
-        padding: '0 16px',
-      }}
+      className="flex items-center gap-2.5 bg-gray-900/80 backdrop-blur-sm border-b border-white/10 h-12 px-4"
     >
       {/* Breadcrumb — hidden on mobile, show only avatar + name */}
       {!isMobile && (
@@ -48,18 +39,11 @@ const CompanyHeader = React.memo(function CompanyHeader({ name, onHomeClick }: {
           <button
             data-testid="company-header-home-link"
             onClick={onHomeClick}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              padding: 0,
-            }}
+            className="bg-transparent border-none text-slate-400 cursor-pointer text-sm p-0"
           >
             AgentCo
           </button>
-          <span style={{ color: '#475569', fontSize: '0.875rem' }}>/</span>
+          <span className="text-slate-600 text-sm">/</span>
         </>
       )}
       {/* SIRI-UX-084: removed hidden duplicate button that caused duplicate data-testid on mobile */}
@@ -70,19 +54,8 @@ const CompanyHeader = React.memo(function CompanyHeader({ name, onHomeClick }: {
         // SIRI-UX-370: aria-label provides accessible name — initials alone are not self-descriptive
         aria-label={name}
         title={name}
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: avatarColor,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          color: '#fff',
-          flexShrink: 0,
-        }}
+        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+        style={{ backgroundColor: avatarColor }}
       >
         {initials}
       </div>
@@ -90,7 +63,7 @@ const CompanyHeader = React.memo(function CompanyHeader({ name, onHomeClick }: {
       {/* Company name */}
       <span
         data-testid="company-header-name"
-        style={{ fontWeight: 600, fontSize: '0.95rem', color: '#f1f5f9' }}
+        className="font-semibold text-[0.95rem] text-slate-100"
       >
         {name}
       </span>
@@ -314,20 +287,12 @@ export default function CompanyPage() {
   }, [id, toast])
 
   return (
-    <div data-testid="company-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div data-testid="company-page" className="flex flex-col h-full">
       {/* SIRI-UX-127: error state — shown instead of silent empty page on fetch failures */}
       {loadError && (
         <div
           role="alert"
-          style={{
-            margin: '1rem',
-            padding: '0.875rem 1rem',
-            background: 'rgba(127, 29, 29, 0.85)',
-            border: '1px solid #b91c1c',
-            borderRadius: '0.5rem',
-            color: '#fee2e2',
-            fontSize: '0.875rem',
-          }}
+          className="m-4 px-4 py-3.5 bg-red-950/85 border border-red-700 rounded-lg text-red-100 text-sm"
         >
           {loadError}
         </div>
@@ -345,15 +310,7 @@ export default function CompanyPage() {
       <div
         role="tablist"
         aria-label="Company sections"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0,
-          background: '#0d1321',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          padding: '0 16px',
-          flexShrink: 0,
-        }}
+        className="flex items-center gap-0 bg-[#0d1321] border-b border-white/[0.08] px-4 shrink-0"
       >
         {TAB_LABELS.map((tab, index) => {
           const isActive = activeTab === tab.id
@@ -385,18 +342,7 @@ export default function CompanyPage() {
               onClick={() => { setActiveTab(tab.id); setActiveCompanyTab(tab.id) }}
               onKeyDown={handleKeyDown}
               // SIRI-UX-263: CSS class for hover instead of JS onMouseEnter/onMouseLeave
-              className="company-tab-btn"
-              style={{
-                padding: '10px 18px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: isActive ? '2px solid #3b82f6' : '2px solid transparent',
-                color: isActive ? '#f1f5f9' : '#64748b',
-                fontSize: '0.875rem',
-                fontWeight: isActive ? 600 : 500,
-                cursor: 'pointer',
-                marginBottom: -1,
-              }}
+              className={`company-tab-btn px-[18px] py-2.5 bg-transparent border-none text-sm cursor-pointer -mb-px border-b-2 ${isActive ? 'border-b-blue-500 text-slate-100 font-semibold' : 'border-b-transparent text-slate-500 font-medium'}`}
             >
               {tab.label}
             </button>
@@ -405,19 +351,19 @@ export default function CompanyPage() {
       </div>
 
       {/* Tab panels */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div className="flex-1 overflow-hidden relative">
         {/* War Room panel */}
         <div
           role="tabpanel"
           id={`tabpanel-${id}-war-room`}
           aria-labelledby={`tab-${id}-war-room`}
           hidden={activeTab !== 'war-room'}
-          style={{ height: '100%' }}
+          className="h-full"
         >
           {/* SIRI-UX-083: when agents not yet loaded, show WarRoomPage (has its own isConnecting state)
               Only show "Add first agent" empty state after we confirm agents are empty */}
           {activeTab === 'war-room' && agentsLoaded && agents.length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div className="flex items-center justify-center h-full">
               <EmptyState
                 data-testid="no-agents-empty-state"
                 icon={<Bot className="w-12 h-12 text-gray-400" />}
@@ -436,18 +382,13 @@ export default function CompanyPage() {
           id={`tabpanel-${id}-board`}
           aria-labelledby={`tab-${id}-board`}
           hidden={activeTab !== 'board'}
-          style={{ height: '100%', overflowY: 'auto' }}
+          className="h-full overflow-y-auto"
         >
           {activeTab === 'board' && (
             <Suspense fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
+              <div className="flex items-center justify-center h-[40vh]">
                 <div
-                  className="app-suspense-spinner"
-                  style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    border: '3px solid #1e293b',
-                    borderTopColor: '#3b82f6',
-                  }}
+                  className="app-suspense-spinner w-7 h-7 rounded-full border-[3px] border-slate-800 border-t-blue-500"
                 />
               </div>
             }>
@@ -467,12 +408,12 @@ export default function CompanyPage() {
           id={`tabpanel-${id}-agents`}
           aria-labelledby={`tab-${id}-agents`}
           hidden={activeTab !== 'agents'}
-          style={{ height: '100%', overflowY: 'auto', padding: '1.25rem' }}
+          className="h-full overflow-y-auto p-5"
         >
           {activeTab === 'agents' && (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="m-0 text-base font-bold text-slate-100">
                   Team
                 </h2>
                 <Button variant="primary" onClick={() => setIsAgentFormOpen(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}>
@@ -490,7 +431,7 @@ export default function CompanyPage() {
                   onCTA={() => setIsAgentFormOpen(true)}
                 />
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
                   {agents.map((agent) => (
                     <AgentCard
                       key={agent.id}
@@ -513,15 +454,7 @@ export default function CompanyPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Add Agent"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            zIndex: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsAgentFormOpen(false)
           }}
@@ -529,16 +462,10 @@ export default function CompanyPage() {
           <div
             ref={agentModalTrapRef}
             data-testid="agent-form-modal-content"
-            style={{
-              background: '#1e293b',
-              borderRadius: 8,
-              padding: '1.5rem',
-              width: 400,
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
+            className="bg-slate-800 rounded-lg p-6 w-[400px] border border-white/10"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#f1f5f9', fontWeight: 700 }}>Add Agent</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="m-0 text-slate-100 font-bold">Add Agent</h3>
               {/* SIRI-UX-399: aria-label on close button so screen reader doesn't read literal "×" */}
               <Button
                 data-testid="agent-form-modal-close"

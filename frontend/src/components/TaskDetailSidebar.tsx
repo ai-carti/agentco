@@ -180,13 +180,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
             onClose()
           }
         }}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          zIndex: 40,
-          cursor: 'default',
-        }}
+        className="fixed inset-0 bg-black/50 z-40 cursor-default"
       />
 
       {/* Sidebar panel */}
@@ -197,76 +191,39 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
         role="dialog"
         aria-modal="true"
         aria-label="Task details"
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 400,
-          background: '#0f172a',
-          borderLeft: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideInRight 250ms ease-out',
-        }}
+        className="fixed top-0 right-0 bottom-0 w-[400px] bg-slate-900 border-l border-white/10 z-50 flex flex-col animate-[slideInRight_250ms_ease-out]"
       >
         {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
           {/* Header row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, flex: 1, lineHeight: 1.4, color: '#f1f5f9' }}>
+          <div className="flex justify-between items-start">
+            <h2 className="text-[1.05rem] font-bold m-0 flex-1 leading-snug text-slate-100">
               {task.title}
             </h2>
             <button
               data-testid="sidebar-close-btn"
               onClick={onClose}
               aria-label="Close task details"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#64748b',
-                cursor: 'pointer',
-                fontSize: '1.4rem',
-                marginLeft: '0.75rem',
-                lineHeight: 1,
-                padding: '0 0.25rem',
-              }}
+              className="bg-transparent border-none text-slate-500 cursor-pointer text-[1.4rem] ml-3 leading-none px-1 py-0"
             >
               ×
             </button>
           </div>
 
           {/* Status + Priority row */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="flex gap-2 items-center flex-wrap">
             <span
               data-testid="sidebar-status-badge"
-              style={{
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                padding: '0.2rem 0.5rem',
-                borderRadius: 4,
-                background: statusColor.bg,
-                color: statusColor.text,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
+              className="text-[0.65rem] font-bold px-2 py-[0.2rem] rounded uppercase tracking-wide"
+              style={{ background: statusColor.bg, color: statusColor.text }}
             >
               {task.status.replace('_', ' ')}
             </span>
             {priorityColor && (
               <span
                 data-testid="sidebar-priority"
-                style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: 4,
-                  background: priorityColor.bg,
-                  color: priorityColor.text,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
+                className="text-[0.65rem] font-bold px-2 py-[0.2rem] rounded uppercase tracking-wide"
+                style={{ background: priorityColor.bg, color: priorityColor.text }}
               >
                 {task.priority}
               </span>
@@ -275,44 +232,33 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
 
           {/* Assignee */}
           <div>
-            <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            <div className="text-[0.65rem] text-slate-600 mb-1.5 uppercase tracking-wider">
               Assignee
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div className="flex items-center gap-2.5">
               <div
                 data-testid="sidebar-assignee-avatar"
                 // SIRI-UX-369: aria-label provides accessible name — initials alone are not self-descriptive
                 aria-label={assigneeName}
                 title={assigneeName}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  background: avatarColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  color: '#fff',
-                  flexShrink: 0,
-                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[0.8rem] font-bold text-white shrink-0"
+                style={{ backgroundColor: avatarColor }}
               >
                 {getInitials(assigneeName)}
               </div>
-              <span style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>{assigneeName}</span>
+              <span className="text-sm text-slate-300">{assigneeName}</span>
             </div>
           </div>
 
           {/* Due date */}
           {task.due_date && (
             <div>
-              <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <div className="text-[0.65rem] text-slate-600 mb-1 uppercase tracking-wider">
                 Due Date
               </div>
               <span
                 data-testid="sidebar-due-date"
-                style={{ fontSize: '0.875rem', color: isDueDateOverdue ? '#ef4444' : '#94a3b8' }}
+                className={`text-sm ${isDueDateOverdue ? 'text-red-500' : 'text-slate-400'}`}
               >
                 {formatDateLong(task.due_date)}
                 {isDueDateOverdue && ' ⚠ Overdue'}
@@ -323,10 +269,10 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
           {/* Description */}
           {task.description && (
             <div>
-              <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              <div className="text-[0.65rem] text-slate-600 mb-1.5 uppercase tracking-wider">
                 Description
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.7, margin: 0 }}>
+              <p className="text-sm text-slate-300 leading-relaxed m-0">
                 {task.description}
               </p>
             </div>
@@ -334,7 +280,7 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
 
           {/* Execution Log */}
           <div>
-            <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>
+            <div className="text-[0.65rem] text-slate-600 mb-2 uppercase tracking-wider font-semibold">
               Execution Log
             </div>
             {/* SIRI-UX-352: aria-live="polite" so screen readers announce new log entries
@@ -343,31 +289,21 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
               data-testid="task-logs-container"
               aria-live="polite"
               aria-label="Execution log"
-              style={{
-                background: 'rgba(0,0,0,0.4)',
-                borderRadius: 6,
-                padding: '0.75rem',
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                color: '#94a3b8',
-                minHeight: 80,
-                maxHeight: 200,
-                overflowY: 'auto',
-              }}
+              className="bg-black/40 rounded-md p-3 font-mono text-xs text-slate-400 min-h-[80px] max-h-[200px] overflow-y-auto"
             >
               {logsLoading ? (
                 <SkeletonCard variant="task" count={2} />
               ) : logsError ? (
                 /* SIRI-UX-338: role="alert" so screen readers announce log load failure */
-                <span data-testid="logs-error" role="alert" style={{ color: '#f87171' }}>⚠ Failed to load logs</span>
+                <span data-testid="logs-error" role="alert" className="text-red-400">⚠ Failed to load logs</span>
               ) : logs.length === 0 ? (
-                <span style={{ color: '#475569' }}>No execution log yet</span>
+                <span className="text-slate-600">No execution log yet</span>
               ) : (
                 logs.map((entry, idx) => (
                   // SIRI-UX-217: use index in key to prevent duplicate-key collision when
                   // two log entries share identical timestamp + message strings
-                  <div key={`${idx}-${entry.timestamp}-${entry.message}`} style={{ marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#64748b', marginRight: '0.5rem' }}>
+                  <div key={`${idx}-${entry.timestamp}-${entry.message}`} className="mb-1">
+                    <span className="text-slate-500 mr-2">
                       [{formatTimeHMS(entry.timestamp)}]
                     </span>
                     {entry.message}
@@ -379,13 +315,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
 
           {/* Status History */}
           <div>
-            <div style={{ fontSize: '0.65rem', color: '#475569', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>
+            <div className="text-[0.65rem] text-slate-600 mb-2 uppercase tracking-wider font-semibold">
               Status History
             </div>
             {statusHistory.length === 0 ? (
-              <span style={{ fontSize: '0.8rem', color: '#475569' }}>No status changes yet</span>
+              <span className="text-[0.8rem] text-slate-600">No status changes yet</span>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingLeft: '0.5rem', borderLeft: '2px solid #1e293b' }}>
+              <div className="flex flex-col gap-2 pl-2 border-l-2 border-slate-800">
                 {statusHistory.map((entry, idx) => {
                   const sc = STATUS_COLORS[entry.status] ?? STATUS_COLORS.todo
                   return (
@@ -394,13 +330,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
                       // multiple times (same root cause as SIRI-UX-217 for log entries)
                       key={`${idx}-${entry.status}-${entry.changed_at}`}
                       data-testid={`status-history-${entry.status}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                      className="flex items-center gap-2"
                     >
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: sc.text, flexShrink: 0, marginLeft: -5 }} />
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: sc.text, textTransform: 'uppercase' }}>
+                      <div className="w-2 h-2 rounded-full shrink-0 -ml-[5px]" style={{ backgroundColor: sc.text }} />
+                      <span className="text-xs font-semibold uppercase" style={{ color: sc.text }}>
                         {entry.status.replace('_', ' ')}
                       </span>
-                      <span style={{ fontSize: '0.7rem', color: '#475569', marginLeft: 'auto' }}>
+                      <span className="text-[0.7rem] text-slate-600 ml-auto">
                         {formatDateLong(entry.changed_at)}
                       </span>
                     </div>
@@ -413,27 +349,13 @@ export default function TaskDetailSidebar({ task, companyId, onClose }: TaskDeta
 
         {/* Fixed bottom actions */}
         {canRun && (
-          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="px-6 py-4 border-t border-white/[0.08]">
             <button
               data-testid="sidebar-run-btn"
               aria-label={running ? 'Running task…' : 'Run task'}
               onClick={handleRun}
               disabled={running}
-              style={{
-                width: '100%',
-                padding: '0.6rem 1rem',
-                background: running ? '#1d4ed8' : '#059669',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                cursor: running ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-              }}
+              className={`w-full px-4 py-2.5 text-white border-none rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 ${running ? 'bg-blue-700 cursor-not-allowed' : 'bg-emerald-600 cursor-pointer'}`}
             >
               {running ? '⏳ Running…' : '▶ Run Task'}
             </button>

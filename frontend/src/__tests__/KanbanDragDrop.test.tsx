@@ -30,8 +30,8 @@ describe('UX-005: Kanban drag & drop', () => {
     renderWithToast(<KanbanBoard companyId="c1" />)
     const inProgressCol = screen.getByTestId('kanban-column-in_progress')
     fireEvent.dragOver(inProgressCol)
-    // Should have visual indicator (border or background change)
-    expect(inProgressCol.style.borderColor || inProgressCol.style.background).toBeTruthy()
+    // SIRI-UX-445: drop-zone indicator migrated from inline style to Tailwind class
+    expect(inProgressCol.className).toContain('border-blue-500')
   })
 
   it('dropping a task in another column sends PATCH to update status', async () => {

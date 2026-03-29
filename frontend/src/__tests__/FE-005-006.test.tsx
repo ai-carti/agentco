@@ -186,7 +186,8 @@ describe('FE-006: WarRoomPage mobile drawer', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
     const panel = screen.getByTestId('agent-panel')
-    expect(panel.style.position).toBe('absolute')
+    // SIRI-UX-445: position migrated from inline style to Tailwind class
+    expect(panel.className).toContain('absolute')
   })
 
   it('on mobile, agent panel starts offscreen (left:-290px)', () => {
@@ -194,8 +195,8 @@ describe('FE-006: WarRoomPage mobile drawer', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
     const panel = screen.getByTestId('agent-panel')
-    // Panel should start offscreen
-    expect(panel.style.left).toBe('-290px')
+    // SIRI-UX-445: left offset migrated from inline style to Tailwind class
+    expect(panel.className).toContain('-left-[290px]')
   })
 
   it('after toggle, agent panel slides to left:0 (visible)', () => {
@@ -205,7 +206,8 @@ describe('FE-006: WarRoomPage mobile drawer', () => {
     const toggle = screen.getByTestId('mobile-agents-toggle')
     fireEvent.click(toggle)
     const panel = screen.getByTestId('agent-panel')
-    expect(panel.style.left).toBe('0px')
+    // SIRI-UX-445: left:0 migrated from inline style to Tailwind class
+    expect(panel.className).toContain('left-0')
   })
 
   it('activity-feed takes full width on mobile (flex:1)', () => {
@@ -213,7 +215,7 @@ describe('FE-006: WarRoomPage mobile drawer', () => {
     renderWarRoom()
     act(() => { vi.advanceTimersByTime(100) })
     const feed = screen.getByTestId('activity-feed')
-    // flex: 1 renders as "1 1 0%" in jsdom — check that flex-grow is 1
-    expect(feed.style.flexGrow).toBe('1')
+    // SIRI-UX-445: flex migrated from inline style to Tailwind class
+    expect(feed.className).toContain('flex-1')
   })
 })

@@ -34,7 +34,6 @@ export default function LibraryPortfolioPage() {
   const abortRef = useRef<AbortController | null>(null)
 
   // SIRI-UX-095 / SIRI-UX-169: useCallback reused by mount effect and Retry button.
-  // AbortController is created inside and stored in ref so cleanup can abort it.
   const fetchPortfolio = useCallback(() => {
     if (!id) return
     // Abort any previous in-flight request
@@ -72,21 +71,21 @@ export default function LibraryPortfolioPage() {
   return (
     <div
       data-testid="portfolio-page"
-      style={{ padding: '1.5rem', maxWidth: 720 }}
+      className="p-6 max-w-[720px]"
     >
-      <div style={{ marginBottom: '1.25rem' }}>
+      <div className="mb-5">
         <Link
           to="/library"
-          style={{ color: '#60a5fa', fontSize: '0.875rem', textDecoration: 'none' }}
+          className="text-blue-400 text-sm no-underline"
         >
           ← Back to Library
         </Link>
       </div>
 
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.25rem', color: '#f1f5f9' }}>
+      <h1 className="text-xl font-bold m-0 mb-1 text-gray-100">
         {portfolio?.agent_name ?? 'Portfolio'}
       </h1>
-      <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#94a3b8' }}>
+      <p className="m-0 mb-6 text-sm text-slate-400">
         Agent Portfolio
       </p>
 
@@ -95,27 +94,13 @@ export default function LibraryPortfolioPage() {
       ) : error ? (
         <div
           role="alert"
-          style={{
-            padding: '2rem 1.5rem',
-            background: 'rgba(127,29,29,0.1)',
-            border: '1px solid #7f1d1d',
-            borderRadius: 8,
-            textAlign: 'center',
-          }}
+          className="py-8 px-6 bg-red-900/10 border border-red-900 rounded-lg text-center"
         >
-          <p style={{ color: '#f87171', margin: '0 0 0.75rem' }}>Failed to load portfolio</p>
+          <p className="text-red-400 m-0 mb-3">Failed to load portfolio</p>
           <button
             onClick={fetchPortfolio}
             aria-label="Retry loading portfolio"
-            style={{
-              padding: '0.4rem 1rem',
-              background: 'transparent',
-              border: '1px solid #7f1d1d',
-              borderRadius: 6,
-              color: '#f87171',
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-            }}
+            className="py-1.5 px-4 bg-transparent border border-red-900 rounded-md text-red-400 text-sm cursor-pointer"
           >
             Retry
           </button>
@@ -123,40 +108,26 @@ export default function LibraryPortfolioPage() {
       ) : portfolio ? (
         <>
           {/* Stats row */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: '1.5rem' }}>
+          <div className="flex gap-4 mb-6">
             <div
               data-testid="portfolio-total-tasks"
-              style={{
-                background: '#1e293b',
-                border: '1px solid #334155',
-                borderRadius: 10,
-                padding: '0.875rem 1.25rem',
-                flex: 1,
-                textAlign: 'center',
-              }}
+              className="bg-slate-800 border border-slate-700 rounded-[10px] py-3.5 px-5 flex-1 text-center"
             >
-              <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9' }}>
+              <div className="text-3xl font-bold text-gray-100">
                 {portfolio.total_tasks}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>
+              <div className="text-xs text-slate-500 mt-1">
                 Total Tasks
               </div>
             </div>
             <div
               data-testid="portfolio-success-rate"
-              style={{
-                background: '#1e293b',
-                border: '1px solid #334155',
-                borderRadius: 10,
-                padding: '0.875rem 1.25rem',
-                flex: 1,
-                textAlign: 'center',
-              }}
+              className="bg-slate-800 border border-slate-700 rounded-[10px] py-3.5 px-5 flex-1 text-center"
             >
-              <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#4ade80' }}>
+              <div className="text-3xl font-bold text-green-400">
                 {portfolio.success_rate}%
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>
+              <div className="text-xs text-slate-500 mt-1">
                 Success Rate
               </div>
             </div>
@@ -164,44 +135,32 @@ export default function LibraryPortfolioPage() {
 
           {/* Task list */}
           {portfolio.tasks.length === 0 ? (
-            <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>
+            <p className="text-slate-400 text-center py-8">
               No tasks yet
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="flex flex-col gap-2">
               {portfolio.tasks.map((task) => (
                 <div
                   key={task.id}
                   data-testid={`portfolio-task-${task.id}`}
-                  style={{
-                    background: '#1e293b',
-                    border: '1px solid #334155',
-                    borderRadius: 8,
-                    padding: '0.75rem 1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}
+                  className="bg-slate-800 border border-slate-700 rounded-lg py-3 px-4 flex items-center gap-3"
                 >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#f1f5f9' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[0.9rem] text-gray-100">
                       {task.title}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
-                      {/* SIRI-UX-305: use formatDateLong for consistent en-US format (replaces system-locale toLocaleDateString) */}
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {/* SIRI-UX-305: use formatDateLong for consistent en-US format */}
                       {task.company_name} · {formatDateLong(task.created_at)}
                     </div>
                   </div>
                   <span
+                    className="text-xs font-semibold rounded px-2 py-0.5 shrink-0"
                     style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
                       // SIRI-UX-198: use shared STATUS_COLORS for consistency with Kanban
                       color: STATUS_COLORS[task.status]?.text ?? '#94a3b8',
                       background: STATUS_COLORS[task.status]?.bg ?? 'rgba(255,255,255,0.05)',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                      flexShrink: 0,
                     }}
                   >
                     {task.status}

@@ -70,8 +70,6 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
   }, [])
 
   // SIRI-UX-383: useCallback prevents new function reference on every ForkModal render.
-  // handleFork is passed as onClick to N company buttons — without memoization it causes
-  // unnecessary closures on every render cycle.
   const handleFork = useCallback(async (companyId: string) => {
     // SIRI-UX-193: AbortController to guard setState on unmounted ForkModal
     forkAbortRef.current?.abort()
@@ -125,60 +123,34 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
       aria-modal="true"
       aria-label="Fork to Company"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.6)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-      }}
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100]"
     >
       <div
         ref={trapRef}
-        style={{
-          background: '#1e293b',
-          border: '1px solid #334155',
-          borderRadius: 12,
-          padding: '1.5rem',
-          width: 340,
-          maxWidth: '90vw',
-        }}
+        className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-[340px] max-w-[90vw]"
       >
-        <h2 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>
+        <h2 className="m-0 mb-4 text-base font-bold text-gray-100">
           Fork to Company
         </h2>
 
         {/* SIRI-UX-315: role="alert" so screen reader announces fork errors automatically */}
         {error && (
-          <p role="alert" style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{error}</p>
+          <p role="alert" className="text-red-400 text-[0.85rem] mb-3">{error}</p>
         )}
 
         {loading ? (
-          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Loading companies…</p>
+          <p className="text-slate-400 text-sm">Loading companies…</p>
         ) : companies.length === 0 ? (
-          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>No companies available</p>
+          <p className="text-slate-400 text-sm">No companies available</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {companies.map((company) => (
               <button
                 key={company.id}
                 data-testid={`fork-company-${company.id}`}
                 onClick={() => handleFork(company.id)}
                 disabled={forking !== null}
-                style={{
-                  padding: '0.625rem 1rem',
-                  background: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: 8,
-                  color: '#f1f5f9',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  cursor: forking ? 'not-allowed' : 'pointer',
-                  textAlign: 'left',
-                  opacity: forking && forking !== company.id ? 0.5 : 1,
-                }}
+                className={`py-2.5 px-4 bg-slate-900 border border-slate-700 rounded-lg text-gray-100 text-sm font-medium text-left ${forking ? 'cursor-not-allowed' : 'cursor-pointer'} ${forking && forking !== company.id ? 'opacity-50' : 'opacity-100'}`}
               >
                 {forking === company.id ? 'Forking…' : company.name}
               </button>
@@ -188,17 +160,7 @@ function ForkModal({ agentId, onClose, onForked }: ForkModalProps) {
 
         <button
           onClick={onClose}
-          style={{
-            marginTop: '1rem',
-            width: '100%',
-            padding: '0.5rem',
-            background: 'transparent',
-            border: '1px solid #334155',
-            borderRadius: 8,
-            color: '#94a3b8',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-          }}
+          className="mt-4 w-full py-2 bg-transparent border border-slate-700 rounded-lg text-slate-400 text-sm cursor-pointer"
         >
           Cancel
         </button>
@@ -246,9 +208,9 @@ export default function LibraryPage() {
   return (
     <div
       data-testid="library-page"
-      style={{ padding: '1.5rem', maxWidth: 720 }}
+      className="p-6 max-w-[720px]"
     >
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 1.25rem', color: '#f1f5f9' }}>
+      <h1 className="text-xl font-bold m-0 mb-5 text-gray-100">
         Agent Library
       </h1>
 
@@ -256,15 +218,7 @@ export default function LibraryPage() {
       {loadError && (
         <div
           role="alert"
-          style={{
-            marginBottom: '1rem',
-            padding: '0.875rem 1rem',
-            background: 'rgba(127, 29, 29, 0.85)',
-            border: '1px solid #b91c1c',
-            borderRadius: '0.5rem',
-            color: '#fee2e2',
-            fontSize: '0.875rem',
-          }}
+          className="mb-4 py-3.5 px-4 bg-red-900/85 border border-red-700 rounded-lg text-red-100 text-sm"
         >
           Failed to load agent library. Please try again.
         </div>
@@ -275,53 +229,37 @@ export default function LibraryPage() {
       ) : agents.length === 0 && !loadError ? (
         <div
           data-testid="library-empty"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '3rem 1.5rem',
-            gap: '0.75rem',
-            color: '#94a3b8',
-            textAlign: 'center',
-          }}
+          className="flex flex-col items-center py-12 px-6 gap-3 text-slate-400 text-center"
         >
-          <span style={{ fontSize: '3rem' }}>📚</span>
-          <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#f1f5f9' }}>
+          <span className="text-5xl">📚</span>
+          <p className="m-0 text-base font-semibold text-gray-100">
             No agents in library yet
           </p>
-          <p style={{ margin: 0, fontSize: '0.875rem' }}>
+          <p className="m-0 text-sm">
             Save an agent from its page
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {agents.map((agent) => (
             <div
               key={agent.id}
               data-testid={`library-agent-${agent.id}`}
-              style={{
-                background: '#1e293b',
-                border: '1px solid #334155',
-                borderRadius: 10,
-                padding: '1rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-              }}
+              className="bg-slate-800 border border-slate-700 rounded-[10px] py-4 px-5 flex items-center gap-3"
             >
               {agent.avatar
-                ? <span style={{ fontSize: '1.5rem' }}>{agent.avatar}</span>
+                ? <span className="text-2xl">{agent.avatar}</span>
                 : <Bot className="w-6 h-6 text-gray-400" />
               }
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#f1f5f9' }}>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-[0.95rem] text-gray-100">
                   {agent.name}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
+                <div className="text-[0.8rem] text-slate-500 mt-0.5">
                   {agent.role}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+              <div className="flex gap-2 items-center shrink-0">
                 {/* SIRI-UX-258: replaced JS hover with CSS class .library-portfolio-link */}
                 <Link
                   to={`/library/${agent.id}/portfolio`}

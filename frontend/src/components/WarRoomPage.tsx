@@ -325,26 +325,15 @@ export default function WarRoomPage() {
     return (
       <div
         data-testid="war-room-no-company"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          minHeight: 360,
-          background: '#0a0f1a',
-          color: '#e2e8f0',
-          gap: '1rem',
-        }}
+        className="flex flex-col items-center justify-center h-full min-h-[360px] bg-[#0a0f1a] text-slate-200 gap-4"
       >
-        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f87171' }}>Company not found</div>
-        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+        <div className="text-xl font-bold text-red-400">Company not found</div>
+        <div className="text-[0.9rem] text-slate-500">
           No company selected. Please navigate to a company first.
         </div>
         <Button
           variant="secondary"
           onClick={() => navigate('/')}
-          style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }}
         >
           Go Home
         </Button>
@@ -360,29 +349,14 @@ export default function WarRoomPage() {
         data-testid="war-room-connecting"
         role="status"
         aria-label="Connecting to War Room…"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          minHeight: 360,
-          background: '#0a0f1a',
-          color: '#e2e8f0',
-          gap: '1rem',
-        }}
+        className="flex flex-col items-center justify-center h-full min-h-[360px] bg-[#0a0f1a] text-slate-200 gap-4"
       >
         {/* SIRI-UX-209: use CSS class instead of inline animation so prefers-reduced-motion can override */}
         <div
           aria-hidden="true"
-          className="war-room-connecting-spinner"
-          style={{
-            width: 36, height: 36, borderRadius: '50%',
-            border: '3px solid #374151',
-            borderTopColor: '#3b82f6',
-          }}
+          className="war-room-connecting-spinner w-9 h-9 rounded-full border-[3px] border-gray-700 border-t-blue-500"
         />
-        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Connecting…</div>
+        <div className="text-[0.9rem] text-slate-500">Connecting…</div>
       </div>
     )
   }
@@ -392,25 +366,15 @@ export default function WarRoomPage() {
     return (
       <div
         data-testid="war-room-page"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          minHeight: 360,
-          background: '#0a0f1a',
-          color: '#e2e8f0',
-          gap: '1.5rem',
-        }}
+        className="flex flex-col items-center justify-center h-full min-h-[360px] bg-[#0a0f1a] text-slate-200 gap-6"
       >
         <Moon className="w-12 h-12 text-gray-400" />
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>
+        <div className="text-center">
+          <div className="text-xl font-bold text-slate-100 mb-2">
             All quiet here
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#64748b', maxWidth: 280 }}>
+          <div className="text-[0.9rem] text-slate-500 max-w-[280px]">
             No agents are running. Start a task to see the magic
           </div>
         </div>
@@ -419,7 +383,6 @@ export default function WarRoomPage() {
           data-testid="war-room-run-task-btn"
           variant="primary"
           onClick={() => companyId ? navigate(`/companies/${companyId}`) : navigate('/')}
-          style={{ padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
         >
           ▶ Run a Task
         </Button>
@@ -432,27 +395,12 @@ export default function WarRoomPage() {
   return (
     <div
       data-testid="war-room-page"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        minHeight: 360,
-        background: '#0a0f1a',
-        color: '#e2e8f0',
-      }}
+      className="flex flex-col h-full min-h-[360px] bg-[#0a0f1a] text-slate-200"
     >
       {/* Top bar: cost + stop */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          background: '#0d1321',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.08] bg-[#0d1321]">
+
+        <div className="flex items-center gap-4">
           {/* Mobile: agents toggle (SIRI-UX-017) */}
           {isMobile && (
             <button
@@ -460,20 +408,12 @@ export default function WarRoomPage() {
               onClick={() => setAgentPanelOpen((v) => !v)}
               aria-label="Toggle agents panel"
               aria-expanded={agentPanelOpen}
-              style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 6,
-                color: '#94a3b8',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                fontSize: '0.75rem',
-              }}
+              className="bg-transparent border border-white/15 rounded-md text-slate-400 cursor-pointer px-2 py-1 text-xs"
             >
               👥 {agents.length}
             </button>
           )}
-          <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
+          <h1 className="m-0 text-[1.1rem] font-bold text-slate-100">
             War Room
           </h1>
           <span
@@ -481,31 +421,17 @@ export default function WarRoomPage() {
             title={isConnected ? 'Connected' : 'Disconnected'}
             aria-label={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
             role="img"
-            style={{
-              display: 'inline-block',
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              background: isConnected ? '#22c55e' : '#6b7280',
-              flexShrink: 0,
-            }}
+            className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="flex items-center gap-4">
           {/* SIRI-UX-353: aria-label describes the cost counter for screen readers —
               the dollar sign and raw number alone are not self-descriptive */}
           <span
             data-testid="cost-counter"
             aria-label={`Total run cost: $${cost.toFixed(4)}`}
-            style={{
-              fontFamily: 'monospace',
-              fontSize: '0.9rem',
-              color: '#fbbf24',
-              background: 'rgba(251,191,36,0.1)',
-              padding: '4px 10px',
-              borderRadius: 6,
-            }}
+            className="font-mono text-[0.9rem] text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md"
           >
             ${cost.toFixed(4)}
           </span>
@@ -515,7 +441,7 @@ export default function WarRoomPage() {
             variant="danger"
             onClick={handleStop}
             disabled={isStopDisabled}
-            style={{ padding: '8px 20px', fontSize: '0.9rem', opacity: isStopDisabled ? 0.4 : 1 }}
+            className={`px-5 py-2 text-[0.9rem] ${isStopDisabled ? 'opacity-40' : 'opacity-100'}`}
           >
             {stopping ? 'Stopping…' : 'Stop'}
           </Button>
@@ -527,17 +453,7 @@ export default function WarRoomPage() {
         <div
           data-testid="ws-error-banner"
           role="alert"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 20px',
-            background: 'rgba(239,68,68,0.12)',
-            borderBottom: '1px solid rgba(239,68,68,0.3)',
-            fontSize: '0.8rem',
-            color: '#f87171',
-            fontWeight: 600,
-          }}
+          className="flex items-center gap-2 px-5 py-2 bg-red-500/[0.12] border-b border-red-500/30 text-[0.8rem] text-red-400 font-semibold"
         >
           ⚠ {wsError}
         </div>
@@ -548,21 +464,13 @@ export default function WarRoomPage() {
         <div
           data-testid="run-status-banner"
           role="alert"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 20px',
-            background: runStatus === 'done'
-              ? 'rgba(34,197,94,0.12)'
+          className={`flex items-center gap-2 px-5 py-2 text-[0.8rem] font-semibold border-b ${
+            runStatus === 'done'
+              ? 'bg-green-500/[0.12] border-green-500/30 text-green-400'
               : runStatus === 'failed'
-                ? 'rgba(239,68,68,0.12)'
-                : 'rgba(107,114,128,0.12)',
-            borderBottom: `1px solid ${runStatus === 'done' ? 'rgba(34,197,94,0.3)' : runStatus === 'failed' ? 'rgba(239,68,68,0.3)' : 'rgba(107,114,128,0.3)'}`,
-            fontSize: '0.8rem',
-            color: runStatus === 'done' ? '#4ade80' : runStatus === 'failed' ? '#f87171' : '#9ca3af',
-            fontWeight: 600,
-          }}
+                ? 'bg-red-500/[0.12] border-red-500/30 text-red-400'
+                : 'bg-gray-500/[0.12] border-gray-500/30 text-gray-400'
+          }`}
         >
           {runStatus === 'done' && '✓ Run completed'}
           {runStatus === 'failed' && '✗ Run failed'}
@@ -571,7 +479,7 @@ export default function WarRoomPage() {
       )}
 
       {/* Main content: agent sidebar + activity feed */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Mobile agent panel backdrop */}
         {isMobile && agentPanelOpen && (
           <div
@@ -585,7 +493,7 @@ export default function WarRoomPage() {
                 setAgentPanelOpen(false)
               }
             }}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9 }}
+            className="absolute inset-0 bg-black/50 z-[9]"
           />
         )}
 
@@ -596,29 +504,12 @@ export default function WarRoomPage() {
           role="region"
           aria-labelledby="agents-panel-heading"
           // BUG-074: CSS class provides transition with prefers-reduced-motion support
-          className={isMobile ? 'war-room-agent-panel' : undefined}
-          style={{
-            width: 280,
-            borderRight: '1px solid rgba(255,255,255,0.08)',
-            padding: '16px 12px',
-            overflowY: 'auto',
-            background: '#0d1321',
-            // Mobile: slide-in drawer (SIRI-UX-017)
-            // BUG-074: use CSS class for transition so prefers-reduced-motion can override it
-            ...(isMobile ? {
-              position: 'absolute',
-              top: 0,
-              left: agentPanelOpen ? 0 : -290,
-              bottom: 0,
-              zIndex: 10,
-              boxShadow: agentPanelOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none',
-            } : {}),
-          }}
+          className={`w-[280px] border-r border-white/[0.08] px-3 py-4 overflow-y-auto bg-[#0d1321] ${isMobile ? `war-room-agent-panel absolute top-0 bottom-0 z-10 ${agentPanelOpen ? 'left-0 shadow-[4px_0_20px_rgba(0,0,0,0.5)]' : '-left-[290px] shadow-none'}` : ''}`}
         >
-          <h2 id="agents-panel-heading" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+          <h2 id="agents-panel-heading" className="text-[0.8rem] font-semibold text-slate-400 uppercase tracking-widest mb-3">
             Agents ({agents.length})
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {sortedAgents.map((agent) => {
               const isFlashing = flashingAgents.has(agent.id)
               return (
@@ -626,79 +517,50 @@ export default function WarRoomPage() {
                   key={agent.id}
                   data-testid={`agent-card-${agent.id}`}
                   data-flash={isFlashing ? 'true' : 'false'}
-                  className={isFlashing ? 'flash-green' : ''}
                   // SIRI-UX-200: role + aria-label for screen reader accessibility
                   role="article"
                   aria-label={`${agent.name} — ${statusLabel[agent.status]}`}
-                  style={{
-                    marginLeft: `${agent.level * 24}px`,
-                    background: isFlashing
-                      ? 'rgba(34,197,94,0.25)'
+                  className={`rounded-[10px] px-3.5 py-3 transition-[background,border-color] duration-300 border ${isFlashing ? 'flash-green' : ''} ${
+                    isFlashing
+                      ? 'bg-green-500/25 border-green-500/50'
                       : agent.status === 'thinking' || agent.status === 'running'
-                        ? 'rgba(34,197,94,0.06)'
-                        : 'rgba(255,255,255,0.03)',
-                    border: isFlashing
-                      ? '1px solid rgba(34,197,94,0.5)'
-                      : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 10,
-                    padding: '12px 14px',
-                    transition: 'background 0.3s, border-color 0.3s',
-                  }}
+                        ? 'bg-green-500/[0.06] border-white/[0.08]'
+                        : 'bg-white/[0.03] border-white/[0.08]'
+                  }`}
+                  style={{ marginLeft: `${agent.level * 24}px` }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: '1.4rem' }}>{agent.avatar}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f1f5f9' }}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-[1.4rem]">{agent.avatar}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-[0.9rem] text-slate-100">
                         {agent.name}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                      <div className="text-xs text-slate-500 mt-px">
                         {agent.role}
                       </div>
                     </div>
                     <span
                       data-testid="agent-status-dot"
                       role="img"
-                      className={statusDotStyle[agent.status]}
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDotStyle[agent.status]}`}
                       aria-label={statusLabel[agent.status]}
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        // SIRI-UX-335: inline fallback so dot is visible without Tailwind
-                        background: statusDotBg[agent.status],
-                      }}
+                      style={{ background: statusDotBg[agent.status] }}
                     />
                   </div>
                   <div
-                    style={{
-                      marginTop: 8,
-                      fontSize: '0.7rem',
-                      color: agent.status === 'thinking' || agent.status === 'running' ? '#4ade80' : '#64748b',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
+                    className={`mt-2 text-[0.7rem] font-medium flex items-center gap-1 ${agent.status === 'thinking' || agent.status === 'running' ? 'text-green-400' : 'text-slate-500'}`}
                   >
                     {statusLabel[agent.status]}
                     {(agent.status === 'thinking' || agent.status === 'running') && (
                       <span
                         data-testid="thinking-animation"
-                        style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}
+                        className="inline-flex gap-0.5 items-center"
                       >
                         {[0, 1, 2].map((i) => (
                           <span
                             key={`thinking-dot-${i}`}
-                            className="war-room-thinking-dot"
-                            style={{
-                              width: 3,
-                              height: 3,
-                              borderRadius: '50%',
-                              background: '#4ade80',
-                              display: 'inline-block',
-                              animationDelay: `${i * 0.2}s`,
-                            }}
+                            className="war-room-thinking-dot w-[3px] h-[3px] rounded-full bg-green-400 inline-block"
+                            style={{ animationDelay: `${i * 0.2}s` }}
                           />
                         ))}
                       </span>
@@ -719,27 +581,11 @@ export default function WarRoomPage() {
           data-testid="activity-feed"
           role="region"
           aria-label="Activity Feed"
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
+          className="flex-1 flex flex-col overflow-hidden"
         >
           <div
             id="activity-feed-heading"
-            style={{
-              padding: '12px 20px',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
+            className="px-5 py-3 border-b border-white/[0.06] text-[0.8rem] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2"
           >
             Activity Feed
             {/* SIRI-UX-332: hide LIVE badge when run is in a terminal state (done/stopped/failed)
@@ -748,29 +594,10 @@ export default function WarRoomPage() {
             {runStatus !== 'idle' && runStatus !== 'done' && runStatus !== 'stopped' && runStatus !== 'failed' && (
               <span
                 data-testid="live-indicator"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: 'rgba(34,197,94,0.1)',
-                  border: '1px solid rgba(34,197,94,0.3)',
-                  borderRadius: 12,
-                  padding: '1px 8px',
-                  fontSize: '0.65rem',
-                  color: '#4ade80',
-                  fontWeight: 700,
-                  letterSpacing: 0.5,
-                }}
+                className="inline-flex items-center gap-1 bg-green-500/10 border border-green-500/30 rounded-xl px-2 py-px text-[0.65rem] text-green-400 font-bold tracking-wide"
               >
                 <span
-                  className="war-room-live-dot"
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#4ade80',
-                    display: 'inline-block',
-                  }}
+                  className="war-room-live-dot w-1.5 h-1.5 rounded-full bg-green-400 inline-block"
                 />
                 LIVE
               </span>
@@ -782,14 +609,7 @@ export default function WarRoomPage() {
             onScroll={handleScroll}
             aria-live="polite"
             aria-label="Agent activity feed"
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '12px 20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 6,
-            }}
+            className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-1.5"
           >
             {messages.map((msg) => {
               const isExpanded = expandedMessages.has(msg.id)
@@ -811,39 +631,33 @@ export default function WarRoomPage() {
                       handleToggleExpand(msg.id)
                     }
                   }}
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: 8,
-                    padding: '10px 14px',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    cursor: isLong ? 'pointer' : 'default',
-                  }}
+                  className={`bg-white/[0.03] rounded-lg px-3.5 py-2.5 border border-white/[0.05] ${isLong ? 'cursor-pointer' : 'cursor-default'}`}
                 >
                   <div data-testid={`feed-message-${msg.id}`}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#60a5fa' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-[0.85rem] text-blue-400">
                         {msg.senderName}
                       </span>
-                      <span style={{ color: '#475569', fontSize: '0.8rem' }}>→</span>
-                      <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#a78bfa' }}>
+                      <span className="text-slate-600 text-[0.8rem]">→</span>
+                      <span className="font-semibold text-[0.85rem] text-violet-400">
                         {msg.targetName}
                       </span>
                       <span
                         data-testid="message-timestamp"
-                        style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#475569', fontFamily: 'monospace' }}
+                        className="ml-auto text-[0.7rem] text-slate-600 font-mono"
                       >
                         {formatTimeHMS(msg.timestamp)}
                       </span>
                     </div>
                     <div
                       data-testid="message-content"
-                      style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.4 }}
+                      className="text-[0.85rem] text-slate-300 leading-snug"
                     >
                       {/* SIRI-UX-050: expand/collapse long messages on click */}
                       {isExpanded ? msg.content : truncate(msg.content, 120)}
                     </div>
                     {isLong && (
-                      <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: 4 }}>
+                      <div className="text-[0.7rem] text-slate-600 mt-1">
                         {isExpanded ? '▲ Show less' : '▼ Show more'}
                       </div>
                     )}
@@ -853,7 +667,7 @@ export default function WarRoomPage() {
             })}
             {/* SIRI-UX-325: differentiate empty feed message by runStatus to avoid misleading "waiting" after run ends */}
             {messages.length === 0 && (
-              <div style={{ textAlign: 'center', color: '#475569', padding: 40, fontSize: '0.9rem' }}>
+              <div className="text-center text-slate-600 p-10 text-[0.9rem]">
                 {runStatus === 'stopped'
                   ? '⏹ Run stopped — no activity recorded'
                   : runStatus === 'done'

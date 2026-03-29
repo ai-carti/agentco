@@ -25,57 +25,32 @@ const AgentCard = React.memo(function AgentCard({ agent, companyId, onEdit }: Ag
     <div
       data-testid={`agent-card-${agent.id}`}
       // SIRI-UX-256: use CSS class for hover (replaces JS onMouseEnter/onMouseLeave)
-      className="agent-card"
-      style={{
-        background: '#1f2937',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 10,
-        padding: '1rem',
-        position: 'relative',
-        transition: 'border-color 0.15s',
-      }}
+      // SIRI-UX-445: migrated inline styles → Tailwind classes
+      className="agent-card bg-gray-800 border border-white/10 rounded-[10px] p-4 relative transition-[border-color] duration-150"
       // SIRI-UX-265: keyboard focus highlight handled by CSS .agent-card:focus (replaces JS onFocus/onBlur)
     >
       {/* Avatar + name + status dot */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+      <div className="flex items-center gap-3 mb-2">
         <div
           data-testid="agent-avatar"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: '50%',
-            backgroundColor: avatarColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: '#fff',
-            flexShrink: 0,
-          }}
+          className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white shrink-0"
+          style={{ backgroundColor: avatarColor }}
         >
           {initials}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-[0.9rem] flex items-center gap-[0.4rem]">
             {agent.name}
             <span
               data-testid="status-dot"
               role="img"
               aria-label={`Status: ${agent.status}`}
-              className={isRunning ? 'animate-pulse' : ''}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: statusColor,
-                display: 'inline-block',
-                flexShrink: 0,
-              }}
+              className={`w-2 h-2 rounded-full inline-block shrink-0 ${isRunning ? 'animate-pulse' : ''}`}
+              style={{ backgroundColor: statusColor }}
             />
           </div>
           {agent.role && (
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="text-xs text-gray-400 mt-px overflow-hidden text-ellipsis whitespace-nowrap">
               {agent.role}
             </div>
           )}
@@ -84,20 +59,10 @@ const AgentCard = React.memo(function AgentCard({ agent, companyId, onEdit }: Ag
 
       {/* Model badge */}
       {agent.model && (
-        <div style={{ marginBottom: '0.5rem' }}>
+        <div className="mb-2">
           <span
             data-testid="model-badge"
-            style={{
-              display: 'inline-block',
-              fontSize: '0.625rem',
-              padding: '0.15rem 0.45rem',
-              borderRadius: 4,
-              background: 'rgba(109,40,217,0.3)',
-              color: '#c4b5fd',
-              border: '1px solid #6d28d9',
-              fontWeight: 600,
-              letterSpacing: '0.03em',
-            }}
+            className="inline-block text-[0.625rem] px-[0.45rem] py-[0.15rem] rounded border border-violet-700 font-semibold tracking-wide bg-violet-800/30 text-violet-300"
           >
             {agent.model}
           </span>
@@ -107,13 +72,13 @@ const AgentCard = React.memo(function AgentCard({ agent, companyId, onEdit }: Ag
       {/* Last task time */}
       <div
         data-testid="last-task-time"
-        style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.75rem' }}
+        className="text-xs text-gray-500 mb-3"
       >
         {agent.last_task_at ? `Last task: ${relativeTime(agent.last_task_at)}` : 'No tasks yet'}
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div className="flex gap-2">
         <Button
           data-testid="agent-edit-btn"
           variant="secondary"
@@ -129,11 +94,7 @@ const AgentCard = React.memo(function AgentCard({ agent, companyId, onEdit }: Ag
           to={`/companies/${companyId}/agents/${agent.id}`}
           // SIRI-UX-334: agent-specific aria-label — screen reader announces "View CEO" not just "View Agent"
           aria-label={`View ${agent.name}`}
-          style={{
-            flex: 1,
-            textDecoration: 'none',
-            display: 'flex',
-          }}
+          className="flex-1 no-underline flex"
         >
           <Button
             variant="secondary"

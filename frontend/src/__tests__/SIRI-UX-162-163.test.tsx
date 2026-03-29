@@ -43,14 +43,14 @@ describe('SIRI-UX-162: history item cursor/role', () => {
     renderAgentPage()
     await waitFor(() => expect(screen.getByText('No-desc task')).toBeInTheDocument())
 
-    // Find the outermost div wrapping the history item (closest div with inline style)
+    // SIRI-UX-445: cursor migrated from inline style to Tailwind class
     const titleEl = screen.getByText('No-desc task')
-    // Walk up to find the item container (has padding style)
+    // Walk up to find the item container (has cursor class)
     let el: HTMLElement | null = titleEl
-    while (el && !el.style?.cursor) {
+    while (el && !el.className?.includes('cursor-')) {
       el = el.parentElement
     }
-    expect(el?.style.cursor).toBe('default')
+    expect(el?.className).toContain('cursor-default')
   })
 
   it('history item without description has no role="button"', async () => {
@@ -86,10 +86,10 @@ describe('SIRI-UX-162: history item cursor/role', () => {
     renderAgentPage()
     await waitFor(() => expect(screen.getByText('No-desc task')).toBeInTheDocument())
 
-    // Walk up to find the item container
+    // Walk up to find the item container (has cursor class)
     const titleEl = screen.getByText('No-desc task')
     let el: HTMLElement | null = titleEl
-    while (el && !el.style?.cursor) {
+    while (el && !el.className?.includes('cursor-')) {
       el = el.parentElement
     }
     // tabIndex should not be 0 (either -1, unset, or not present)
@@ -112,7 +112,8 @@ describe('SIRI-UX-162: history item cursor/role', () => {
 
     const item = screen.getByRole('button', { name: /With-desc task/i })
     expect(item).toBeTruthy()
-    expect((item as HTMLElement).style.cursor).toBe('pointer')
+    // SIRI-UX-445: cursor migrated from inline style to Tailwind class
+    expect((item as HTMLElement).className).toContain('cursor-pointer')
   })
 })
 

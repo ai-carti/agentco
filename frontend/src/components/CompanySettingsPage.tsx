@@ -136,47 +136,37 @@ export default function CompanySettingsPage() {
   }, [companyId, navigate, toast]) // SIRI-UX-384
 
   return (
-    <div data-testid="company-settings-page" style={{ padding: '1.5rem', maxWidth: 560 }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, marginBottom: '1.5rem' }}>
+    <div data-testid="company-settings-page" className="p-6 max-w-[560px]">
+      <h1 className="text-2xl font-bold m-0 mb-6">
         Company Settings
       </h1>
 
       {/* General section */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>General</h2>
+      <div className="mb-8">
+        <h2 className="text-base font-semibold mb-4">General</h2>
 
-        <div style={{ marginBottom: '0.75rem' }}>
-          <label htmlFor="company-name" style={{ display: 'block', fontSize: '0.8rem', color: '#9ca3af', marginBottom: '0.25rem' }}>
+        <div className="mb-3">
+          <label htmlFor="company-name" className="block text-[0.8rem] text-gray-400 mb-1">
             Company name
           </label>
           <input
             id="company-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="input-focus-ring"
-            style={{
-              width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-              border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-              fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
-            }}
+            className="input-focus-ring w-full py-2 px-3 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border outline-none"
           />
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="company-description" style={{ display: 'block', fontSize: '0.8rem', color: '#9ca3af', marginBottom: '0.25rem' }}>
+        <div className="mb-4">
+          <label htmlFor="company-description" className="block text-[0.8rem] text-gray-400 mb-1">
             Description
           </label>
           <textarea
             id="company-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="input-focus-ring"
+            className="input-focus-ring w-full py-2 px-3 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border resize-y outline-none"
             rows={3}
-            style={{
-              width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-              border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-              fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical', outline: 'none',
-            }}
           />
         </div>
 
@@ -184,29 +174,24 @@ export default function CompanySettingsPage() {
           variant="primary"
           onClick={handleSave}
           disabled={saving}
-          style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}
+          className="py-2 px-5 text-sm"
         >
           {saving ? 'Saving...' : 'Save changes'}
         </Button>
       </div>
 
       {/* Danger Zone */}
-      <div
-        style={{
-          border: '1px solid #7f1d1d', borderRadius: 8, padding: '1rem',
-          background: 'rgba(127,29,29,0.1)',
-        }}
-      >
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#f87171', marginBottom: '0.5rem' }}>
+      <div className="border border-red-900 rounded-lg p-4 bg-red-900/10">
+        <h2 className="text-base font-semibold text-red-400 mb-2">
           Danger Zone
         </h2>
-        <p style={{ color: '#9ca3af', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+        <p className="text-gray-400 text-[0.8rem] mb-3">
           Once you delete a company, there is no going back.
         </p>
         <Button
           variant="danger"
           onClick={() => setDeleteModalOpen(true)}
-          style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}
+          className="py-1.5 px-4 text-[0.8rem]"
         >
           Delete this company
         </Button>
@@ -218,40 +203,29 @@ export default function CompanySettingsPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Delete Company"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteModalOpen(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape') setDeleteModalOpen(false) }}
         >
-          <div ref={deleteTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 400,
-            border: '1px solid #374151',
-          }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 0.75rem', fontWeight: 700, color: '#f87171' }}>
+          <div ref={deleteTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[400px] border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <h2 className="m-0 mb-3 font-bold text-red-400">
               Delete Company
             </h2>
-            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0 0 1rem' }}>
-              Type <strong style={{ color: '#f8fafc' }}>{company?.name}</strong> to confirm deletion.
+            <p className="text-gray-400 text-sm m-0 mb-4">
+              Type <strong className="text-gray-50">{company?.name}</strong> to confirm deletion.
             </p>
             <input
               data-testid="confirm-delete-company-input"
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
-              className="input-focus-ring-red"
+              className="input-focus-ring-red w-full py-2 px-3 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border mb-4 outline-none"
               placeholder={company?.name}
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '1rem', outline: 'none',
-              }}
             />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="flex gap-2 justify-end">
               <Button
                 variant="secondary"
                 onClick={() => { setDeleteModalOpen(false); setDeleteConfirm('') }}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="py-1.5 px-3.5"
               >
                 Cancel
               </Button>
@@ -260,7 +234,7 @@ export default function CompanySettingsPage() {
                 variant="danger"
                 onClick={handleDelete}
                 disabled={deleteConfirm !== company?.name || isDeleting}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="py-1.5 px-3.5"
               >
                 {isDeleting ? 'Deleting…' : 'Delete permanently'}
               </Button>

@@ -194,39 +194,22 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div data-testid="companies-page" style={{ padding: '1.5rem', maxWidth: 640 }}>
+    <div data-testid="companies-page" className="p-6 max-w-[640px]">
       {/* SIRI-UX-148: error state — shown when fetch fails */}
       {loadError && (
         <div
           role="alert"
-          style={{
-            marginBottom: '1rem',
-            padding: '0.875rem 1rem',
-            background: 'rgba(127, 29, 29, 0.85)',
-            border: '1px solid #b91c1c',
-            borderRadius: '0.5rem',
-            color: '#fee2e2',
-            fontSize: '0.875rem',
-          }}
+          className="mb-4 py-3.5 px-4 bg-red-900/85 border border-red-700 rounded-lg text-red-100 text-sm"
         >
           {loadError}
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Companies</h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-2xl font-bold m-0">Companies</h1>
         <button
           data-testid="new-company-btn"
           onClick={() => setShowNewModal(true)}
-          style={{
-            padding: '0.4rem 0.9rem',
-            background: '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            fontSize: '0.875rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
+          className="py-1.5 px-3.5 bg-blue-600 text-white border-none rounded-md text-sm font-semibold cursor-pointer"
         >
           + New Company
         </button>
@@ -243,7 +226,7 @@ export default function CompaniesPage() {
           onCTA={() => setShowNewModal(true)}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="flex flex-col gap-2">
           {companies.map((co) => (
             <div
               key={co.id}
@@ -253,7 +236,7 @@ export default function CompaniesPage() {
               aria-label={co.name}
               // SIRI-UX-255: CSS class for hover instead of JS onMouseEnter/onMouseLeave
               // SIRI-UX-265: input-focus-ring-blue for focus ring via CSS
-              className="companies-item input-focus-ring-blue"
+              className="companies-item input-focus-ring-blue py-3.5 px-4 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer font-medium transition-colors outline-none flex items-center justify-between"
               onClick={() => navigate(`/companies/${co.id}`)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -261,35 +244,13 @@ export default function CompaniesPage() {
                   navigate(`/companies/${co.id}`)
                 }
               }}
-              style={{
-                padding: '0.875rem 1rem',
-                background: '#1f2937',
-                border: '1px solid #374151',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontWeight: 500,
-                transition: 'border-color 0.15s',
-                outline: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
             >
               <span>{co.name}</span>
               {/* SIRI-UX-429: edit button to open edit company modal */}
               <button
                 data-testid={`edit-company-${co.id}-btn`}
                 onClick={(e) => handleEditOpen(co, e)}
-                style={{
-                  padding: '0.2rem 0.5rem',
-                  background: 'transparent',
-                  border: '1px solid #4b5563',
-                  borderRadius: 4,
-                  color: '#9ca3af',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                }}
+                className="py-0.5 px-2 bg-transparent border border-gray-600 rounded text-gray-400 text-xs cursor-pointer leading-none"
               >
                 Edit
               </button>
@@ -304,26 +265,17 @@ export default function CompaniesPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Edit Company"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) handleEditClose() }}
           onKeyDown={(e) => { if (e.key === 'Escape') handleEditClose() }}
         >
-          <div ref={editModalTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
-            border: '1px solid #374151', position: 'relative',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontWeight: 700 }}>Edit Company</h2>
+          <div ref={editModalTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[360px] border border-gray-700 relative">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="m-0 font-bold">Edit Company</h2>
               <button
                 aria-label="Close edit company modal"
                 onClick={handleEditClose}
-                style={{
-                  background: 'transparent', border: 'none', color: '#9ca3af',
-                  fontSize: '1.25rem', cursor: 'pointer', lineHeight: 1, padding: '0.25rem',
-                }}
+                className="bg-transparent border-none text-gray-400 text-xl cursor-pointer leading-none p-1"
               >
                 ×
               </button>
@@ -335,16 +287,11 @@ export default function CompaniesPage() {
               value={editCompanyName}
               onChange={(e) => setEditCompanyName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
-              className="input-focus-ring-blue"
+              className="input-focus-ring-blue w-full py-2 px-3 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border outline-none"
               placeholder="Company name"
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
-              }}
             />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-              <Button variant="secondary" onClick={handleEditClose} style={{ padding: '0.4rem 0.9rem' }}>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="secondary" onClick={handleEditClose} className="py-1.5 px-3.5">
                 Cancel
               </Button>
               <Button
@@ -354,7 +301,7 @@ export default function CompaniesPage() {
                 disabled={editSaving || !editCompanyName.trim()}
                 aria-disabled={editSaving || !editCompanyName.trim()}
                 aria-busy={editSaving}
-                style={{ padding: '0.4rem 0.9rem', fontWeight: 600 }}
+                className="py-1.5 px-3.5 font-semibold"
               >
                 {editSaving ? 'Saving…' : 'Save'}
               </Button>
@@ -369,18 +316,12 @@ export default function CompaniesPage() {
           role="dialog"
           aria-modal="true"
           aria-label="New Company"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setShowNewModal(false) }}
           onKeyDown={(e) => { if (e.key === 'Escape') setShowNewModal(false) }}
         >
-          <div ref={newModalTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
-            border: '1px solid #374151',
-          }}>
-            <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>New Company</h2>
+          <div ref={newModalTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[360px] border border-gray-700">
+            <h2 className="m-0 mb-4 font-bold">New Company</h2>
             <input
               autoFocus
               data-testid="new-company-name-input"
@@ -388,17 +329,12 @@ export default function CompaniesPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              className="input-focus-ring-blue"
+              className="input-focus-ring-blue w-full py-2 px-3 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border outline-none"
               placeholder="Company name"
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
-              }}
             />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <div className="flex gap-2 justify-end mt-4">
               {/* SIRI-UX-409: use <Button> component for consistent style — matches KanbanBoard/TaskCard modal pattern */}
-              <Button variant="secondary" onClick={() => { setShowNewModal(false); setNewName('') }} style={{ padding: '0.4rem 0.9rem' }}>
+              <Button variant="secondary" onClick={() => { setShowNewModal(false); setNewName('') }} className="py-1.5 px-3.5">
                 Cancel
               </Button>
               {/* SIRI-UX-409: aria-disabled mirrors disabled prop so AT announces inactive state */}
@@ -409,7 +345,7 @@ export default function CompaniesPage() {
                 disabled={creating || !newName.trim()}
                 aria-disabled={creating || !newName.trim()}
                 aria-busy={creating}
-                style={{ padding: '0.4rem 0.9rem', fontWeight: 600 }}
+                className="py-1.5 px-3.5 font-semibold"
               >
                 {creating ? 'Creating…' : 'Create'}
               </Button>

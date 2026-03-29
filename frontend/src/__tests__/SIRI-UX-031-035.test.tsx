@@ -130,9 +130,10 @@ describe('SIRI-UX-033: OnboardingPage company name input focus ring', () => {
     const input = screen.getByTestId('onboarding-company-name-input') as HTMLInputElement
     expect(input).toBeTruthy()
 
-    // Fire focus and blur — should not crash, border color should change
+    // SIRI-UX-445: focus ring migrated from inline style to CSS class
+    // Fire focus and blur — should not crash; focus styling is via CSS class
     fireEvent.focus(input)
-    expect(input.style.borderColor).toBeTruthy()
+    expect(input.className).toContain('input-focus-ring')
     fireEvent.blur(input)
   })
 })
@@ -161,8 +162,8 @@ describe('SIRI-UX-034: KanbanBoard create task modal inputs focus ring', () => {
 
     const titleInput = screen.getByTestId('create-task-title-input') as HTMLInputElement
     fireEvent.focus(titleInput)
-    // Check border color changed on focus
-    expect(titleInput.style.borderColor).toBeTruthy()
+    // SIRI-UX-445: focus ring migrated from inline style to CSS class
+    expect(titleInput.className).toContain('input-focus-ring')
     fireEvent.blur(titleInput)
   })
 })

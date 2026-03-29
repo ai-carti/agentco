@@ -35,25 +35,6 @@ interface AgentData {
   system_prompt?: string
 }
 
-const fieldStyle: React.CSSProperties = {
-  padding: '0.5rem 0.75rem',
-  background: '#1f2937',
-  border: '1px solid #374151',
-  borderRadius: 6,
-  color: '#f8fafc',
-  fontSize: '0.875rem',
-  wordBreak: 'break-word',
-  whiteSpace: 'pre-wrap',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.75rem',
-  color: '#9ca3af',
-  marginBottom: '0.3rem',
-  fontWeight: 500,
-}
-
 export default function AgentPage() {
   useDocumentTitle('Agent — AgentCo')
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
@@ -195,17 +176,13 @@ export default function AgentPage() {
     return (
       <div
         data-testid="agent-not-found"
-        style={{
-          padding: '3rem 1.5rem',
-          textAlign: 'center',
-          color: '#9ca3af',
-        }}
+        className="py-12 px-6 text-center text-gray-400"
       >
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤖</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>
+        <div className="text-4xl mb-4">🤖</div>
+        <div className="text-lg font-bold text-gray-100 mb-2">
           Agent not found
         </div>
-        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+        <div className="text-sm text-gray-500 mb-6">
           This agent may have been deleted or you don't have access.
         </div>
         <Button
@@ -220,9 +197,9 @@ export default function AgentPage() {
   }
 
   return (
-    <div data-testid="agent-page" style={{ padding: '1.5rem', maxWidth: 540 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+    <div data-testid="agent-page" className="p-6 max-w-[540px]">
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-xl font-bold m-0">
           {agentData?.name ?? 'Agent'}
         </h1>
         <Button
@@ -237,28 +214,28 @@ export default function AgentPage() {
       {agentLoading ? (
         <SkeletonCard variant="agent" count={1} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="flex flex-col gap-4">
           <div>
-            <label style={labelStyle}>Name</label>
-            <div data-testid="agent-name-display" style={fieldStyle}>
+            <label className="block text-xs text-gray-400 mb-1 font-medium">Name</label>
+            <div data-testid="agent-name-display" className="py-2 px-3 bg-gray-800 border border-gray-700 rounded-md text-gray-50 text-sm break-words whitespace-pre-wrap">
               {agentData?.name ?? '—'}
             </div>
           </div>
           <div>
-            <label style={labelStyle}>Role</label>
-            <div data-testid="agent-role-display" style={fieldStyle}>
+            <label className="block text-xs text-gray-400 mb-1 font-medium">Role</label>
+            <div data-testid="agent-role-display" className="py-2 px-3 bg-gray-800 border border-gray-700 rounded-md text-gray-50 text-sm break-words whitespace-pre-wrap">
               {agentData?.role ?? '—'}
             </div>
           </div>
           <div>
-            <label style={labelStyle}>Model</label>
-            <div data-testid="agent-model-display" style={fieldStyle}>
+            <label className="block text-xs text-gray-400 mb-1 font-medium">Model</label>
+            <div data-testid="agent-model-display" className="py-2 px-3 bg-gray-800 border border-gray-700 rounded-md text-gray-50 text-sm break-words whitespace-pre-wrap">
               {agentData?.model ?? '—'}
             </div>
           </div>
           <div>
-            <label style={labelStyle}>System Prompt</label>
-            <div data-testid="agent-system-prompt-display" style={{ ...fieldStyle, minHeight: 80 }}>
+            <label className="block text-xs text-gray-400 mb-1 font-medium">System Prompt</label>
+            <div data-testid="agent-system-prompt-display" className="py-2 px-3 bg-gray-800 border border-gray-700 rounded-md text-gray-50 text-sm break-words whitespace-pre-wrap min-h-[80px]">
               {agentData?.system_prompt ?? '—'}
             </div>
           </div>
@@ -266,7 +243,7 @@ export default function AgentPage() {
       )}
 
       {!agentLoading && (
-        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="mt-4 flex items-center gap-3">
           <Button
             data-testid="save-to-library-btn"
             variant="secondary"
@@ -278,7 +255,7 @@ export default function AgentPage() {
           {savedToLibrary && (
             <span
               data-testid="save-to-library-success"
-              style={{ color: '#4ade80', fontSize: '0.875rem' }}
+              className="text-green-400 text-sm"
             >
               Saved to library ✓
             </span>
@@ -286,7 +263,7 @@ export default function AgentPage() {
           {saveToLibraryError && (
             <span
               data-testid="save-to-library-error"
-              style={{ color: '#f87171', fontSize: '0.875rem' }}
+              className="text-red-400 text-sm"
             >
               {saveToLibraryError}
             </span>
@@ -296,13 +273,13 @@ export default function AgentPage() {
 
       {/* Memory + History sections — SIRI-UX-035: only show after agent data loaded */}
       {!agentLoading && (<>
-      <div data-testid="agent-memory-section" style={{ marginTop: '2rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Memory</h2>
+      <div data-testid="agent-memory-section" className="mt-8">
+        <h2 className="text-base font-semibold mb-3">Memory</h2>
 
         {!memoriesLoaded ? (
           <SkeletonCard variant="task" count={2} />
         ) : memoriesError ? (
-          <p role="alert" data-testid="memory-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+          <p role="alert" data-testid="memory-load-error" className="text-red-400 text-sm">
             ⚠ Failed to load memories
           </p>
         ) : memories.length === 0 ? (
@@ -312,23 +289,17 @@ export default function AgentPage() {
             subtitle="This agent hasn't stored any memories"
           />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="flex flex-col gap-2">
             {memories.map((entry) => (
               <div
                 key={entry.id}
                 data-testid="memory-entry"
-                style={{
-                  padding: '0.625rem 0.875rem',
-                  background: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: 6,
-                  fontSize: '0.875rem',
-                }}
+                className="py-2.5 px-3.5 bg-gray-800 border border-gray-700 rounded-md text-sm"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <span style={{ color: '#e5e7eb', flex: 1 }}>{entry.content}</span>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-gray-200 flex-1">{entry.content}</span>
                   {entry.created_at && (
-                    <span style={{ color: '#6b7280', fontSize: '0.75rem', flexShrink: 0 }}>
+                    <span className="text-gray-500 text-xs shrink-0">
                       {/* SIRI-UX-303: use shared formatDateLong for consistent locale */}
                       {formatDateLong(entry.created_at)}
                     </span>
@@ -341,14 +312,14 @@ export default function AgentPage() {
       </div>
 
       {/* History section */}
-      <div style={{ marginTop: '2rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>History</h2>
+      <div className="mt-8">
+        <h2 className="text-base font-semibold mb-3">History</h2>
 
         {!historyLoaded ? (
           <SkeletonCard variant="task" count={3} />
         ) : historyError ? (
           // SIRI-UX-301: role="alert" so screen readers announce the history load error
-          <p role="alert" data-testid="history-load-error" style={{ color: '#f87171', fontSize: '0.875rem' }}>
+          <p role="alert" data-testid="history-load-error" className="text-red-400 text-sm">
             ⚠ Failed to load task history
           </p>
         ) : history.length === 0 ? (
@@ -358,7 +329,7 @@ export default function AgentPage() {
             subtitle="This agent hasn't completed any tasks"
           />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="flex flex-col gap-2">
             {visibleHistory.map((item) => {
               // SIRI-UX-159: stable id for aria-controls so screen readers can navigate to expanded content
               const expandedContentId = `history-desc-${item.id}`
@@ -381,20 +352,12 @@ export default function AgentPage() {
                         },
                       }
                     : {})}
-                  style={{
-                    padding: '0.625rem 0.875rem',
-                    background: '#1f2937',
-                    border: '1px solid #374151',
-                    borderRadius: 6,
-                    fontSize: '0.875rem',
-                    // SIRI-UX-162: only show pointer when item is expandable
-                    cursor: item.description ? 'pointer' : 'default',
-                  }}
+                  className={`py-2.5 px-3.5 bg-gray-800 border border-gray-700 rounded-md text-sm ${item.description ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 500 }}>{item.title}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{item.title}</span>
                     {item.created_at && (
-                      <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                      <span className="text-gray-500 text-xs">
                         {/* SIRI-UX-303: use shared formatDateLong for consistent locale */}
                         {formatDateLong(item.created_at)}
                       </span>
@@ -403,7 +366,7 @@ export default function AgentPage() {
                   {expandedId === item.id && item.description && (
                     <div
                       id={expandedContentId}
-                      style={{ marginTop: '0.5rem', color: '#9ca3af', fontSize: '0.8rem' }}
+                      className="mt-2 text-gray-400 text-[0.8rem]"
                     >
                       {item.description}
                     </div>
@@ -415,7 +378,7 @@ export default function AgentPage() {
               <Button
                 variant="secondary"
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                style={{ width: '100%', fontSize: '0.8rem' }}
+                className="w-full text-[0.8rem]"
               >
                 Load more
               </Button>

@@ -105,7 +105,8 @@ describe('BUG-039: Company Header', () => {
 
     await waitFor(() => {
       const header = screen.getByTestId('company-header')
-      expect(header.style.height).toBe('48px')
+      // SIRI-UX-445: height migrated from inline style to Tailwind h-12 (48px)
+      expect(header.className).toContain('h-12')
     })
   })
 })

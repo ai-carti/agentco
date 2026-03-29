@@ -327,7 +327,8 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
       // SIRI-UX-246: apply task-grabbed CSS class while dragging for visual feedback
       // SIRI-UX-262: use task-card CSS class for hover (no JS onMouseEnter/onMouseLeave)
       // SIRI-UX-265: input-focus-ring-blue for focus ring via CSS
-      className={isGrabbed ? 'task-card task-grabbed input-focus-ring-blue' : 'task-card input-focus-ring-blue'}
+      // SIRI-UX-445: migrated inline styles → Tailwind classes
+      className={`task-card input-focus-ring-blue bg-gray-800 rounded-lg p-3 cursor-pointer border border-gray-700 relative outline-none ${isGrabbed ? 'task-grabbed' : ''}`}
       onDragStart={(e) => onDragStart?.(e, task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onCardClick(task)}
@@ -337,19 +338,10 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           onCardClick(task)
         }
       }}
-      style={{
-        background: '#1f2937',
-        borderRadius: 8,
-        padding: '0.75rem',
-        cursor: 'pointer',
-        border: '1px solid #374151',
-        position: 'relative',
-        outline: 'none',
-      }}
     >
       {/* Header: title + menu */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
-        <div style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.4, flex: 1, marginRight: '0.5rem' }}>
+      <div className="flex justify-between items-start mb-1">
+        <div className="text-sm font-semibold leading-snug flex-1 mr-2">
           {task.title}
         </div>
         <button
@@ -359,10 +351,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           aria-label="Task options"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          style={{
-            background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer',
-            fontSize: '1rem', padding: '0 0.15rem', lineHeight: 1, flexShrink: 0,
-          }}
+          className="bg-transparent border-none text-gray-400 cursor-pointer text-base px-[0.15rem] py-0 leading-none shrink-0"
           title="Task options"
         >
           ···
@@ -371,11 +360,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           <div
             ref={menuRef}
             role="menu"
-            style={{
-              position: 'absolute', background: '#1f2937', border: '1px solid #374151',
-              borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              padding: '0.25rem 0', zIndex: 10, minWidth: 120, right: 0, top: 24,
-            }}
+            className="absolute bg-gray-800 border border-gray-700 rounded-md shadow-lg py-1 z-10 min-w-[120px] right-0 top-6"
             onClick={(e) => e.stopPropagation()}
           >
             {['Edit', 'Delete', 'Assign'].map((item) => (
@@ -397,34 +382,19 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
       {task.description && (
         <div
           data-testid={`task-desc-preview-${task.id}`}
-          style={{
-            fontSize: '0.75rem',
-            color: '#9ca3af',
-            marginBottom: '0.5rem',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className="text-xs text-gray-400 mb-2 overflow-hidden text-ellipsis whitespace-nowrap"
         >
           {task.description}
         </div>
       )}
 
       {/* Priority + due date row */}
-      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+      <div className="flex gap-[0.4rem] mb-2 flex-wrap">
         {priorityStyle && (
           <span
             data-testid={`priority-badge-${task.id}`}
-            style={{
-              fontSize: '0.6rem',
-              fontWeight: 700,
-              padding: '0.1rem 0.4rem',
-              borderRadius: 4,
-              background: priorityStyle.bg,
-              color: priorityStyle.text,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
+            className="text-[0.6rem] font-bold px-[0.4rem] py-[0.1rem] rounded uppercase tracking-wide"
+            style={{ background: priorityStyle.bg, color: priorityStyle.text }}
           >
             {priorityStyle.label}
           </span>
@@ -432,10 +402,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
         {dueDateInfo && (
           <span
             data-testid={`due-date-${task.id}`}
-            style={{
-              fontSize: '0.65rem',
-              color: dueDateInfo.overdue ? '#f87171' : '#9ca3af',
-            }}
+            className={`text-[0.65rem] ${dueDateInfo.overdue ? 'text-red-400' : 'text-gray-400'}`}
           >
             📅 {dueDateInfo.label}
           </span>
@@ -443,28 +410,22 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
       </div>
 
       {/* Assignee + status badge row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: canRun ? '0.5rem' : 0 }}>
+      <div className={`flex items-center gap-2 ${canRun ? 'mb-2' : ''}`}>
         <div
           data-testid={`assignee-avatar-${task.id}`}
           // SIRI-UX-356: aria-label provides accessible name — initials alone are not self-descriptive
           aria-label={assigneeName}
           title={assigneeName}
-          style={{
-            width: 24, height: 24, borderRadius: '50%', background: avatarColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.65rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white shrink-0"
+          style={{ background: avatarColor }}
         >
           {initials}
         </div>
-        <span style={{ fontSize: '0.75rem', color: '#9ca3af', flex: 1 }}>{assigneeName}</span>
+        <span className="text-xs text-gray-400 flex-1">{assigneeName}</span>
         <span
           data-testid={`status-badge-${task.id}`}
-          style={{
-            fontSize: '0.65rem', fontWeight: 600, padding: '0.1rem 0.4rem', borderRadius: 4,
-            background: statusColor.bg, color: statusColor.text,
-            textTransform: 'uppercase', letterSpacing: '0.05em',
-          }}
+          className="text-[0.65rem] font-semibold px-[0.4rem] py-[0.1rem] rounded uppercase tracking-wide"
+          style={{ background: statusColor.bg, color: statusColor.text }}
         >
           {task.status.replace('_', ' ')}
         </span>
@@ -477,11 +438,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           variant="primary"
           onClick={handleRun}
           disabled={running}
-          style={{
-            width: '100%', padding: '0.3rem 0.5rem',
-            fontSize: '0.75rem',
-            gap: '0.25rem',
-          }}
+          className="w-full px-2 py-[0.3rem] text-xs gap-1"
         >
           {running ? '⏳' : '▶'} {running ? 'Running…' : 'Run'}
         </Button>
@@ -492,7 +449,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
         <p
           data-testid={`run-error-${task.id}`}
           role="alert"
-          style={{ fontSize: '0.7rem', color: '#f87171', margin: '0.3rem 0 0' }}
+          className="text-[0.7rem] text-red-400 mt-1"
         >
           ⚠ {runError}
         </p>
@@ -505,44 +462,26 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           role="dialog"
           aria-modal="true"
           aria-label="Edit Task"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false) }}
         >
-          <div ref={editTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
-            border: '1px solid #374151',
-          }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>Edit Task</h2>
+          <div ref={editTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[360px] border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <h2 className="m-0 mb-4 font-bold">Edit Task</h2>
             <input
               autoFocus
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="input-focus-ring-blue"
+              className="input-focus-ring-blue w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border mb-3 outline-none"
               placeholder="Task title"
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: '0.75rem',
-                outline: 'none',
-              }}
             />
             <textarea
               value={editDesc}
               onChange={(e) => setEditDesc(e.target.value)}
-              className="input-focus-ring-blue"
+              className="input-focus-ring-blue w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border resize-y outline-none"
               placeholder="Description"
               rows={3}
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
-                outline: 'none',
-              }}
             />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <div className="flex gap-2 justify-end mt-4">
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -552,7 +491,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
                   setEditDesc(freshTask?.description ?? task.description ?? '')
                   setEditOpen(false)
                 }}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 Cancel
               </Button>
@@ -560,7 +499,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
                 variant="primary"
                 onClick={handleEdit}
                 disabled={!editTitle.trim() || saving}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 {saving ? 'Saving…' : 'Save'}
               </Button>
@@ -576,26 +515,20 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           role="dialog"
           aria-modal="true"
           aria-label="Delete Task"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteOpen(false) }}
         >
-          <div ref={deleteTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 360,
-            border: '1px solid #374151',
-          }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 0.5rem', fontWeight: 700 }}>Delete Task</h2>
-            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0 0 1rem' }}>
+          <div ref={deleteTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[360px] border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <h2 className="m-0 mb-2 font-bold">Delete Task</h2>
+            <p className="text-gray-400 text-sm m-0 mb-4">
               Are you sure you want to delete "{task.title}"? This action cannot be undone.
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="flex gap-2 justify-end">
               <Button
                 data-testid="cancel-delete-btn"
                 variant="secondary"
                 onClick={() => setDeleteOpen(false)}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 Cancel
               </Button>
@@ -604,7 +537,7 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
                 variant="danger"
                 onClick={handleDelete}
                 disabled={deleting}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </Button>
@@ -620,36 +553,27 @@ const TaskCard = React.memo(function TaskCard({ task, companyId, onCardClick, on
           role="dialog"
           aria-modal="true"
           aria-label="Assign to Agent"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) setAssignOpen(false) }}
         >
-          <div ref={assignTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1rem', width: 280,
-            border: '1px solid #374151',
-          }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.9rem' }}>Assign to Agent</h3>
+          <div ref={assignTrapRef} className="bg-gray-800 rounded-[10px] p-4 w-[280px] border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <h3 className="m-0 mb-3 font-bold text-[0.9rem]">Assign to Agent</h3>
             {agents.length === 0 ? (
-              <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>No agents available</p>
+              <p className="text-gray-400 text-[0.8rem]">No agents available</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div className="flex flex-col gap-1">
                 {agents.map((agent) => (
                   <button
                     key={agent.id}
                     data-testid={`assign-agent-${agent.id}`}
                     onClick={() => handleAssign(agent.id, agent.name)}
                     disabled={assigning}
-                    className="kanban-assign-agent-btn"
-                    style={{ cursor: assigning ? 'not-allowed' : 'pointer' }}
+                    className={`kanban-assign-agent-btn ${assigning ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    <div style={{
-                      width: 24, height: 24, borderRadius: '50%',
-                      background: getAvatarColor(agent.name),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.6rem', fontWeight: 700, color: '#fff',
-                    }}>
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white"
+                      style={{ background: getAvatarColor(agent.name) }}
+                    >
                       {getInitials(agent.name)}
                     </div>
                     {agent.name}
@@ -719,8 +643,8 @@ const FilterBar = React.memo(function FilterBar({
   }, [agentDropdownOpen, priorityDropdownOpen])
 
   return (
-    <div ref={filterBarRef} style={{ padding: '0.75rem 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div ref={filterBarRef} className="px-4 pt-3 flex flex-col gap-2">
+      <div className="flex gap-2 items-center flex-wrap">
         <input
           data-testid="kanban-search-input"
           type="text"
@@ -728,24 +652,17 @@ const FilterBar = React.memo(function FilterBar({
           aria-label="Search tasks"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          style={{
-            padding: '0.4rem 0.75rem', background: '#111827', border: '1px solid #374151',
-            borderRadius: 6, color: '#f8fafc', fontSize: '0.8rem', minWidth: 180,
-          }}
+          className="px-3 py-[0.4rem] bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-[0.8rem] min-w-[180px]"
         />
 
         {/* Agent dropdown */}
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
           <button
             data-testid="filter-agent-btn"
             aria-expanded={agentDropdownOpen}
             aria-haspopup="menu"
             onClick={() => { setAgentDropdownOpen((v) => !v); setPriorityDropdownOpen(false) }}
-            style={{
-              padding: '0.4rem 0.75rem', background: selectedAgents.length > 0 ? '#1e3a5f' : '#1f2937',
-              border: '1px solid #374151', borderRadius: 6, color: '#e5e7eb',
-              fontSize: '0.8rem', cursor: 'pointer',
-            }}
+            className={`px-3 py-[0.4rem] border border-gray-700 rounded-md text-gray-200 text-[0.8rem] cursor-pointer ${selectedAgents.length > 0 ? 'bg-[#1e3a5f]' : 'bg-gray-800'}`}
           >
             Agent {selectedAgents.length > 0 && `(${selectedAgents.length})`}
           </button>
@@ -754,11 +671,7 @@ const FilterBar = React.memo(function FilterBar({
             // so the dropdown container must have role="menu" for correct ARIA ownership
             <div
               role="menu"
-              style={{
-                position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
-                border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 160,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              }}>
+              className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-md z-20 min-w-[160px] shadow-lg">
               {agents.map((agent) => (
                 <button
                   key={agent.id}
@@ -767,14 +680,9 @@ const FilterBar = React.memo(function FilterBar({
                   aria-checked={selectedAgents.includes(agent.id)}
                   onClick={() => onToggleAgent(agent.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleAgent(agent.id) } }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
-                    background: selectedAgents.includes(agent.id) ? '#374151' : 'transparent',
-                    border: 'none', width: '100%', textAlign: 'left', color: '#e5e7eb',
-                  }}
+                  className={`flex items-center gap-2 px-3 py-[0.4rem] cursor-pointer text-[0.8rem] border-none w-full text-left text-gray-200 ${selectedAgents.includes(agent.id) ? 'bg-gray-700' : 'bg-transparent'}`}
                 >
-                  <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                  <span className="w-3.5 h-3.5 border border-gray-500 rounded-[3px] inline-flex items-center justify-center text-[0.6rem]">
                     {selectedAgents.includes(agent.id) ? '✓' : ''}
                   </span>
                   {agent.name}
@@ -785,17 +693,13 @@ const FilterBar = React.memo(function FilterBar({
         </div>
 
         {/* Priority dropdown */}
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
           <button
             data-testid="filter-priority-btn"
             aria-expanded={priorityDropdownOpen}
             aria-haspopup="menu"
             onClick={() => { setPriorityDropdownOpen((v) => !v); setAgentDropdownOpen(false) }}
-            style={{
-              padding: '0.4rem 0.75rem', background: selectedPriorities.length > 0 ? '#1e3a5f' : '#1f2937',
-              border: '1px solid #374151', borderRadius: 6, color: '#e5e7eb',
-              fontSize: '0.8rem', cursor: 'pointer',
-            }}
+            className={`px-3 py-[0.4rem] border border-gray-700 rounded-md text-gray-200 text-[0.8rem] cursor-pointer ${selectedPriorities.length > 0 ? 'bg-[#1e3a5f]' : 'bg-gray-800'}`}
           >
             Priority {selectedPriorities.length > 0 && `(${selectedPriorities.length})`}
           </button>
@@ -803,11 +707,7 @@ const FilterBar = React.memo(function FilterBar({
             // SIRI-UX-402: role="menu" required — button trigger declares aria-haspopup="menu"
             <div
               role="menu"
-              style={{
-                position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#1f2937',
-                border: '1px solid #374151', borderRadius: 6, zIndex: 20, minWidth: 140,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              }}>
+              className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-md z-20 min-w-[140px] shadow-lg">
               {PRIORITIES.map((p) => (
                 <button
                   key={p}
@@ -816,14 +716,9 @@ const FilterBar = React.memo(function FilterBar({
                   aria-checked={selectedPriorities.includes(p)}
                   onClick={() => onTogglePriority(p)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTogglePriority(p) } }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8rem',
-                    background: selectedPriorities.includes(p) ? '#374151' : 'transparent',
-                    textTransform: 'capitalize', border: 'none', width: '100%', textAlign: 'left', color: '#e5e7eb',
-                  }}
+                  className={`flex items-center gap-2 px-3 py-[0.4rem] cursor-pointer text-[0.8rem] capitalize border-none w-full text-left text-gray-200 ${selectedPriorities.includes(p) ? 'bg-gray-700' : 'bg-transparent'}`}
                 >
-                  <span style={{ width: 14, height: 14, border: '1px solid #6b7280', borderRadius: 3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                  <span className="w-3.5 h-3.5 border border-gray-500 rounded-[3px] inline-flex items-center justify-center text-[0.6rem]">
                     {selectedPriorities.includes(p) ? '✓' : ''}
                   </span>
                   {p}
@@ -837,10 +732,7 @@ const FilterBar = React.memo(function FilterBar({
           <button
             data-testid="filter-clear-all"
             onClick={onClearAll}
-            style={{
-              padding: '0.4rem 0.75rem', background: 'transparent', border: '1px solid #374151',
-              borderRadius: 6, color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer',
-            }}
+            className="px-3 py-[0.4rem] bg-transparent border border-gray-700 rounded-md text-gray-400 text-xs cursor-pointer"
           >
             Clear all
           </button>
@@ -849,18 +741,14 @@ const FilterBar = React.memo(function FilterBar({
 
       {/* Active filter badges */}
       {hasActiveFilters && (
-        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+        <div className="flex gap-[0.35rem] flex-wrap">
           {selectedAgents.map((agentId) => {
             const agent = agents.find((a) => a.id === agentId)
             return (
               <span
                 key={agentId}
                 data-testid={`filter-badge-agent-${agentId}`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
-                  padding: '0.15rem 0.5rem', background: '#1e3a5f', borderRadius: 12,
-                  fontSize: '0.7rem', color: '#93c5fd',
-                }}
+                className="inline-flex items-center gap-1 px-2 py-[0.15rem] bg-[#1e3a5f] rounded-xl text-[0.7rem] text-blue-300"
               >
                 {agent?.name ?? agentId}
                 <button
@@ -868,7 +756,7 @@ const FilterBar = React.memo(function FilterBar({
                   onClick={() => onRemoveAgent(agentId)}
                   // SIRI-UX-180: descriptive aria-label so screen reader doesn't just say "×"
                   aria-label={`Remove ${agent?.name ?? agentId} agent filter`}
-                  style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
+                  className="bg-transparent border-none text-blue-300 cursor-pointer p-0 text-xs leading-none"
                 >
                   ×
                 </button>
@@ -879,11 +767,7 @@ const FilterBar = React.memo(function FilterBar({
             <span
               key={p}
               data-testid={`filter-badge-priority-${p}`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
-                padding: '0.15rem 0.5rem', background: '#78350f', borderRadius: 12,
-                fontSize: '0.7rem', color: '#fcd34d', textTransform: 'capitalize',
-              }}
+              className="inline-flex items-center gap-1 px-2 py-[0.15rem] bg-amber-900 rounded-xl text-[0.7rem] text-amber-300 capitalize"
             >
               {p}
               <button
@@ -891,7 +775,7 @@ const FilterBar = React.memo(function FilterBar({
                 onClick={() => onRemovePriority(p)}
                 // SIRI-UX-180: descriptive aria-label so screen reader doesn't just say "×"
                 aria-label={`Remove ${p} priority filter`}
-                style={{ background: 'none', border: 'none', color: '#fcd34d', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
+                className="bg-transparent border-none text-amber-300 cursor-pointer p-0 text-xs leading-none"
               >
                 ×
               </button>
@@ -1212,7 +1096,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
     <>
       {/* Always-visible header with New Task button when loaded and tasks exist */}
       {isLoaded && !showEmpty && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1rem 0' }}>
+        <div className="flex justify-end px-4 pt-2">
           <button
             data-testid="kanban-new-task-btn"
             className="kanban-new-task-btn"
@@ -1247,13 +1131,13 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
         />
       )}
       {showFilterEmpty && (
-        <div data-testid="filter-empty-state" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280', fontSize: '0.875rem' }}>
+        <div data-testid="filter-empty-state" className="text-center p-8 text-gray-500 text-sm">
           No tasks match filters
         </div>
       )}
       <div
         data-testid="kanban-board"
-        style={{ display: (showEmpty || showFilterEmpty) ? 'none' : 'flex', gap: '1rem', padding: '1rem' }}
+        className={`gap-4 p-4 ${(showEmpty || showFilterEmpty) ? 'hidden' : 'flex'}`}
       >
         {COLUMNS.map((col) => (
           <div
@@ -1265,25 +1149,17 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}
-            style={{
-              flex: 1,
-              background: '#111827',
-              borderRadius: 8,
-              padding: '0.75rem',
-              minWidth: 0,
-              border: dragOverCol === col.id ? '2px solid #3b82f6' : '2px solid transparent',
-              transition: 'border-color 0.15s',
-            }}
+            className={`flex-1 bg-gray-900 rounded-lg p-3 min-w-0 border-2 transition-[border-color] duration-150 ${dragOverCol === col.id ? 'border-blue-500' : 'border-transparent'}`}
           >
-            <h2 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#e5e7eb' }}>
+            <h2 className="text-sm font-semibold mb-3 text-gray-200">
               {col.label}
               {isLoaded && (
-                <span style={{ marginLeft: '0.4rem', color: '#6b7280', fontWeight: 400 }}>
+                <span className="ml-[0.4rem] text-gray-500 font-normal">
                   ({filteredTasks.filter((t) => t.status === col.id).length})
                 </span>
               )}
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="flex flex-col gap-2">
               {!isLoaded ? (
                 <SkeletonCard variant="task" count={3} />
               ) : (
@@ -1308,7 +1184,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
 
       {/* FE-005: Load More button for server-side pagination */}
       {isLoaded && hasMore && onLoadMore && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 1rem 1rem' }}>
+        <div className="flex justify-center px-4 pt-2 pb-4">
           <button
             data-testid="kanban-load-more-btn"
             onClick={onLoadMore}
@@ -1330,17 +1206,11 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
           role="dialog"
           aria-modal="true"
           aria-label="Create Task"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-          }}
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           onClick={(e) => { if (e.target === e.currentTarget) closeCreateModal() }}
         >
-          <div ref={createModalTrapRef} style={{
-            background: '#1f2937', borderRadius: 10, padding: '1.5rem', width: 380,
-            border: '1px solid #374151',
-          }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: '0 0 1rem', fontWeight: 700 }}>New Task</h2>
+          <div ref={createModalTrapRef} className="bg-gray-800 rounded-[10px] p-6 w-[380px] border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <h2 className="m-0 mb-4 font-bold">New Task</h2>
             {/* SIRI-UX-111: aria-invalid + describedby for empty-submit validation */}
             <input
               autoFocus
@@ -1351,19 +1221,12 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               value={newTaskTitle}
               onChange={(e) => { setNewTaskTitle(e.target.value); if (titleTouched) setTitleTouched(false) }}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-              className="input-focus-ring-blue"
+              className={`input-focus-ring-blue w-full px-3 py-2 bg-gray-900 rounded-md text-gray-50 text-sm box-border outline-none border ${titleTouched && !newTaskTitle.trim() ? 'border-red-500 mb-1' : 'border-gray-700 mb-3'}`}
               placeholder="Task title"
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: `1px solid ${titleTouched && !newTaskTitle.trim() ? '#ef4444' : '#374151'}`,
-                borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', marginBottom: titleTouched && !newTaskTitle.trim() ? '0.25rem' : '0.75rem',
-                outline: 'none',
-              }}
             />
             {/* SIRI-UX-317: role="alert" so screen reader announces validation error dynamically */}
             {titleTouched && !newTaskTitle.trim() && (
-              <p id="title-error" role="alert" style={{ color: '#ef4444', fontSize: '0.75rem', margin: '0 0 0.75rem' }}>
+              <p id="title-error" role="alert" className="text-red-500 text-xs m-0 mb-3">
                 Title is required
               </p>
             )}
@@ -1373,30 +1236,19 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               aria-label="Task description"
               value={newTaskDesc}
               onChange={(e) => setNewTaskDesc(e.target.value)}
-              className="input-focus-ring-blue"
+              className="input-focus-ring-blue w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-gray-50 text-sm box-border resize-y outline-none mb-3"
               placeholder="Description (optional)"
               rows={3}
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: '#f8fafc',
-                fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical',
-                outline: 'none', marginBottom: '0.75rem',
-              }}
             />
             {/* SIRI-UX-048: Priority selector */}
             {/* SIRI-UX-204: aria-label for screen readers */}
             {/* SIRI-UX-342: add input-focus-ring-blue for consistent keyboard focus ring */}
             <select
               data-testid="create-task-priority-select"
-              className="input-focus-ring-blue"
               aria-label="Task priority"
               value={newTaskPriority}
               onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority | '')}
-              style={{
-                width: '100%', padding: '0.5rem 0.75rem', background: '#111827',
-                border: '1px solid #374151', borderRadius: 6, color: newTaskPriority ? '#f8fafc' : '#6b7280',
-                fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none',
-              }}
+              className={`input-focus-ring-blue w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-md text-sm box-border outline-none ${newTaskPriority ? 'text-gray-50' : 'text-gray-500'}`}
             >
               <option value="">Priority (optional)</option>
               <option value="high">High</option>
@@ -1404,13 +1256,13 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
               <option value="low">Low</option>
             </select>
             {/* SIRI-UX-341: use <Button> component for Cancel/Submit — matches Edit/Delete modal pattern */}
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <div className="flex gap-2 justify-end mt-4">
               {/* SIRI-UX-276: data-testid for consistent testability — matches cancel-delete-btn pattern */}
               <Button
                 data-testid="create-task-cancel-btn"
                 variant="secondary"
                 onClick={closeCreateModal}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 Cancel
               </Button>
@@ -1421,7 +1273,7 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
                 onClick={handleCreateTask}
                 disabled={creating || !newTaskTitle.trim()}
                 aria-disabled={creating || !newTaskTitle.trim()}
-                style={{ padding: '0.4rem 0.9rem' }}
+                className="px-[0.9rem] py-[0.4rem]"
               >
                 {creating ? 'Creating…' : 'Create'}
               </Button>

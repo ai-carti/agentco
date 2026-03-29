@@ -159,7 +159,7 @@ describe('SIRI-UX-031: CompaniesPage - new company input has focus ring', () => 
     fireEvent.click(screen.getByText('+ New Company'))
     const nameInput = await screen.findByTestId('new-company-name-input')
     fireEvent.focus(nameInput)
-    // Should have focus ring
-    expect(nameInput.style.borderColor || nameInput.style.outline).toBeTruthy()
+    // SIRI-UX-445: focus ring migrated from inline style to CSS class
+    expect(nameInput.className).toContain('input-focus-ring')
   })
 })

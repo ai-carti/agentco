@@ -72,8 +72,8 @@ describe('SIRI-UX-349: handleDragEnd clears dragOverCol', () => {
       fireEvent.dragOver(todoCol, { dataTransfer: { getData: () => 't1' } })
     })
 
-    // Column should have highlighted border (rgb format in jsdom)
-    expect(todoCol.style.border).toContain('rgb(59, 130, 246)')
+    // SIRI-UX-445: drop-zone indicator migrated from inline style to Tailwind class
+    expect(todoCol.className).toContain('border-blue-500')
 
     // Now simulate dragEnd on the card (drag cancelled, no drop)
     const taskCard = screen.getByTestId('task-card-t1')
@@ -82,7 +82,7 @@ describe('SIRI-UX-349: handleDragEnd clears dragOverCol', () => {
     })
 
     // SIRI-UX-349 fix: dragOverCol should be cleared → no blue border
-    expect(todoCol.style.border).not.toContain('rgb(59, 130, 246)')
+    expect(todoCol.className).not.toContain('border-blue-500')
   })
 })
 
