@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react'
-import type { CSSProperties } from 'react'
 
 // SIRI-UX-244: shimmer animation moved to index.css .skeleton-shimmer class
 // (eliminates runtime JS-injected <style> tag — same pattern as SIRI-UX-237/242/243)
-
-const CARD_STYLE: CSSProperties = {
-  background: '#1f2937',
-  borderRadius: 8,
-  padding: '0.75rem',
-  border: '1px solid #374151',
-}
 
 function ShimmerLine({ width = '100%', height = 12 }: { width?: string | number; height?: number }) {
   return (
@@ -25,18 +17,18 @@ function ShimmerCircle({ size, testId = 'skeleton-avatar' }: { size: number; tes
   return (
     <div
       data-testid={testId}
-      className="skeleton-shimmer"
-      style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0 }}
+      className="skeleton-shimmer rounded-full shrink-0"
+      style={{ width: size, height: size }}
     />
   )
 }
 
 function AgentSkeleton() {
   return (
-    <div data-testid="skeleton-agent" style={CARD_STYLE}>
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+    <div data-testid="skeleton-agent" className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+      <div className="flex gap-3 items-center mb-2">
         <ShimmerCircle size={48} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="flex-1 flex flex-col gap-1.5">
           <ShimmerLine width="60%" height={14} />
           <ShimmerLine width="40%" height={12} />
         </div>
@@ -48,12 +40,12 @@ function AgentSkeleton() {
 
 function TaskSkeleton() {
   return (
-    <div data-testid="skeleton-task" style={CARD_STYLE}>
+    <div data-testid="skeleton-task" className="bg-gray-800 rounded-lg p-3 border border-gray-700">
       <ShimmerLine width="80%" height={14} />
-      <div style={{ marginTop: 8 }}>
+      <div className="mt-2">
         <ShimmerLine width="100%" height={10} />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 10 }}>
+      <div className="flex items-center gap-2 mt-2.5">
         <ShimmerCircle size={24} />
         <ShimmerLine width="50%" height={10} />
       </div>
@@ -63,10 +55,10 @@ function TaskSkeleton() {
 
 function CompanySkeleton() {
   return (
-    <div data-testid="skeleton-company" style={CARD_STYLE}>
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+    <div data-testid="skeleton-company" className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+      <div className="flex gap-3 items-center">
         <ShimmerCircle size={40} testId="skeleton-icon" />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="flex-1 flex flex-col gap-1.5">
           <ShimmerLine width="70%" height={14} />
           <ShimmerLine width="45%" height={10} />
         </div>
@@ -92,7 +84,7 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
   if (timedOut) {
     return (
       // SIRI-UX-236: role="alert" so screen readers announce the timeout error to the user
-      <div role="alert" style={{ padding: '1rem', textAlign: 'center', color: '#f87171', fontSize: '0.875rem' }}>
+      <div role="alert" className="p-4 text-center text-red-400 text-sm">
         Loading took too long. Please try refreshing.
       </div>
     )
@@ -108,7 +100,7 @@ export default function SkeletonCard({ variant, count = 1 }: SkeletonCardProps) 
       role="status"
       aria-label="Loading..."
       aria-busy={true}
-      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+      className="flex flex-col gap-2"
     >
       {Array.from({ length: count }, (_, i) => (
         <Component key={`skeleton-${variant}-${i}`} />

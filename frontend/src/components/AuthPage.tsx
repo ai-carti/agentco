@@ -21,7 +21,6 @@ export default function AuthPage() {
   const from = rawFrom && rawFrom !== '/auth' ? rawFrom : '/'
 
   // SIRI-UX-391: wrap in useCallback — handleSubmit is recreated on every render
-  // (when email/password/tab/isLoading state changes) and passed as onSubmit to <form>
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (tab === 'signin') {
@@ -30,128 +29,38 @@ export default function AuthPage() {
       await register(email, password)
     }
     // BUG-010: navigate to original URL after successful auth
-    // Only navigate if no error — check store state after action
     const token = useAuthStore.getState().token
     if (token) {
       navigate(from, { replace: true })
     }
   }, [tab, email, password, login, register, navigate, from]) // SIRI-UX-391
 
-  const styles = {
-    page: {
-      minHeight: '100vh',
-      background: '#0a0a0f',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'sans-serif',
-    } as React.CSSProperties,
-    card: {
-      width: '100%',
-      maxWidth: 400,
-      padding: '2rem',
-      background: '#111118',
-      borderRadius: 12,
-      border: '1px solid #1e1e2e',
-    } as React.CSSProperties,
-    tabs: {
-      display: 'flex',
-      gap: 0,
-      marginBottom: '1.5rem',
-      borderBottom: '1px solid #1e1e2e',
-    } as React.CSSProperties,
-    tab: (active: boolean): React.CSSProperties => ({
-      padding: '0.6rem 1.2rem',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      color: active ? '#6c47ff' : '#6b7280',
-      fontWeight: active ? 600 : 400,
-      borderBottom: active ? '2px solid #6c47ff' : '2px solid transparent',
-      marginBottom: -1,
-      fontSize: '0.95rem',
-      transition: 'color 0.15s',
-    }),
-    label: {
-      display: 'block',
-      color: '#9ca3af',
-      fontSize: '0.8rem',
-      marginBottom: '0.35rem',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.05em',
-    } as React.CSSProperties,
-    input: {
-      width: '100%',
-      padding: '0.65rem 0.9rem',
-      background: '#0a0a0f',
-      border: '1px solid #1e1e2e',
-      borderRadius: 8,
-      color: '#f8fafc',
-      fontSize: '0.95rem',
-      outline: 'none',
-      boxSizing: 'border-box' as const,
-      marginBottom: '1rem',
-    } as React.CSSProperties,
-    button: {
-      width: '100%',
-      padding: '0.75rem',
-      background: '#6c47ff',
-      color: '#fff',
-      border: 'none',
-      borderRadius: 8,
-      fontSize: '1rem',
-      fontWeight: 600,
-      cursor: 'pointer',
-      marginTop: '0.5rem',
-      opacity: isLoading ? 0.7 : 1,
-    } as React.CSSProperties,
-    error: {
-      color: '#ef4444',
-      fontSize: '0.875rem',
-      marginBottom: '1rem',
-      padding: '0.5rem 0.75rem',
-      background: '#1f0a0a',
-      borderRadius: 6,
-      border: '1px solid #3f1010',
-    } as React.CSSProperties,
-    title: {
-      color: '#f8fafc',
-      fontSize: '1.4rem',
-      fontWeight: 700,
-      marginBottom: '1.5rem',
-      textAlign: 'center' as const,
-    } as React.CSSProperties,
-  }
-
   return (
-    <div data-testid="auth-page" style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>AgentCo</h1>
+    <div data-testid="auth-page" className="min-h-screen bg-[#0a0a0f] flex items-center justify-center font-sans">
+      <div className="w-full max-w-[400px] p-8 bg-[#111118] rounded-xl border border-[#1e1e2e]">
+        <h1 className="text-slate-50 text-2xl font-bold mb-6 text-center">AgentCo</h1>
 
         <p
           data-testid="auth-tagline"
-          style={{
-            textAlign: 'center',
-            color: '#6b7280',
-            fontSize: '0.85rem',
-            margin: '-0.75rem 0 1.5rem',
-            lineHeight: 1.5,
-          }}
+          className="text-center text-gray-500 text-sm -mt-3 mb-6 leading-relaxed"
         >
           Your AI team, working 24/7
         </p>
 
         {/* SIRI-UX-282: roving tabindex — active tab gets tabIndex=0, inactive gets tabIndex=-1
-            so Tab key doesn't visit both tabs; Arrow keys move between them (APG tabs pattern)
             SIRI-UX-310: ArrowLeft/ArrowRight keyboard navigation between tabs (WAI-ARIA APG) */}
-        <div role="tablist" style={styles.tabs}>
+        <div role="tablist" className="flex mb-6 border-b border-[#1e1e2e]">
           <button
             id="tab-signin"
             role="tab"
             aria-selected={tab === 'signin'}
             aria-controls="tabpanel-auth"
             tabIndex={tab === 'signin' ? 0 : -1}
-            style={styles.tab(tab === 'signin')}
+            className={`px-5 py-2.5 bg-none border-none cursor-pointer text-[0.95rem] transition-colors duration-150 -mb-px ${
+              tab === 'signin'
+                ? 'text-[#6c47ff] font-semibold border-b-2 border-[#6c47ff]'
+                : 'text-gray-500 font-normal border-b-2 border-transparent'
+            }`}
             onClick={() => setTab('signin')}
             onKeyDown={(e) => {
               if (e.key === 'ArrowRight') {
@@ -170,7 +79,11 @@ export default function AuthPage() {
             aria-selected={tab === 'signup'}
             aria-controls="tabpanel-auth"
             tabIndex={tab === 'signup' ? 0 : -1}
-            style={styles.tab(tab === 'signup')}
+            className={`px-5 py-2.5 bg-none border-none cursor-pointer text-[0.95rem] transition-colors duration-150 -mb-px ${
+              tab === 'signup'
+                ? 'text-[#6c47ff] font-semibold border-b-2 border-[#6c47ff]'
+                : 'text-gray-500 font-normal border-b-2 border-transparent'
+            }`}
             onClick={() => setTab('signup')}
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft') {
@@ -191,15 +104,18 @@ export default function AuthPage() {
           role="tabpanel"
           aria-labelledby={tab === 'signin' ? 'tab-signin' : 'tab-signup'}
         >
-        {/* SIRI-UX-283: role="alert" ensures screen readers auto-announce auth errors (wrong password etc.) */}
-        {error && <div role="alert" style={styles.error}>{error}</div>}
+        {/* SIRI-UX-283: role="alert" ensures screen readers auto-announce auth errors */}
+        {error && (
+          <div role="alert" className="text-red-500 text-sm mb-4 px-3 py-2 bg-[#1f0a0a] rounded-md border border-[#3f1010]">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <input
             id="auth-email"
             aria-label="Email address"
-            style={styles.input}
-            className="input-focus-ring"
+            className="input-focus-ring w-full px-4 py-2.5 bg-[#0a0a0f] border border-[#1e1e2e] rounded-lg text-slate-50 text-[0.95rem] outline-none box-border mb-4"
             type="email"
             placeholder="Email"
             value={email}
@@ -211,8 +127,7 @@ export default function AuthPage() {
           <input
             id="auth-password"
             aria-label="Password"
-            style={styles.input}
-            className="input-focus-ring"
+            className="input-focus-ring w-full px-4 py-2.5 bg-[#0a0a0f] border border-[#1e1e2e] rounded-lg text-slate-50 text-[0.95rem] outline-none box-border mb-4"
             type="password"
             placeholder="Password"
             value={password}
@@ -221,29 +136,26 @@ export default function AuthPage() {
             autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
           />
 
-          {/* SIRI-UX-324: was a <span> — inaccessible to keyboard/screen reader. Now a disabled <button>
-              so tab navigation finds it and AT announces "Forgot password? dimmed button" */}
-          <div style={{ textAlign: 'right', marginTop: '-0.75rem', marginBottom: '1rem' }}>
+          {/* SIRI-UX-324: was a <span> — now a disabled <button> for accessibility */}
+          <div className="text-right -mt-3 mb-4">
             <button
               type="button"
               disabled
               aria-disabled="true"
               title="Coming soon"
               data-testid="forgot-password-btn"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#6b7280',
-                fontSize: '0.8rem',
-                cursor: 'not-allowed',
-                padding: 0,
-              }}
+              className="bg-none border-none text-gray-500 text-xs cursor-not-allowed p-0"
             >
               Forgot password?
             </button>
           </div>
 
-          <button style={styles.button} type="submit" disabled={isLoading} aria-busy={isLoading}>
+          <button
+            className={`w-full py-3 bg-[#6c47ff] text-white border-none rounded-lg text-base font-semibold cursor-pointer mt-2 ${isLoading ? 'opacity-70' : 'opacity-100'}`}
+            type="submit"
+            disabled={isLoading}
+            aria-busy={isLoading}
+          >
             {isLoading ? 'Loading…' : tab === 'signin' ? 'Sign In' : 'Sign Up'}
           </button>
         </form>

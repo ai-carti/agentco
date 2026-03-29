@@ -62,79 +62,52 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
     onSubmit({ name, role, model, system_prompt: systemPrompt })
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    background: '#1f2937',
-    border: '1px solid #374151',
-    borderRadius: 6,
-    color: '#f8fafc',
-    fontSize: '0.875rem',
-    boxSizing: 'border-box',
-    outline: 'none',
-  }
-
   // SIRI-UX-265: focus ring via CSS class input-focus-ring, no JS handlers needed
 
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: '0.75rem',
-    color: '#9ca3af',
-    marginBottom: '0.3rem',
-    fontWeight: 500,
-  }
-
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {/* Name */}
       <div>
         {/* SIRI-UX-066: associate label with input via htmlFor/id */}
-        <label htmlFor="agent-name" style={labelStyle}>Name</label>
+        <label htmlFor="agent-name" className="block text-xs text-gray-400 mb-1 font-medium">Name</label>
         <input
           id="agent-name"
           data-testid="agent-name-input"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="input-focus-ring"
+          className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none"
           placeholder="Agent name"
-          style={inputStyle}
           required
         />
       </div>
 
       {/* Role */}
       <div>
-        <label htmlFor="agent-role" style={labelStyle}>Role</label>
+        <label htmlFor="agent-role" className="block text-xs text-gray-400 mb-1 font-medium">Role</label>
         <input
           id="agent-role"
           data-testid="agent-role-input"
           type="text"
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="input-focus-ring"
+          className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none"
           placeholder="e.g. Frontend Engineer"
-          style={inputStyle}
         />
       </div>
 
       {/* Model — dropdown */}
       <div>
-        <label htmlFor="agent-model" style={labelStyle}>Model</label>
+        <label htmlFor="agent-model" className="block text-xs text-gray-400 mb-1 font-medium">Model</label>
         <select
           id="agent-model"
           data-testid="model-select"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          className="input-focus-ring"
+          className={`input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none appearance-auto ${loadingModels ? 'cursor-not-allowed' : 'cursor-pointer'}`}
           disabled={loadingModels}
           aria-busy={loadingModels}
           required
-          style={{
-            ...inputStyle,
-            cursor: loadingModels ? 'not-allowed' : 'pointer',
-            appearance: 'auto',
-          }}
         >
           <option value="" disabled>
             {loadingModels ? 'Loading models…' : 'Select model'}
@@ -147,13 +120,13 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         </select>
         {error && (
           // SIRI-UX-306: role="alert" so screen reader announces model validation error automatically
-          <p data-testid="agent-form-model-error" role="alert" style={{ color: '#f87171', fontSize: '0.75rem', marginTop: '0.25rem' }}>{error}</p>
+          <p data-testid="agent-form-model-error" role="alert" className="text-red-400 text-xs mt-1">{error}</p>
         )}
       </div>
 
       {/* System Prompt */}
       <div>
-        <label htmlFor="agent-system-prompt" style={labelStyle}>System Prompt</label>
+        <label htmlFor="agent-system-prompt" className="block text-xs text-gray-400 mb-1 font-medium">System Prompt</label>
         <SystemPromptEditor id="agent-system-prompt" value={systemPrompt} onChange={setSystemPrompt} />
       </div>
 
@@ -161,7 +134,7 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         data-testid="agent-form-submit"
         type="submit"
         variant="primary"
-        style={{ width: '100%' }}
+        className="w-full"
       >
         Save Agent
       </Button>

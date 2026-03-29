@@ -26,22 +26,17 @@ function AppLayout() {
   return (
     <>
       <Navbar />
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 49px)' }}>
+      <div className="flex min-h-[calc(100vh-49px)]">
         <Sidebar />
-        <div id="main-content" role="main" style={{ flex: 1, minWidth: 0 }}>
+        <div id="main-content" role="main" className="flex-1 min-w-0">
           <Breadcrumb />
           <ErrorBoundary>
             {/* SIRI-UX-140: show inline spinner instead of null so slow-network users see feedback */}
             <Suspense fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+              <div className="flex items-center justify-center h-[60vh]">
                 {/* SIRI-UX-228: use CSS class instead of inline animation so prefers-reduced-motion can override */}
                 <div
-                  className="app-suspense-spinner"
-                  style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    border: '3px solid #1e293b',
-                    borderTopColor: '#3b82f6',
-                  }}
+                  className="app-suspense-spinner w-8 h-8 rounded-full border-[3px] border-slate-800 border-t-blue-500"
                 />
               </div>
             }>
@@ -77,39 +72,11 @@ function App() {
   }, [initAuth]) // SIRI-UX-229: initAuth is a stable Zustand action but explicit dep is correct
 
   return (
-    <div style={{ fontFamily: 'sans-serif', background: '#0f172a', minHeight: '100vh', color: '#f8fafc' }}>
+    <div className="font-sans bg-slate-900 min-h-screen text-slate-50">
       {/* SIRI-UX-432: Skip-to-content link for keyboard/screen-reader users (WCAG 2.4.1) */}
       <a
         href="#main-content"
-        className="skip-to-content"
-        style={{
-          position: 'absolute',
-          left: '-9999px',
-          top: 'auto',
-          width: '1px',
-          height: '1px',
-          overflow: 'hidden',
-          zIndex: 9999,
-          padding: '0.75rem 1.5rem',
-          background: '#2563eb',
-          color: '#fff',
-          fontWeight: 700,
-          borderRadius: '0 0 8px 0',
-          textDecoration: 'none',
-          fontSize: '0.875rem',
-        }}
-        onFocus={(e) => {
-          const el = e.currentTarget
-          el.style.left = '0'
-          el.style.width = 'auto'
-          el.style.height = 'auto'
-        }}
-        onBlur={(e) => {
-          const el = e.currentTarget
-          el.style.left = '-9999px'
-          el.style.width = '1px'
-          el.style.height = '1px'
-        }}
+        className="skip-to-content absolute -left-[9999px] top-auto w-px h-px overflow-hidden z-[9999] px-6 py-3 bg-blue-600 text-white font-bold rounded-br-lg no-underline text-sm focus:left-0 focus:w-auto focus:h-auto"
       >
         Skip to content
       </a>

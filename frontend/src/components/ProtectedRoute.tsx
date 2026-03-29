@@ -14,23 +14,10 @@ export default function ProtectedRoute() {
         role="status"
         aria-label="Loading..."
         aria-busy="true"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          background: '#0f172a',
-        }}
+        className="flex items-center justify-center min-h-screen bg-slate-900"
       >
         <div
-          className="app-suspense-spinner"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            border: '3px solid #1e293b',
-            borderTopColor: '#3b82f6',
-          }}
+          className="app-suspense-spinner w-8 h-8 rounded-full border-[3px] border-slate-800 border-t-blue-500"
         />
       </div>
     )

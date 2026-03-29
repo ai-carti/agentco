@@ -8,34 +8,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // SIRI-UX-249: hover handled by CSS classes in index.css (.btn-primary:hover, etc.)
-// Inline style sets base colors; CSS :hover overrides them — prefers-reduced-motion friendly
-const BASE_STYLES: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.375rem',
-  padding: '0.5rem 1rem',
-  borderRadius: 8,
-  fontSize: '0.875rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-  border: 'none',
-  transition: 'background 0.15s, opacity 0.15s',
-}
+const BASE_CLASSES = 'inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer border-none transition-[background,opacity] duration-150'
 
-const VARIANT_STYLES: Record<ButtonVariant, React.CSSProperties> = {
-  primary: {
-    color: '#ffffff',
-    border: 'none',
-  },
-  secondary: {
-    color: '#e2e8f0',
-    border: '1px solid rgba(255,255,255,0.2)',
-  },
-  danger: {
-    color: '#ffffff',
-    border: 'none',
-  },
+const VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  primary: 'text-white border-none',
+  secondary: 'text-slate-200 border border-white/20',
+  danger: 'text-white border-none',
 }
 
 export default function Button({
@@ -48,17 +26,12 @@ export default function Button({
 }: ButtonProps) {
   const variantClass = `btn-${variant}`
 
-  const mergedStyle: React.CSSProperties = {
-    ...BASE_STYLES,
-    ...VARIANT_STYLES[variant],
-    ...(disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
-    ...style,
-  }
+  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
 
   return (
     <button
-      className={[variantClass, 'btn', className].filter(Boolean).join(' ')}
-      style={mergedStyle}
+      className={[variantClass, 'btn', BASE_CLASSES, VARIANT_CLASSES[variant], disabledClasses, className].filter(Boolean).join(' ')}
+      style={style}
       disabled={disabled}
       {...props}
     >

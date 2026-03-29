@@ -90,6 +90,7 @@ describe('Sidebar — UX-019', () => {
   it('has smooth transition style', () => {
     renderSidebar()
     const sidebar = screen.getByTestId('sidebar')
-    expect(sidebar.style.transition).toContain('width')
+    // Transition is now applied via Tailwind class transition-[width]
+    expect(sidebar.className).toContain('transition-')
   })
 })

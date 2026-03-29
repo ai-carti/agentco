@@ -43,27 +43,7 @@ function maskKey(key: string): string {
   return `sk-...${key.slice(-4)}`
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem 0.75rem',
-  background: '#1f2937',
-  border: '1px solid #374151',
-  borderRadius: 6,
-  color: '#f8fafc',
-  fontSize: '0.875rem',
-  boxSizing: 'border-box',
-  outline: 'none',
-}
-
 // SIRI-UX-265: focus ring via CSS class input-focus-ring, no JS handlers needed
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.75rem',
-  color: '#9ca3af',
-  marginBottom: '0.3rem',
-  fontWeight: 500,
-}
 
 function authHeaders(): Record<string, string> {
   const token = getStoredToken()
@@ -271,14 +251,14 @@ export default function SettingsPage() {
   }, [selectedCompanyId, toast])
 
   return (
-    <div data-testid="settings-page" style={{ padding: '1rem', maxWidth: 560 }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, marginBottom: '1.5rem' }}>
+    <div data-testid="settings-page" className="p-4 max-w-[560px]">
+      <h1 className="text-2xl font-bold m-0 mb-6">
         Settings
       </h1>
 
       {/* LLM Credentials section */}
-      <div data-testid="llm-credentials-section" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: '#f1f5f9' }}>
+      <div data-testid="llm-credentials-section" className="mb-8">
+        <h2 className="text-base font-semibold mb-4 text-slate-100">
           LLM Credentials
         </h2>
 
@@ -286,17 +266,10 @@ export default function SettingsPage() {
         {companiesLoaded && companies.length === 0 && (
           <div
             data-testid="settings-no-company"
-            style={{
-              padding: '1rem',
-              background: '#1f2937',
-              border: '1px solid #374151',
-              borderRadius: 6,
-              color: '#9ca3af',
-              fontSize: '0.875rem',
-            }}
+            className="p-4 bg-gray-800 border border-gray-700 rounded-md text-gray-400 text-sm"
           >
             Create a company first to manage LLM credentials.{' '}
-            <Link to="/" style={{ color: '#6c47ff', textDecoration: 'none' }}>
+            <Link to="/" className="text-[#6c47ff] no-underline">
               Go to Companies →
             </Link>
           </div>
@@ -304,14 +277,13 @@ export default function SettingsPage() {
 
         {/* Company selector (show only if multiple companies) */}
         {companiesLoaded && companies.length > 1 && (
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={labelStyle}>Company</label>
+          <div className="mb-4">
+            <label className="block text-xs text-gray-400 mb-1 font-medium">Company</label>
             <select
               data-testid="settings-company-select"
               value={selectedCompanyId ?? ''}
               onChange={(e) => setSelectedCompanyId(e.target.value)}
-              className="input-focus-ring"
-              style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+              className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none cursor-pointer appearance-auto"
             >
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -325,17 +297,16 @@ export default function SettingsPage() {
           <>
             <form
               onSubmit={handleSubmit}
-              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}
+              className="flex flex-col gap-3 mb-5"
             >
               <div>
-                <label htmlFor="settings-provider" style={labelStyle}>Provider</label>
+                <label htmlFor="settings-provider" className="block text-xs text-gray-400 mb-1 font-medium">Provider</label>
                 <select
                   id="settings-provider"
                   data-testid="llm-provider-select"
                   value={provider}
                   onChange={(e) => setProvider(e.target.value)}
-                  className="input-focus-ring"
-                  style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
+                  className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none cursor-pointer appearance-auto"
                   required
                 >
                   {PROVIDERS.map((p) => (
@@ -345,16 +316,15 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label htmlFor="settings-api-key" style={labelStyle}>API Key</label>
+                <label htmlFor="settings-api-key" className="block text-xs text-gray-400 mb-1 font-medium">API Key</label>
                 <input
                   id="settings-api-key"
                   data-testid="llm-api-key-input"
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value.trim())}
-                  className="input-focus-ring"
+                  className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none"
                   placeholder="sk-..."
-                  style={inputStyle}
                   required
                   autoComplete="new-password"
                 />
@@ -365,7 +335,7 @@ export default function SettingsPage() {
                 <p
                   data-testid="llm-credentials-error"
                   role="alert"
-                  style={{ color: '#f87171', fontSize: '0.8rem', margin: 0 }}
+                  className="text-red-400 text-xs m-0"
                 >
                   {submitError}
                 </p>
@@ -376,7 +346,7 @@ export default function SettingsPage() {
                 type="submit"
                 variant="primary"
                 disabled={submitting}
-                style={{ alignSelf: 'flex-start' }}
+                className="self-start"
               >
                 {submitting ? 'Validating…' : 'Validate & Save'}
               </Button>
@@ -388,15 +358,7 @@ export default function SettingsPage() {
               <div
                 data-testid="credentials-fetch-error"
                 role="alert"
-                style={{
-                  padding: '0.75rem',
-                  background: '#1f2937',
-                  border: '1px solid #ef4444',
-                  borderRadius: 6,
-                  color: '#f87171',
-                  fontSize: '0.875rem',
-                  marginBottom: '0.75rem',
-                }}
+                className="px-3 py-3 bg-gray-800 border border-red-500 rounded-md text-red-400 text-sm mb-3"
               >
                 {credentialsError}
               </div>
@@ -404,34 +366,24 @@ export default function SettingsPage() {
 
             {/* Saved credentials list */}
             {credentialsLoaded && credentials.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '0 0 0.5rem' }}>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-gray-400 m-0 mb-2">
                   Saved credentials
                 </p>
                 {credentials.map((cred) => (
                   <div
                     key={cred.id}
                     data-testid="llm-credential-item"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.5rem 0.75rem',
-                      background: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: 6,
-                      fontSize: '0.875rem',
-                      gap: '0.75rem',
-                    }}
+                    className="flex items-center justify-between px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm gap-3"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <span
                         data-testid="llm-credential-provider"
-                        style={{ color: '#94a3b8', fontWeight: 500, textTransform: 'capitalize', flexShrink: 0 }}
+                        className="text-slate-400 font-medium capitalize shrink-0"
                       >
                         {cred.provider}
                       </span>
-                      <span style={{ color: '#6b7280', fontFamily: 'monospace', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span className="text-gray-500 font-mono text-xs overflow-hidden text-ellipsis">
                         {cred.key_hint}
                       </span>
                     </div>
@@ -439,7 +391,7 @@ export default function SettingsPage() {
                       data-testid="llm-credential-delete"
                       variant="secondary"
                       onClick={() => handleDelete(cred.id)}
-                      style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', flexShrink: 0 }}
+                      className="px-2 py-0.5 text-xs shrink-0"
                     >
                       Delete
                     </Button>
@@ -456,18 +408,7 @@ export default function SettingsPage() {
         <Link
           to="/settings/billing"
           data-testid="settings-billing-link"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            background: '#1e293b',
-            border: '1px solid #334155',
-            borderRadius: 6,
-            color: '#f1f5f9',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-          }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-md text-slate-100 no-underline text-[0.9rem]"
         >
           💳 Billing
         </Link>

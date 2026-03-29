@@ -40,9 +40,9 @@ export default function SystemPromptEditor({ value, onChange, id }: SystemPrompt
   }, [onChange])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div className="flex flex-col gap-2">
       {/* Template buttons */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div className="flex gap-2 flex-wrap">
         {TEMPLATES.map((tpl) => (
           <button
             key={tpl.key}
@@ -58,40 +58,18 @@ export default function SystemPromptEditor({ value, onChange, id }: SystemPrompt
       </div>
 
       {/* Textarea + token counter wrapper */}
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <textarea
           id={id}
           data-testid="system-prompt-textarea"
           value={value}
           onChange={handleChange}
-          className="min-h-[200px] font-mono text-sm resize-y"
-          style={{
-            width: '100%',
-            minHeight: '200px',
-            padding: '0.5rem 0.75rem',
-            paddingBottom: '1.5rem',
-            background: '#1f2937',
-            border: '1px solid #374151',
-            borderRadius: 6,
-            color: '#f8fafc',
-            fontSize: '0.875rem',
-            fontFamily: 'monospace',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-          }}
+          className="w-full min-h-[200px] px-3 py-2 pb-6 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm font-mono resize-y box-border"
           placeholder="Describe the agent's role and behavior..."
         />
         <span
           data-testid="token-counter"
-          className={`text-xs ${isOverLimit ? 'text-yellow-400' : 'text-gray-500'}`}
-          style={{
-            position: 'absolute',
-            bottom: '0.4rem',
-            right: '0.5rem',
-            fontSize: '0.75rem',
-            color: isOverLimit ? '#facc15' : '#6b7280',
-            pointerEvents: 'none',
-          }}
+          className={`absolute bottom-1.5 right-2 text-xs pointer-events-none ${isOverLimit ? 'text-yellow-400' : 'text-gray-500'}`}
         >
           ~{tokens} tokens
         </span>

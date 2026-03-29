@@ -16,7 +16,6 @@ function getInitialCollapsed(): boolean {
 }
 
 // SIRI-UX-272: static nav items at module-level — no object recreation on each render
-// War Room `to` is dynamic (depends on currentCompany), computed inside the component
 const STATIC_NAV_ITEMS = [
   { label: 'Companies', icon: '\u{1F3E2}', testId: 'sidebar-nav-companies', to: '/', end: true },
   { label: 'Library', icon: '\u{1F4DA}', testId: 'sidebar-nav-library', to: '/library', end: false },
@@ -64,40 +63,23 @@ export default function Sidebar() {
               localStorage.setItem(STORAGE_KEY, 'true')
             }
           }}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 39,
-          }}
+          className="fixed inset-0 bg-black/50 z-[39]"
         />
       )}
       <aside
         data-testid="sidebar"
+        className="flex flex-col border-r border-slate-800 bg-gray-900 transition-[width] duration-200 ease-in-out overflow-hidden shrink-0"
         style={{
           width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
           minHeight: '100%',
-          background: '#111827',
-          borderRight: '1px solid #1e293b',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'width 0.2s ease',
-          overflow: 'hidden',
-          flexShrink: 0,
-          position: mobile ? 'fixed' : 'relative',
-          top: mobile ? 0 : undefined,
-          left: mobile ? 0 : undefined,
-          bottom: mobile ? 0 : undefined,
-          zIndex: mobile ? 40 : undefined,
+          ...(mobile ? { position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 40 } : { position: 'relative' }),
         }}
       >
         {/* Toggle button */}
         <button
           data-testid="sidebar-toggle"
           onClick={toggle}
-          style={{
-            background: 'transparent', border: 'none', color: '#9ca3af',
-            cursor: 'pointer', padding: '0.75rem', fontSize: '1rem',
-            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-end',
-            borderBottom: '1px solid #1e293b',
-          }}
+          className={`bg-transparent border-none text-gray-400 cursor-pointer p-3 text-base flex items-center border-b border-slate-800 ${collapsed ? 'justify-center' : 'justify-end'}`}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -106,28 +88,23 @@ export default function Sidebar() {
 
         {/* Nav items */}
         {/* SIRI-UX-141: aria-label distinguishes sidebar nav from Navbar nav for screen readers */}
-        <nav aria-label="Sidebar navigation" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem' }}>
+        <nav aria-label="Sidebar navigation" className="flex flex-col gap-1 p-2">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.testId}
               to={item.to}
               // SIRI-UX-214: pass `end` prop when item requires exact match (e.g., Companies at "/")
-              // Without `end`, NavLink to="/" is always isActive on every route
               end={'end' in item ? item.end : undefined}
               data-testid={item.testId}
               title={item.label}
               onClick={() => { if (mobile) { setCollapsed(true); localStorage.setItem(STORAGE_KEY, 'true') } }}
-              style={({ isActive }) => ({
-                display: 'flex', alignItems: 'center', gap: '0.6rem',
-                padding: collapsed ? '0.5rem' : '0.5rem 0.75rem',
-                borderRadius: 6, textDecoration: 'none',
-                color: isActive ? '#f8fafc' : '#9ca3af',
-                background: isActive ? '#1e293b' : 'transparent',
-                fontSize: '0.85rem', whiteSpace: 'nowrap',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-              })}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 rounded-md no-underline text-sm whitespace-nowrap ${
+                  collapsed ? 'p-2 justify-center' : 'px-3 py-2 justify-start'
+                } ${isActive ? 'text-slate-50 bg-slate-800' : 'text-gray-400 bg-transparent'}`
+              }
             >
-              <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+              <span className="text-base shrink-0">{item.icon}</span>
               {!collapsed && <span>{item.label}</span>}
             </NavLink>
           ))}

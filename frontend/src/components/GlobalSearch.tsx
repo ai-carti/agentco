@@ -60,8 +60,6 @@ export default function GlobalSearch() {
   }, [])
 
   // SIRI-UX-275: Escape listener gated on `open` — only active when dialog is open.
-  // Previously, setOpen(false) was called on every Escape regardless of dialog state,
-  // causing spurious state updates when other modals (Kanban, etc.) used Escape to close.
   useEffect(() => {
     if (!open) return
     const handleEscape = (e: KeyboardEvent) => {
@@ -195,32 +193,23 @@ export default function GlobalSearch() {
         data-testid="global-search-trigger"
         onClick={() => setOpen(true)}
         aria-label="Open search"
-        style={{
-          background: 'transparent', border: '1px solid #374151', borderRadius: 6,
-          color: '#9ca3af', padding: '0.3rem 0.7rem', fontSize: '0.8rem', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: '0.4rem',
-        }}
+        className="bg-transparent border border-gray-700 rounded-md text-gray-400 px-3 py-1 text-xs cursor-pointer flex items-center gap-1.5"
       >
         {/* SIRI-UX-396: aria-hidden so screen reader doesn't announce raw emoji glyph name */}
-        <span aria-hidden="true" style={{ fontSize: '0.85rem' }}>&#x1F50D;</span>
+        <span aria-hidden="true" className="text-sm">&#x1F50D;</span>
         <span>Search</span>
         {/* SIRI-UX-285: platform-adaptive shortcut hint — ⌘K on Mac, Ctrl+K elsewhere */}
-        <kbd style={{ fontSize: '0.65rem', color: '#6b7280', marginLeft: '0.25rem' }}>{getIsMac() ? '⌘K' : 'Ctrl+K'}</kbd>
+        <kbd className="text-[0.65rem] text-gray-500 ml-1">{getIsMac() ? '⌘K' : 'Ctrl+K'}</kbd>
       </button>
     )
   }
 
   // SIRI-UX-326: removed duplicate data-testid="global-search-trigger" hidden button — was pointless
-  // and caused getByTestId to throw when two elements had the same testid
   return (
     <div
         data-testid="global-search-overlay"
         onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
-        style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-          paddingTop: '15vh', zIndex: 100,
-        }}
+        className="fixed inset-0 bg-black/60 flex items-start justify-center pt-[15vh] z-[100]"
       >
         {/* SIRI-UX-235: role="dialog" + aria-modal="true" so screen readers treat this as a modal dialog */}
         {/* SIRI-UX-270: dialogTrapRef traps focus inside dialog (Tab/Shift+Tab stay within) */}
@@ -229,11 +218,8 @@ export default function GlobalSearch() {
           role="dialog"
           aria-modal="true"
           aria-label="Search"
-          style={{
-          background: '#1f2937', borderRadius: 10, width: '100%', maxWidth: 520,
-          border: '1px solid #374151', overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        }}>
+          className="bg-gray-800 rounded-[10px] w-full max-w-[520px] border border-gray-700 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+        >
           {/* SIRI-UX-142: combobox pattern — input controls the listbox below */}
           <input
             ref={inputRef}
@@ -249,11 +235,7 @@ export default function GlobalSearch() {
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            style={{
-              width: '100%', padding: '0.75rem 1rem', background: 'transparent',
-              border: 'none', borderBottom: '1px solid #374151', color: '#f8fafc',
-              fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box',
-            }}
+            className="w-full px-4 py-3 bg-transparent border-none border-b border-gray-700 text-slate-50 text-[0.95rem] outline-none box-border border-b-gray-700"
           />
 
           {/* SIRI-UX-314: search scope hint so user understands what's being searched */}
@@ -263,7 +245,7 @@ export default function GlobalSearch() {
               data-testid="global-search-scope-hint"
               role="status"
               aria-live="polite"
-              style={{ textAlign: 'center', color: '#6b7280', padding: '0.75rem 1rem', fontSize: '0.8rem' }}
+              className="text-center text-gray-500 px-4 py-3 text-xs"
             >
               {currentCompany
                 ? `Searching in "${currentCompany.name}"`
@@ -275,7 +257,7 @@ export default function GlobalSearch() {
               data-testid="global-search-empty"
               role="status"
               aria-live="polite"
-              style={{ textAlign: 'center', color: '#6b7280', padding: '1rem 0' }}
+              className="text-center text-gray-500 py-4"
             >
               {currentCompany
                 ? `No results for "${debouncedQuery}" in "${currentCompany.name}"`
@@ -290,14 +272,14 @@ export default function GlobalSearch() {
               data-testid="search-results"
               role="listbox"
               aria-label="Search results"
-              style={{ maxHeight: 360, overflowY: 'auto', padding: '0.5rem 0' }}
+              className="max-h-[360px] overflow-y-auto py-2"
             >
               {(['company', 'agent', 'task'] as const).map((type) => {
                 const group = grouped[type]
                 if (!group || group.length === 0) return null
                 return (
                   <div key={type} data-testid={`search-group-${type}s`}>
-                    <div style={{ padding: '0.35rem 1rem', fontSize: '0.7rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="px-4 py-1 text-[0.7rem] text-gray-500 font-semibold uppercase tracking-wide">
                       {GROUP_LABELS[type]}
                     </div>
                     {group.map((result) => {
@@ -311,15 +293,11 @@ export default function GlobalSearch() {
                           aria-selected={isActive}
                           data-testid={isActive ? 'search-result-active' : undefined}
                           onClick={() => handleSelect(result)}
-                          className={`search-result-item${isActive ? ' search-result-item--active' : ''}`}
-                          style={{
-                            padding: '0.5rem 1rem', cursor: 'pointer',
-                            display: 'flex', flexDirection: 'column', gap: '0.1rem',
-                          }}
+                          className={`px-4 py-2 cursor-pointer flex flex-col gap-0.5 search-result-item${isActive ? ' search-result-item--active' : ''}`}
                         >
-                          <span style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{result.title}</span>
+                          <span className="text-sm text-slate-50">{result.title}</span>
                           {result.subtitle && (
-                            <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{result.subtitle}</span>
+                            <span className="text-[0.7rem] text-gray-500">{result.subtitle}</span>
                           )}
                         </div>
                       )

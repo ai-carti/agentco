@@ -35,51 +35,19 @@ export default class ErrorBoundary extends Component<Props, State> {
           data-testid="error-boundary-fallback"
           role="alert"
           aria-live="assertive"
-          style={{
-            padding: '3rem 1.5rem',
-            textAlign: 'center',
-            color: '#9ca3af',
-            minHeight: '60vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="p-12 text-center text-gray-400 min-h-[60vh] flex flex-col items-center justify-center"
         >
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💥</div>
-          <div
-            style={{
-              fontSize: '1.25rem',
-              fontWeight: 700,
-              color: '#f1f5f9',
-              marginBottom: '0.5rem',
-            }}
-          >
+          <div className="text-5xl mb-4">💥</div>
+          <div className="text-xl font-bold text-slate-100 mb-2">
             Something went wrong
           </div>
-          <div
-            style={{
-              fontSize: '0.875rem',
-              color: '#6b7280',
-              marginBottom: '1.5rem',
-              maxWidth: 400,
-            }}
-          >
+          <div className="text-sm text-gray-500 mb-6 max-w-[400px]">
             An unexpected error occurred. Try reloading the page.
           </div>
           <button
             data-testid="error-boundary-reload-btn"
             onClick={this.handleReload}
-            style={{
-              padding: '0.5rem 1.25rem',
-              background: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+            className="px-5 py-2 bg-blue-600 text-white border-none rounded-md text-sm font-semibold cursor-pointer"
           >
             Reload page
           </button>

@@ -76,7 +76,8 @@ describe('SIRI-UX-028: AgentForm - inputs have focus ring on focus', () => {
     })
     render(<AgentForm onSubmit={vi.fn()} />)
     const nameInput = screen.getByTestId('agent-name-input')
-    expect(nameInput.style.outline).toBe('none')
+    // outline:none now applied via Tailwind class
+    expect(nameInput.className).toContain('outline-none')
   })
 })
 
@@ -110,7 +111,7 @@ describe('SIRI-UX-030: SettingsPage - API key input has visible focus ring', () 
     })
   }
 
-  it('api key input has onFocus/onBlur handlers for focus ring', async () => {
+  it('api key input has focus ring CSS class for focus styling', async () => {
     setupCompanyFetch()
     render(
       <MemoryRouter>
@@ -118,17 +119,8 @@ describe('SIRI-UX-030: SettingsPage - API key input has visible focus ring', () 
       </MemoryRouter>
     )
     const apiKeyInput = await screen.findByTestId('llm-api-key-input')
-    // Store initial border color before focus
-    const initialBorderColor = apiKeyInput.style.borderColor
-    fireEvent.focus(apiKeyInput)
-    // After focus, border color should have changed
-    const focusedBorderColor = apiKeyInput.style.borderColor
-    expect(focusedBorderColor).not.toBe('')
-    // jsdom normalizes hex → rgb, so check it changed from initial
-    fireEvent.blur(apiKeyInput)
-    // After blur it should return to a non-focus color
-    const blurredBorderColor = apiKeyInput.style.borderColor
-    expect(blurredBorderColor).toBe(initialBorderColor)
+    // Focus ring is now applied via CSS class input-focus-ring, not JS onFocus/onBlur handlers
+    expect(apiKeyInput.className).toContain('input-focus-ring')
   })
 
   it('api key input has outline:none (no default browser outline)', async () => {
@@ -139,7 +131,8 @@ describe('SIRI-UX-030: SettingsPage - API key input has visible focus ring', () 
       </MemoryRouter>
     )
     const apiKeyInput = await screen.findByTestId('llm-api-key-input')
-    expect(apiKeyInput.style.outline).toBe('none')
+    // outline:none now applied via Tailwind class
+    expect(apiKeyInput.className).toContain('outline-none')
   })
 })
 

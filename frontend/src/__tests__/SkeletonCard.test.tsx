@@ -97,15 +97,17 @@ describe('UX-016: SkeletonCard', () => {
   it('agent skeleton card has consistent card styling (background, border-radius)', () => {
     render(<SkeletonCard variant="agent" />)
     const card = screen.getByTestId('skeleton-agent')
-    expect(card.style.background).toBe('rgb(31, 41, 55)')
-    expect(card.style.borderRadius).toBe('8px')
+    // Styling now applied via Tailwind classes (bg-gray-800, rounded-lg, border)
+    expect(card.className).toContain('bg-gray-800')
+    expect(card.className).toContain('rounded-lg')
   })
 
   it('task skeleton card has consistent card styling', () => {
     render(<SkeletonCard variant="task" />)
     const card = screen.getByTestId('skeleton-task')
-    expect(card.style.background).toBe('rgb(31, 41, 55)')
-    expect(card.style.borderRadius).toBe('8px')
+    // Styling now applied via Tailwind classes (bg-gray-800, rounded-lg, border)
+    expect(card.className).toContain('bg-gray-800')
+    expect(card.className).toContain('rounded-lg')
   })
 
   // SIRI-UX-378: key should use semantic string (`skeleton-${variant}-${i}`) not bare index

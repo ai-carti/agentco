@@ -10,28 +10,21 @@ export default function Navbar() {
     <nav
       aria-label="Main navigation"
       data-testid="navbar"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.75rem 1.5rem',
-        borderBottom: '1px solid #1e293b',
-        background: '#0f172a',
-      }}
+      className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+      <div className="flex items-center gap-6">
         {/* SIRI-UX-044: Logo only — nav links live in Sidebar */}
         <NavLink
           to="/"
-          style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f8fafc', textDecoration: 'none' }}
+          className="font-bold text-lg text-slate-50 no-underline"
         >
           AgentCo
         </NavLink>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div className="flex items-center gap-3">
         <GlobalSearch />
         {user && (
-          <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+          <span className="text-gray-400 text-sm">
             {user.email}
           </span>
         )}

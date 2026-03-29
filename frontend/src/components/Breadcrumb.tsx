@@ -58,25 +58,17 @@ export default function Breadcrumb({ activeSection }: BreadcrumbProps = {}) {
     <nav aria-label="Breadcrumb">
       <div
         data-testid="breadcrumb"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.5rem 1.5rem',
-          fontSize: '0.85rem',
-          color: '#9ca3af',
-          borderBottom: '1px solid #1e293b',
-        }}
+        className="flex items-center gap-2 px-6 py-2 text-sm text-gray-400 border-b border-slate-800"
       >
-        <Link to="/" style={{ color: '#60a5fa', textDecoration: 'none' }}>
+        <Link to="/" className="text-blue-400 no-underline">
           AgentCo
         </Link>
 
         {showCompanyBlock && (
           <>
-            <span aria-hidden="true" style={{ color: '#4b5563' }}>&gt;</span>
+            <span aria-hidden="true" className="text-gray-600">&gt;</span>
             {hasCompany ? (
-              <span style={{ color: '#e2e8f0' }}>{currentCompany.name}</span>
+              <span className="text-slate-200">{currentCompany.name}</span>
             ) : (
               <span>Select company</span>
             )}
@@ -85,8 +77,8 @@ export default function Breadcrumb({ activeSection }: BreadcrumbProps = {}) {
 
         {section && (
           <>
-            <span aria-hidden="true" style={{ color: '#4b5563' }}>&gt;</span>
-            <span style={{ color: '#e2e8f0' }}>{section}</span>
+            <span aria-hidden="true" className="text-gray-600">&gt;</span>
+            <span className="text-slate-200">{section}</span>
           </>
         )}
       </div>

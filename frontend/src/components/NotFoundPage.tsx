@@ -8,51 +8,20 @@ export default function NotFoundPage() {
   return (
     <div
       data-testid="not-found-page"
-      style={{
-        padding: '3rem 1.5rem',
-        textAlign: 'center',
-        color: '#9ca3af',
-        minHeight: '60vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      className="p-12 text-center text-gray-400 min-h-[60vh] flex flex-col items-center justify-center"
     >
       {/* SIRI-UX-399: use semantic h1 for screen reader heading navigation */}
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }} aria-hidden="true">404</div>
-      <h1
-        style={{
-          fontSize: '1.25rem',
-          fontWeight: 700,
-          color: '#f1f5f9',
-          marginBottom: '0.5rem',
-        }}
-      >
+      <div className="text-6xl mb-4" aria-hidden="true">404</div>
+      <h1 className="text-xl font-bold text-slate-100 mb-2">
         Page not found
       </h1>
-      <div
-        style={{
-          fontSize: '0.875rem',
-          color: '#6b7280',
-          marginBottom: '1.5rem',
-        }}
-      >
+      <div className="text-sm text-gray-500 mb-6">
         The page you're looking for doesn't exist.
       </div>
       <button
         data-testid="not-found-home-btn"
         onClick={() => navigate('/')}
-        style={{
-          padding: '0.5rem 1.25rem',
-          background: '#2563eb',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
+        className="px-5 py-2 bg-blue-600 text-white border-none rounded-md text-sm font-semibold cursor-pointer"
       >
         Go home
       </button>

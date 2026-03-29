@@ -1,4 +1,3 @@
-import React from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 // POST-005: Billing UI skeleton — pre-MVP Stripe integration preparation
@@ -63,86 +62,48 @@ const USAGE_HISTORY = [
   { date: '2026-03-15', description: 'War Room session', amount: '$0.00' },
 ]
 
-const cardStyle: React.CSSProperties = {
-  background: '#1e293b',
-  border: '1px solid #334155',
-  borderRadius: 10,
-  padding: '1.25rem',
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#94a3b8',
-  fontSize: '0.78rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  marginBottom: '0.25rem',
-}
-
-const valueStyle: React.CSSProperties = {
-  color: '#f8fafc',
-  fontSize: '1.1rem',
-  fontWeight: 600,
-}
-
-const sectionHeadingStyle: React.CSSProperties = {
-  fontSize: '1rem',
-  fontWeight: 700,
-  color: '#f1f5f9',
-  marginBottom: '1rem',
-  marginTop: 0,
-}
-
 export default function BillingPage() {
   // SIRI-UX-437: document title for accessibility + tab distinction (missed in SIRI-UX-433)
   useDocumentTitle('Billing — AgentCo')
   return (
     <div
       data-testid="billing-page"
-      style={{ padding: '1.5rem', maxWidth: 900, margin: '0 auto' }}
+      className="p-6 max-w-[900px] mx-auto"
     >
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, marginBottom: '1.5rem' }}>
+      <h1 className="text-2xl font-bold m-0 mb-6">
         Billing
       </h1>
 
       {/* ── Current Plan ── */}
       {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
-      <section data-testid="billing-current-plan" aria-labelledby="billing-heading-current" style={{ marginBottom: '2rem' }}>
-        <h2 id="billing-heading-current" style={sectionHeadingStyle}>Current Plan</h2>
-        <div style={{ ...cardStyle, display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
+      <section data-testid="billing-current-plan" aria-labelledby="billing-heading-current" className="mb-8">
+        <h2 id="billing-heading-current" className="text-base font-bold text-slate-100 mb-4 mt-0">Current Plan</h2>
+        <div className="bg-slate-800 border border-slate-700 rounded-[10px] p-5 flex flex-wrap gap-8">
           <div>
-            <p style={labelStyle}>Plan</p>
-            <p style={valueStyle}>
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Plan</p>
+            <p className="text-slate-50 text-lg font-semibold">
               <span
-                style={{
-                  display: 'inline-block',
-                  background: CURRENT_PLAN.name === 'Free' ? '#374151' : '#1d4ed8',
-                  color: '#f8fafc',
-                  borderRadius: 4,
-                  padding: '0.15rem 0.6rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  marginRight: '0.5rem',
-                }}
+                className={`inline-block ${CURRENT_PLAN.name === 'Free' ? 'bg-gray-700' : 'bg-blue-700'} text-slate-50 rounded px-2.5 py-0.5 text-sm font-bold mr-2`}
               >
                 {CURRENT_PLAN.name}
               </span>
             </p>
           </div>
           <div>
-            <p style={labelStyle}>Next billing</p>
-            <p style={valueStyle}>{CURRENT_PLAN.nextBilling}</p>
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Next billing</p>
+            <p className="text-slate-50 text-lg font-semibold">{CURRENT_PLAN.nextBilling}</p>
           </div>
         </div>
 
         {/* Usage stats */}
         <div
           data-testid="billing-usage"
-          style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}
+          className="flex gap-4 mt-4 flex-wrap"
         >
-          <div style={{ ...cardStyle, flex: 1, minWidth: 160 }}>
-            <p style={labelStyle}>API calls</p>
-            <p style={valueStyle}>{CURRENT_PLAN.apiCalls.toLocaleString()}</p>
-            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0.5rem' }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-[10px] p-5 flex-1 min-w-[160px]">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">API calls</p>
+            <p className="text-slate-50 text-lg font-semibold">{CURRENT_PLAN.apiCalls.toLocaleString()}</p>
+            <p className="text-slate-600 text-xs mt-1 mb-2">
               of 1,000 / mo
             </p>
             {/* SIRI-UX-094: usage progress bar */}
@@ -152,15 +113,15 @@ export default function BillingPage() {
               aria-valuemin={0}
               aria-valuemax={1000}
               aria-label="API calls usage"
-              style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
+              className="h-1 bg-slate-700 rounded-sm overflow-hidden"
             >
-              <div className="billing-progress-fill" style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.apiCalls / 1000) * 100, 100)}%`, background: '#3b82f6', borderRadius: 2 }} />
+              <div className="billing-progress-fill h-full bg-blue-500 rounded-sm" style={{ width: `${Math.min((CURRENT_PLAN.apiCalls / 1000) * 100, 100)}%` }} />
             </div>
           </div>
-          <div style={{ ...cardStyle, flex: 1, minWidth: 160 }}>
-            <p style={labelStyle}>Tokens used</p>
-            <p style={valueStyle}>{(CURRENT_PLAN.tokensUsed / 1000).toLocaleString()}K</p>
-            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.25rem 0 0.5rem' }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-[10px] p-5 flex-1 min-w-[160px]">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-1">Tokens used</p>
+            <p className="text-slate-50 text-lg font-semibold">{(CURRENT_PLAN.tokensUsed / 1000).toLocaleString()}K</p>
+            <p className="text-slate-600 text-xs mt-1 mb-2">
               of 100K / mo
             </p>
             {/* SIRI-UX-094: usage progress bar */}
@@ -170,9 +131,9 @@ export default function BillingPage() {
               aria-valuemin={0}
               aria-valuemax={100000}
               aria-label="Tokens used"
-              style={{ height: 4, background: '#334155', borderRadius: 2, overflow: 'hidden' }}
+              className="h-1 bg-slate-700 rounded-sm overflow-hidden"
             >
-              <div className="billing-progress-fill" style={{ height: '100%', width: `${Math.min((CURRENT_PLAN.tokensUsed / 100000) * 100, 100)}%`, background: '#8b5cf6', borderRadius: 2 }} />
+              <div className="billing-progress-fill h-full bg-violet-500 rounded-sm" style={{ width: `${Math.min((CURRENT_PLAN.tokensUsed / 100000) * 100, 100)}%` }} />
             </div>
           </div>
         </div>
@@ -180,71 +141,36 @@ export default function BillingPage() {
 
       {/* ── Upgrade Plans ── */}
       {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
-      <section data-testid="billing-upgrade" aria-labelledby="billing-heading-upgrade" style={{ marginBottom: '2rem' }}>
-        <h2 id="billing-heading-upgrade" style={sectionHeadingStyle}>Upgrade</h2>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+      <section data-testid="billing-upgrade" aria-labelledby="billing-heading-upgrade" className="mb-8">
+        <h2 id="billing-heading-upgrade" className="text-base font-bold text-slate-100 mb-4 mt-0">Upgrade</h2>
+        <div className="flex gap-4 flex-wrap">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
               data-testid={`billing-plan-${plan.id}`}
-              style={{
-                ...cardStyle,
-                flex: 1,
-                minWidth: 200,
-                border: plan.current ? '1px solid #3b82f6' : '1px solid #334155',
-                position: 'relative',
-              }}
+              className={`bg-slate-800 rounded-[10px] p-5 flex-1 min-w-[200px] relative ${plan.current ? 'border border-blue-500' : 'border border-slate-700'}`}
             >
               {plan.current && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    background: '#1d4ed8',
-                    color: '#fff',
-                    fontSize: '0.65rem',
-                    borderRadius: 4,
-                    padding: '0.1rem 0.4rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                  }}
-                >
+                <span className="absolute top-2.5 right-2.5 bg-blue-700 text-white text-[0.65rem] rounded px-1.5 py-0.5 font-bold uppercase">
                   Current
                 </span>
               )}
-              <h3
-                style={{
-                  margin: '0 0 0.25rem',
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  color: '#f1f5f9',
-                }}
-              >
+              <h3 className="m-0 mb-1 text-base font-bold text-slate-100">
                 {plan.name}
               </h3>
-              <p style={{ margin: '0 0 1rem', color: '#94a3b8' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f8fafc' }}>
+              <p className="m-0 mb-4 text-slate-400">
+                <span className="text-2xl font-bold text-slate-50">
                   {plan.price}
                 </span>
                 {plan.period}
               </p>
-              <ul
-                style={{
-                  listStyle: 'none',
-                  padding: 0,
-                  margin: '0 0 1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.4rem',
-                }}
-              >
+              <ul className="list-none p-0 m-0 mb-4 flex flex-col gap-1.5">
                 {plan.features.map((feat) => (
                   <li
                     key={feat}
-                    style={{ color: '#cbd5e1', fontSize: '0.82rem', display: 'flex', gap: '0.4rem' }}
+                    className="text-slate-300 text-sm flex gap-1.5"
                   >
-                    <span style={{ color: '#22c55e' }}>✓</span> {feat}
+                    <span className="text-green-500">✓</span> {feat}
                   </li>
                 ))}
               </ul>
@@ -253,17 +179,7 @@ export default function BillingPage() {
                 <button
                   disabled
                   aria-label={plan.current ? `${plan.name} — current plan` : `Upgrade to ${plan.name}`}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    background: '#334155',
-                    color: '#64748b',
-                    border: 'none',
-                    borderRadius: 6,
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    cursor: 'not-allowed',
-                  }}
+                  className="w-full py-2 bg-slate-700 text-slate-500 border-none rounded-md font-semibold text-sm cursor-not-allowed"
                 >
                   {plan.current ? 'Current plan' : 'Upgrade'}
                 </button>
@@ -276,23 +192,15 @@ export default function BillingPage() {
       {/* ── Usage History ── */}
       {/* SIRI-UX-322: aria-labelledby makes <section> a named region for AT navigation */}
       <section data-testid="billing-history" aria-labelledby="billing-heading-history">
-        <h2 id="billing-heading-history" style={sectionHeadingStyle}>Usage History</h2>
-        <div style={{ ...cardStyle, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <h2 id="billing-heading-history" className="text-base font-bold text-slate-100 mb-4 mt-0">Usage History</h2>
+        <div className="bg-slate-800 border border-slate-700 rounded-[10px] p-5 overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr style={{ borderBottom: '1px solid #334155' }}>
+              <tr className="border-b border-slate-700">
                 {['Date', 'Description', 'Amount'].map((col) => (
                   <th
                     key={col}
-                    style={{
-                      textAlign: 'left',
-                      padding: '0.5rem 0.75rem',
-                      color: '#94a3b8',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                    }}
+                    className="text-left px-3 py-2 text-slate-400 font-semibold text-xs uppercase tracking-wide"
                   >
                     {col}
                   </th>
@@ -304,17 +212,11 @@ export default function BillingPage() {
               {USAGE_HISTORY.map((row, i) => (
                 <tr
                   key={`${row.date}-${row.description}`}
-                  style={{
-                    borderBottom: i < USAGE_HISTORY.length - 1 ? '1px solid #1e293b' : undefined,
-                  }}
+                  className={i < USAGE_HISTORY.length - 1 ? 'border-b border-slate-800' : ''}
                 >
-                  <td style={{ padding: '0.6rem 0.75rem', color: '#94a3b8' }}>{row.date}</td>
-                  <td style={{ padding: '0.6rem 0.75rem', color: '#f1f5f9' }}>
-                    {row.description}
-                  </td>
-                  <td style={{ padding: '0.6rem 0.75rem', color: '#22c55e', fontWeight: 600 }}>
-                    {row.amount}
-                  </td>
+                  <td className="px-3 py-2.5 text-slate-400">{row.date}</td>
+                  <td className="px-3 py-2.5 text-slate-100">{row.description}</td>
+                  <td className="px-3 py-2.5 text-green-500 font-semibold">{row.amount}</td>
                 </tr>
               ))}
             </tbody>

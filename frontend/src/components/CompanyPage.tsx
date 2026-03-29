@@ -416,7 +416,7 @@ export default function CompanyPage() {
                 <h2 className="m-0 text-base font-bold text-slate-100">
                   Team
                 </h2>
-                <Button variant="primary" onClick={() => setIsAgentFormOpen(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}>
+                <Button variant="primary" onClick={() => setIsAgentFormOpen(true)} className="text-[0.8rem] px-3.5 py-1.5">
                   + Add Agent
                 </Button>
               </div>
@@ -472,7 +472,7 @@ export default function CompanyPage() {
                 variant="secondary"
                 aria-label="Close Add Agent dialog"
                 onClick={() => setIsAgentFormOpen(false)}
-                style={{ padding: '0.25rem 0.5rem', fontSize: '1.2rem' }}
+                className="px-2 py-1 text-xl"
               >
                 <span aria-hidden="true">×</span>
               </Button>

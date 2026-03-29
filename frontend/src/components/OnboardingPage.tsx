@@ -128,8 +128,7 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
       if (err instanceof Error && err.name === 'AbortError') return
       toast.error('Something went wrong. Try again.')
     } finally {
-      // SIRI-UX-215: skip setState if we just navigated away — component is unmounted,
-      // calling setState would trigger React "Can't perform a state update on unmounted component"
+      // SIRI-UX-215: skip setState if we just navigated away — component is unmounted
       if (!signal.aborted && !navigated) {
         setLoading(false)
         launchAbortRef.current = null
@@ -141,63 +140,37 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
   return (
     <div
       data-testid="onboarding-page"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        padding: '2rem 1rem',
-        textAlign: 'center',
-        animation: 'fadeIn 0.4s ease-in',
-      }}
+      className="flex flex-col items-center justify-center min-h-[60vh] px-4 py-8 text-center animate-[fadeIn_0.4s_ease-in]"
     >
 
       {/* Hero */}
-      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🦄</div>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#f8fafc' }}>
+      <div className="text-6xl mb-4">🦄</div>
+      <h1 className="text-3xl font-extrabold m-0 mb-2 text-slate-50">
         Welcome to AgentCo
       </h1>
-      <p style={{ fontSize: '1rem', color: '#9ca3af', margin: '0 0 2.5rem', maxWidth: 420 }}>
+      <p className="text-base text-gray-400 m-0 mb-10 max-w-[420px]">
         Launch your first AI team in seconds. Pick a template and go.
       </p>
 
       {/* Template card */}
       <div
         data-testid="template-card-startup-team"
-        style={{
-          background: 'linear-gradient(135deg, #1e293b 0%, #1a2540 100%)',
-          border: '1px solid #2563eb',
-          borderRadius: 16,
-          padding: '1.75rem',
-          width: '100%',
-          maxWidth: 440,
-          marginBottom: '1.5rem',
-          boxShadow: '0 0 40px rgba(37,99,235,0.15)',
-        }}
+        className="bg-gradient-to-br from-slate-800 to-[#1a2540] border border-blue-600 rounded-2xl p-7 w-full max-w-[440px] mb-6 shadow-[0_0_40px_rgba(37,99,235,0.15)]"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '2rem' }}>{template.emoji}</span>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#f1f5f9' }}>{template.name}</div>
-            <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>{template.description}</div>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-4xl">{template.emoji}</span>
+          <div className="text-left">
+            <div className="font-bold text-lg text-slate-100">{template.name}</div>
+            <div className="text-sm text-gray-400">{template.description}</div>
           </div>
         </div>
 
         {/* Agent pills */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+        <div className="flex gap-2 flex-wrap mb-5">
           {template.agents.map((agent) => (
             <span
               key={agent.name}
-              style={{
-                padding: '0.25rem 0.75rem',
-                background: 'rgba(37,99,235,0.15)',
-                border: '1px solid rgba(37,99,235,0.3)',
-                borderRadius: 20,
-                fontSize: '0.8rem',
-                color: '#93c5fd',
-                fontWeight: 500,
-              }}
+              className="px-3 py-1 bg-blue-600/15 border border-blue-600/30 rounded-full text-xs text-blue-300 font-medium"
             >
               {agent.name}
             </span>
@@ -212,20 +185,8 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleUseTemplate()}
-          className="input-focus-ring-blue"
+          className="input-focus-ring-blue w-full px-4 py-2.5 bg-slate-900 border border-gray-700 rounded-lg text-slate-50 text-[0.9rem] box-border mb-4 outline-none"
           placeholder="Your company name"
-          style={{
-            width: '100%',
-            padding: '0.6rem 0.9rem',
-            background: '#0f172a',
-            border: '1px solid #374151',
-            borderRadius: 8,
-            color: '#f8fafc',
-            fontSize: '0.9rem',
-            boxSizing: 'border-box',
-            marginBottom: '1rem',
-            outline: 'none',
-          }}
         />
 
         {/* SIRI-UX-260: replaced JS hover with CSS class .onboarding-launch-btn */}

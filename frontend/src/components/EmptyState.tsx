@@ -15,26 +15,17 @@ export default function EmptyState({ emoji, icon, title, subtitle, ctaLabel, onC
   return (
     <div
       data-testid="empty-state"
-      className="empty-state-fadein"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.75rem',
-        padding: '4rem 1rem',
-        textAlign: 'center',
-      }}
+      className="empty-state-fadein flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
     >
       {icon ? (
-        <div data-testid="empty-state-icon" style={{ lineHeight: 1 }}>{icon}</div>
+        <div data-testid="empty-state-icon" className="leading-none">{icon}</div>
       ) : (
-        <span style={{ fontSize: '4rem', lineHeight: 1 }}>{emoji}</span>
+        <span className="text-6xl leading-none">{emoji}</span>
       )}
-      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#f8fafc', margin: 0 }}>
+      <h3 className="text-lg font-semibold text-slate-50 m-0">
         {title}
       </h3>
-      <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: 0, maxWidth: '20rem' }}>
+      <p className="text-sm text-gray-400 m-0 max-w-[20rem]">
         {subtitle}
       </p>
       {ctaLabel && onCTA && (

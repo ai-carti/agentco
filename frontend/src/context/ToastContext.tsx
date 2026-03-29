@@ -31,23 +31,23 @@ function nextId() {
   return `toast-${++counter}`
 }
 
-const STYLES: Record<ToastType, { border: string; bg: string; text: string; icon: string }> = {
+const STYLES: Record<ToastType, { borderClass: string; bgClass: string; textClass: string; icon: string }> = {
   success: {
-    border: '1px solid #047857',
-    bg: 'rgba(6, 78, 59, 0.92)',
-    text: '#d1fae5',
+    borderClass: 'border-emerald-700',
+    bgClass: 'bg-emerald-900/90',
+    textClass: 'text-emerald-100',
     icon: '✓',
   },
   error: {
-    border: '1px solid #b91c1c',
-    bg: 'rgba(127, 29, 29, 0.92)',
-    text: '#fee2e2',
+    borderClass: 'border-red-700',
+    bgClass: 'bg-red-900/90',
+    textClass: 'text-red-100',
     icon: '✕',
   },
   info: {
-    border: '1px solid #1d4ed8',
-    bg: 'rgba(30, 58, 138, 0.92)',
-    text: '#dbeafe',
+    borderClass: 'border-blue-700',
+    bgClass: 'bg-blue-900/90',
+    textClass: 'text-blue-100',
     icon: 'ℹ',
   },
 }
@@ -97,16 +97,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         data-testid="toast-container"
         role="status"
         aria-live="polite"
-        style={{
-          position: 'fixed',
-          bottom: '1rem',
-          right: '1rem',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          pointerEvents: 'none',
-        }}
+        className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
       >
         {toasts.map((t) => {
           const s = STYLES[t.type]
@@ -115,40 +106,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               data-testid="toast-item"
               data-type={t.type}
-              style={{
-                background: s.bg,
-                border: s.border,
-                color: s.text,
-                borderRadius: '0.5rem',
-                padding: '0.75rem 1rem',
-                minWidth: 280,
-                maxWidth: 380,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem',
-                pointerEvents: 'auto',
-                fontSize: '0.875rem',
-                animation: 'toast-slide-in 0.2s ease-out',
-              }}
+              className={`${s.bgClass} border ${s.borderClass} ${s.textClass} rounded-lg px-4 py-3 min-w-[280px] max-w-[380px] shadow-lg flex items-center gap-2.5 pointer-events-auto text-sm animate-[toast-slide-in_0.2s_ease-out]`}
             >
-              <span style={{ fontSize: '1rem', flexShrink: 0 }}>{s.icon}</span>
-              <span style={{ flex: 1, wordBreak: 'break-word' }}>{t.text}</span>
+              <span className="text-base shrink-0">{s.icon}</span>
+              <span className="flex-1 break-words">{t.text}</span>
               <button
                 data-testid="toast-close"
                 onClick={() => dismiss(t.id)}
                 aria-label="Close"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: s.text,
-                  cursor: 'pointer',
-                  padding: '0 0.25rem',
-                  fontSize: '1rem',
-                  lineHeight: 1,
-                  opacity: 0.7,
-                  flexShrink: 0,
-                }}
+                className={`bg-transparent border-none ${s.textClass} cursor-pointer px-1 py-0 text-base leading-none opacity-70 shrink-0`}
               >
                 ✕
               </button>

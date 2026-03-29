@@ -106,7 +106,7 @@ export default function AgentEditPage() {
 
   if (loading) {
     return (
-      <div data-testid="agent-edit-loading" style={{ padding: '1.5rem', maxWidth: 600 }}>
+      <div data-testid="agent-edit-loading" className="p-6 max-w-[600px]">
         <SkeletonCard variant="task" count={4} />
       </div>
     )
@@ -117,23 +117,19 @@ export default function AgentEditPage() {
     return (
       <div
         data-testid="agent-edit-not-found"
-        style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#9ca3af' }}
+        className="py-12 px-6 text-center text-gray-400"
       >
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤖</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '0.5rem' }}>
+        <div className="text-4xl mb-4">🤖</div>
+        <div className="text-lg font-bold text-slate-100 mb-2">
           Agent not found
         </div>
-        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+        <div className="text-sm text-gray-500 mb-6">
           This agent may have been deleted or you don't have access.
         </div>
         <button
           data-testid="agent-edit-not-found-back-btn"
           onClick={() => navigate(`/companies/${companyId}`)}
-          style={{
-            padding: '0.5rem 1.25rem', background: 'transparent',
-            border: '1px solid #374151', borderRadius: 6, color: '#9ca3af',
-            fontSize: '0.875rem', cursor: 'pointer',
-          }}
+          className="px-5 py-2 bg-transparent border border-gray-700 rounded-md text-gray-400 text-sm cursor-pointer"
         >
           ← Back to Company
         </button>
@@ -149,9 +145,9 @@ export default function AgentEditPage() {
   }
 
   return (
-    <div data-testid="agent-edit-page" style={{ padding: '1.5rem', maxWidth: 600 }}>
+    <div data-testid="agent-edit-page" className="p-6 max-w-[600px]">
       {/* Breadcrumb suffix is handled globally via Breadcrumb.tsx */}
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, marginBottom: '1.5rem' }}>
+      <h1 className="text-xl font-bold m-0 mb-6">
         Edit Agent
       </h1>
 
@@ -163,7 +159,7 @@ export default function AgentEditPage() {
       {saving && (
         <p
           data-testid="agent-edit-saving"
-          style={{ color: '#60a5fa', fontSize: '0.875rem', marginTop: '0.75rem' }}
+          className="text-blue-400 text-sm mt-3"
         >
           Saving…
         </p>
@@ -174,13 +170,13 @@ export default function AgentEditPage() {
         <p
           role="alert"
           data-testid="agent-edit-error"
-          style={{ color: '#f87171', fontSize: '0.875rem', marginTop: '0.75rem' }}
+          className="text-red-400 text-sm mt-3"
         >
           {saveError}
         </p>
       )}
 
-      <div style={{ marginTop: '1rem' }}>
+      <div className="mt-4">
         {/* SIRI-UX-261: replaced JS hover with CSS class .agent-edit-cancel-btn */}
         <button
           data-testid="agent-edit-cancel"
