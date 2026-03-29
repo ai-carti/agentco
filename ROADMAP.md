@@ -32,8 +32,9 @@
 |----|----------|----------|----------|--------|
 | BUG-076 | critical | **Mock LLM в production**: `AGENTCO_USE_REAL_LLM=true` не установлен в Railway env → агент выполняет задачи через mock LLM, `total_tokens=0`, War Room Activity Feed пуст. Фикс: установить `AGENTCO_USE_REAL_LLM=true` в Railway Variables + добавить LLM API key. **Требует action от @timofeytst** в Railway dashboard. | Alisa | open |
 | BUG-075 | critical | **E2E prod флоу (conditional)**: шаги 1–6 работают ✅. Без real LLM — mock ответ. Заблокировано BUG-076. | Alisa | open |
-| BUG-NEW-001 | medium | **Backend pytest isolation — 19 тестов падают при полном suite**: shared state / mock pollution. Затронуты: `test_alex_td_088_091.py`, `test_alex_td_267_271.py`, `test_bug_068_069.py` и ещё 7 файлов. Нужен аудит setup/teardown. | Alisa | open |
+| BUG-NEW-001 | medium | **Backend pytest isolation — 19 тестов падают при полном suite**: shared state / mock pollution. Затронуты: `test_alex_td_088_091.py`, `test_alex_td_267_271.py`, `test_bug_068_069.py` и ещё 7 файлов. Нужен аудит setup/teardown. | Alisa | fixed |
 | BUG-084 | minor | **KanbanBoard canRun не включает 'error'**: TaskDetailSidebar.tsx:158 позволяет retry для error задач (SIRI-UX-427), но KanbanBoard.tsx:111 — нет. Кнопка Run не видна на карточке в error колонке. Fix: добавить `|| task.status === 'error'` в KanbanBoard canRun. | Siri | fixed |
+| BUG-085 | major | **KanbanBoard.tsx дублирует className на 2 элементах** (строки 572, 1253): JSX элементы имеют два `className` атрибута → `tsc --noEmit` падает с TS17001, `npm run build` сломан. Fix: объединить className в один атрибут. | Siri | fixed |
 
 ---
 
@@ -60,8 +61,8 @@
 | SIRI-UX-440 | minor | **CompanyHeader not memoized**: `components/CompanyPage.tsx` — receives stable props but re-renders on every CompanyPage state change (tab switch, tasks loaded). Fix: wrap with `React.memo`. | Siri | done |
 | SIRI-UX-441 | minor | **FilterBar not memoized**: `components/KanbanBoard.tsx` — receives stable useCallback props but re-renders on every KanbanBoard state change (drag, selection, modal). Fix: wrap with `React.memo`. | Siri | done |
 | SIRI-UX-442 | minor | **Unused vitest imports in audit test**: `__tests__/SIRI-UX-437-441-Audit.test.tsx:8` — `vi` and `beforeEach` imported but never used → `tsc --noEmit` errors (TS6133). Fix: remove unused imports. | Siri | done |
-| SIRI-UX-443 | minor | **vendor-router bundle 178KB (58KB gzip)**: react-router-dom v7.13.1 produces a 178KB chunk. v6 was ~30KB. Evaluate: lazy-load router, or pin v6 if v7 features aren't needed. | Siri | open |
-| SIRI-UX-444 | minor | **CompanyPage chunk 45KB (11KB gzip) — split KanbanBoard**: `CompanyPage-*.js` bundles KanbanBoard+TaskDetailSidebar+AgentForm. Split KanbanBoard into its own lazy chunk since Board tab is not always active. | Siri | open |
+| SIRI-UX-443 | minor | **vendor-router bundle 178KB (58KB gzip)**: react-router-dom v7.13.1 produces a 178KB chunk. v6 was ~30KB. Evaluate: lazy-load router, or pin v6 if v7 features aren't needed. | Siri | done |
+| SIRI-UX-444 | minor | **CompanyPage chunk 45KB (11KB gzip) — split KanbanBoard**: `CompanyPage-*.js` bundles KanbanBoard+TaskDetailSidebar+AgentForm. Split KanbanBoard into its own lazy chunk since Board tab is not always active. | Siri | done |
 | SIRI-UX-445 | minor | **464 inline styles vs 71 className usages — migrate to Tailwind classes**: Heavy inline style usage across all components. Increases bundle size, prevents CSS caching, makes theming/dark mode harder. Incremental migration per component recommended. | Siri | open |
 
 ---
