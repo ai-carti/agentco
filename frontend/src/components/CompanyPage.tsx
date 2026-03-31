@@ -84,7 +84,9 @@ const TAB_LABELS: { id: TabId; label: string }[] = [
 const TASK_LIMIT = 50
 
 export default function CompanyPage() {
-  useDocumentTitle('Company — AgentCo')
+  // SIRI-UX-451: use company name in document title (better browser history + tab management)
+  const currentCompanyName = useAgentStore((s) => s.currentCompany?.name)
+  useDocumentTitle(currentCompanyName ? `${currentCompanyName} — AgentCo` : 'Company — AgentCo')
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const setCurrentCompany = useAgentStore((s) => s.setCurrentCompany)

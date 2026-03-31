@@ -115,6 +115,9 @@ class SqliteVecStore(VectorStore):
 
             CREATE VIRTUAL TABLE IF NOT EXISTS agent_memories_vec
             USING vec0(embedding float[{self.EMBEDDING_DIM}]);
+
+            CREATE INDEX IF NOT EXISTS idx_agent_memory_meta_agent_id
+            ON agent_memory_meta(agent_id);
         """)
         self._conn.commit()
 

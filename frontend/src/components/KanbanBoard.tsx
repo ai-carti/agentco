@@ -1137,7 +1137,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
       )}
       <div
         data-testid="kanban-board"
-        className={`gap-4 p-4 ${(showEmpty || showFilterEmpty) ? 'hidden' : 'flex'}`}
+        // SIRI-UX-452: overflow-x-auto so 6 columns scroll horizontally on narrow screens instead of squeezing
+        className={`gap-4 p-4 overflow-x-auto ${(showEmpty || showFilterEmpty) ? 'hidden' : 'flex'}`}
       >
         {COLUMNS.map((col) => (
           <div
@@ -1149,7 +1150,8 @@ export default function KanbanBoard({ companyId, isLoaded = true, hasMore = fals
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}
-            className={`flex-1 bg-gray-900 rounded-lg p-3 min-w-0 border-2 transition-[border-color] duration-150 ${dragOverCol === col.id ? 'border-blue-500' : 'border-transparent'}`}
+            // SIRI-UX-452: min-w-[220px] so columns have readable width when scrolling horizontally
+            className={`flex-1 bg-gray-900 rounded-lg p-3 min-w-[220px] border-2 transition-[border-color] duration-150 ${dragOverCol === col.id ? 'border-blue-500' : 'border-transparent'}`}
           >
             <h2 className="text-sm font-semibold mb-3 text-gray-200">
               {col.label}

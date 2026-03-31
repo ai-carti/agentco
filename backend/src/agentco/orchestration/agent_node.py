@@ -75,14 +75,54 @@ _COST_PER_1K_TOKENS: dict[str, float] = {
     "default": 0.002,
 }
 
+# ALEX-TD-299: per-1K-token rates split by input/output.
+# Major providers charge 2-5x more for output tokens than input.
+# Format: prefix → (input_rate, output_rate) per 1K tokens.
+_COST_PER_1K_TOKENS_SPLIT: dict[str, tuple[float, float]] = {
+    "gpt-4o-mini": (0.00015, 0.0006),    # $0.15/$0.60 per 1M
+    "gpt-4o": (0.005, 0.015),             # $5/$15 per 1M
+    "gpt-4-turbo": (0.01, 0.03),
+    "gpt-4": (0.03, 0.06),
+    "gpt-3.5": (0.001, 0.002),
+    "o3": (0.01, 0.04),
+    "o1": (0.015, 0.06),
+    "claude-sonnet": (0.003, 0.015),
+    "claude-opus": (0.015, 0.075),
+    "claude-4": (0.015, 0.075),
+    "claude-3-7": (0.003, 0.015),
+    "claude-3-5": (0.003, 0.015),
+    "claude-3": (0.003, 0.015),
+    "gemini": (0.00125, 0.005),
+    "default": (0.002, 0.002),
+}
 
-def _estimate_cost(model: str, total_tokens: int) -> float:
+
+def _estimate_cost(
+    model: str,
+    total_tokens: int,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+) -> float:
     """Оценить стоимость по модели и количеству токенов.
 
-    ALEX-TD-210: guard against model=None (state.get("model", "gpt-4o") returns None
-    when the key is explicitly set to None in AgentState — dict.get only uses default
-    for *missing* keys). Without this guard, None.startswith() → AttributeError.
+    ALEX-TD-210: guard against model=None.
+    ALEX-TD-299: when prompt_tokens and completion_tokens are provided,
+    uses split input/output rates for more accurate cost estimation.
+    Falls back to flat rate (from _COST_PER_1K_TOKENS) when split is unavailable.
     """
+    if not model:
+        model = ""
+
+    # ALEX-TD-299: if we have input/output split, use differentiated rates
+    if prompt_tokens > 0 or completion_tokens > 0:
+        for prefix, (in_rate, out_rate) in _COST_PER_1K_TOKENS_SPLIT.items():
+            if prefix == "default" or model.startswith(prefix):
+                return (prompt_tokens / 1000.0) * in_rate + (completion_tokens / 1000.0) * out_rate
+        # Shouldn't reach here due to "default" key, but guard anyway
+        rates = _COST_PER_1K_TOKENS_SPLIT["default"]
+        return (prompt_tokens / 1000.0) * rates[0] + (completion_tokens / 1000.0) * rates[1]
+
+    # Flat-rate fallback (no split available)
     if not model:
         return (total_tokens / 1000.0) * _COST_PER_1K_TOKENS["default"]
     for prefix, rate in _COST_PER_1K_TOKENS.items():
@@ -176,24 +216,26 @@ async def _build_messages_with_memory(state: AgentState) -> list[dict]:
     return messages
 
 
-def _extract_tokens(chunk) -> int:
-    """Извлекает total_tokens из chunk.usage (если есть).
+def _extract_tokens(chunk) -> tuple[int, int, int]:
+    """Извлекает (total_tokens, prompt_tokens, completion_tokens) из chunk.usage.
 
     ALEX-TD-094: Some providers (Gemini, Anthropic) omit usage from intermediate
     streaming chunks — only the final chunk contains usage data. When usage is
-    absent, returns 0. The caller accumulates the last non-zero value.
-    If a run shows total_tokens=0, enable DEBUG logging to see whether the
-    provider is omitting usage from all chunks (provider issue vs. parsing bug).
+    absent, returns (0, 0, 0). The caller accumulates the last non-zero value.
+
+    ALEX-TD-299: returns a 3-tuple instead of int to support split cost estimation.
+    prompt_tokens and completion_tokens default to 0 when not available in chunk.
     """
     try:
         if chunk.usage and chunk.usage.total_tokens:
-            return chunk.usage.total_tokens
-        # NOTE: Some streaming providers don't include usage in every chunk.
-        # This is expected; cost estimate will use 0 tokens for those chunks.
+            total = chunk.usage.total_tokens
+            prompt = getattr(chunk.usage, "prompt_tokens", None) or 0
+            completion = getattr(chunk.usage, "completion_tokens", None) or 0
+            return (total, prompt, completion)
         logger.debug("_extract_tokens: chunk.usage missing or zero (provider may omit mid-stream)")
     except (AttributeError, TypeError):
         pass
-    return 0
+    return (0, 0, 0)
 
 
 async def _publish_chunk(state: AgentState, content: str) -> None:
@@ -318,6 +360,9 @@ async def agent_node(state: AgentState) -> dict:
             # ── Collect streaming response ─────────────────────────────────
             full_text = ""
             total_tokens = 0
+            # ALEX-TD-299: track prompt/completion tokens for split cost estimation
+            prompt_tokens = 0
+            completion_tokens = 0
 
             # tool_calls accumulator: index → {id, name, args_buffer}
             tool_calls_acc: dict[int, dict] = {}
@@ -357,16 +402,20 @@ async def agent_node(state: AgentState) -> dict:
                         finish_reason = choice.finish_reason
 
                     # Usage (обычно в финальном chunk)
-                    tokens = _extract_tokens(chunk)
-                    if tokens:
-                        total_tokens = tokens
+                    # ALEX-TD-299: _extract_tokens returns (total, prompt, completion)
+                    token_info = _extract_tokens(chunk)
+                    if token_info[0]:
+                        total_tokens = token_info[0]
+                        prompt_tokens = token_info[1]
+                        completion_tokens = token_info[2]
 
                 except (AttributeError, IndexError) as e:
                     logger.debug("Chunk parsing error (skipped): %s", e)
                     continue
 
         # ── Cost tracking ──────────────────────────────────────────────────
-        cost_usd = _estimate_cost(model, total_tokens)
+        # ALEX-TD-299: use split rates when prompt/completion tokens available
+        cost_usd = _estimate_cost(model, total_tokens, prompt_tokens, completion_tokens)
 
         # ALEX-TD-139: warn when finish_reason=length with pending tool_calls.
         # Truncated responses mean tool args JSON is incomplete — json.loads will

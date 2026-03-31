@@ -24,7 +24,12 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null)
 
 const MAX_TOASTS = 3
-const AUTO_DISMISS_MS = 3000
+// SIRI-UX-453: errors need more reading time than success/info messages
+const AUTO_DISMISS_MS: Record<ToastType, number> = {
+  success: 3000,
+  info: 3000,
+  error: 5000,
+}
 
 let counter = 0
 function nextId() {
@@ -79,7 +84,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         }
         return next
       })
-      const timer = setTimeout(() => dismiss(id), AUTO_DISMISS_MS)
+      const timer = setTimeout(() => dismiss(id), AUTO_DISMISS_MS[type])
       timers.current.set(id, timer)
     },
     [dismiss],

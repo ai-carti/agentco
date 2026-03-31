@@ -134,10 +134,20 @@ export default function LibraryPortfolioPage() {
           </div>
 
           {/* Task list */}
+          {/* SIRI-UX-455: styled empty state instead of bare <p> — consistent with rest of app */}
           {portfolio.tasks.length === 0 ? (
-            <p className="text-slate-400 text-center py-8">
-              No tasks yet
-            </p>
+            <div
+              data-testid="portfolio-empty"
+              className="flex flex-col items-center py-12 px-6 gap-3 text-slate-400 text-center"
+            >
+              <span className="text-5xl">📋</span>
+              <p className="m-0 text-base font-semibold text-gray-100">
+                No tasks yet
+              </p>
+              <p className="m-0 text-sm">
+                Run tasks through this agent to see them here
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
               {portfolio.tasks.map((task) => (

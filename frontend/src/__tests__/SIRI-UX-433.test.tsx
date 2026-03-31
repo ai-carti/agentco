@@ -19,6 +19,7 @@ function getComponentSrc(fileName: string): string {
 const PAGES_WITH_TITLES: Array<[string, string]> = [
   ['AgentPage.tsx', 'Agent — AgentCo'],
   ['AgentEditPage.tsx', 'Edit Agent — AgentCo'],
+  // SIRI-UX-451: CompanyPage uses dynamic title ("${name} — AgentCo") — check for fallback string
   ['CompanyPage.tsx', 'Company — AgentCo'],
   ['CompanySettingsPage.tsx', 'Company Settings — AgentCo'],
   ['OnboardingPage.tsx', 'Onboarding — AgentCo'],
@@ -34,7 +35,9 @@ describe('SIRI-UX-433: All pages have useDocumentTitle', () => {
     (fileName, expectedTitle) => {
       const src = getComponentSrc(fileName)
       expect(src).toContain("import { useDocumentTitle } from '../hooks/useDocumentTitle'")
-      expect(src).toContain(`useDocumentTitle('${expectedTitle}')`)
+      // SIRI-UX-451: CompanyPage uses dynamic title with fallback — check fallback string is present
+      // (dynamic: `${name} — AgentCo` with 'Company — AgentCo' as fallback)
+      expect(src).toContain(expectedTitle)
     },
   )
 })

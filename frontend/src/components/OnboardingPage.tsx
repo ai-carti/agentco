@@ -179,9 +179,11 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
 
         {/* Company name input */}
         {/* SIRI-UX-067: add aria-label since there's no visible <label> */}
+        {/* SIRI-UX-454: autoFocus so keyboard users land on input immediately — part of WoW moment */}
         <input
           data-testid="onboarding-company-name-input"
           aria-label="Company name"
+          autoFocus
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleUseTemplate()}
