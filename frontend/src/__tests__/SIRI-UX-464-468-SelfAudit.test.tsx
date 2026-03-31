@@ -5,7 +5,7 @@
  * SIRI-UX-467: GlobalSearch Escape handler doesn't stopPropagation
  * SIRI-UX-468: Navbar Logout button missing aria-label
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 

@@ -62,13 +62,19 @@ export default function SystemPromptEditor({ value, onChange, id }: SystemPrompt
         <textarea
           id={id}
           data-testid="system-prompt-textarea"
+          // SIRI-UX-470: aria-describedby links textarea to token counter so screen readers announce token usage
+          aria-describedby="system-prompt-token-count"
           value={value}
           onChange={handleChange}
           className="w-full min-h-[200px] px-3 py-2 pb-6 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm font-mono resize-y box-border"
           placeholder="Describe the agent's role and behavior..."
         />
         <span
+          id="system-prompt-token-count"
           data-testid="token-counter"
+          // SIRI-UX-470: role="status" + aria-live so screen readers announce token count changes
+          role="status"
+          aria-live="polite"
           className={`absolute bottom-1.5 right-2 text-xs pointer-events-none ${isOverLimit ? 'text-yellow-400' : 'text-gray-500'}`}
         >
           ~{tokens} tokens

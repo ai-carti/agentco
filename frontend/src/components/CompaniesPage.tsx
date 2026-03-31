@@ -247,9 +247,11 @@ export default function CompaniesPage() {
             >
               <span>{co.name}</span>
               {/* SIRI-UX-429: edit button to open edit company modal */}
+              {/* SIRI-UX-471: company-specific aria-label so screen readers distinguish multiple Edit buttons */}
               <button
                 data-testid={`edit-company-${co.id}-btn`}
                 onClick={(e) => handleEditOpen(co, e)}
+                aria-label={`Edit ${co.name}`}
                 className="py-0.5 px-2 bg-transparent border border-gray-600 rounded text-gray-400 text-xs cursor-pointer leading-none"
               >
                 Edit
