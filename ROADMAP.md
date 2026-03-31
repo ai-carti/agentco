@@ -32,6 +32,7 @@
 |----|----------|----------|----------|--------|
 | BUG-076 | critical | **Mock LLM в production**: `AGENTCO_USE_REAL_LLM=true` не установлен в Railway env → агент выполняет задачи через mock LLM, `total_tokens=0`, War Room Activity Feed пуст. Фикс: установить `AGENTCO_USE_REAL_LLM=true` в Railway Variables + добавить LLM API key. **Требует action от @timofeytst** в Railway dashboard. | Alisa | open |
 | BUG-075 | critical | **E2E prod флоу (conditional)**: шаги 1–6 работают ✅. Без real LLM — mock ответ. Заблокировано BUG-076. | Alisa | open |
+| BUG-077 | low | **tsc --noEmit fail**: `SIRI-UX-464-468-SelfAudit.test.tsx` — unused `afterEach` import (TS6133). Fix: убрать `afterEach` из import на строке 8. | Siri | fixed (SIRI-UX-469) |
 | BUG-NEW-001 | medium | **Backend pytest isolation — 19 тестов падают при полном suite**: shared state / mock pollution. Затронуты: `test_alex_td_088_091.py`, `test_alex_td_267_271.py`, `test_bug_068_069.py` и ещё 7 файлов. Нужен аудит setup/teardown. | Alisa | fixed |
 | BUG-084 | minor | **KanbanBoard canRun не включает 'error'**: TaskDetailSidebar.tsx:158 позволяет retry для error задач (SIRI-UX-427), но KanbanBoard.tsx:111 — нет. Кнопка Run не видна на карточке в error колонке. Fix: добавить `|| task.status === 'error'` в KanbanBoard canRun. | Siri | fixed |
 | BUG-085 | major | **KanbanBoard.tsx дублирует className на 2 элементах** (строки 572, 1253): JSX элементы имеют два `className` атрибута → `tsc --noEmit` падает с TS17001, `npm run build` сломан. Fix: объединить className в один атрибут. | Siri | fixed |
@@ -103,6 +104,9 @@
 | SIRI-UX-466 | minor | **WarRoom run items без `tabIndex`**: `WarRoom.tsx` — элементы с `role="article"` не имеют `tabIndex={0}`. Keyboard users не могут сфокусировать отдельные runs. Fix: добавить `tabIndex={0}` + focus ring CSS. | Siri | done |
 | SIRI-UX-467 | minor | **GlobalSearch Escape без `stopPropagation`**: `GlobalSearch.tsx` — Escape handler не вызывает `e.stopPropagation()`. Если GlobalSearch открыт внутри другого контекста, Escape закрывает оба. Fix: добавить `stopPropagation()`. | Siri | done |
 | SIRI-UX-468 | minor | **Navbar Logout без `aria-label`**: `Navbar.tsx` — кнопка "Logout" не имеет `aria-label`. Screen readers не дают достаточного контекста. Fix: добавить `aria-label="Sign out"`. | Siri | done |
+| SIRI-UX-469 | minor | **Unused `afterEach` import в тесте — TS warning при build**: `__tests__/SIRI-UX-464-468-SelfAudit.test.tsx:8` — `afterEach` импортирован но не используется. `tsc --noEmit` выдаёт TS6133 warning. Fix: убрать `afterEach` из импорта. | Siri | done |
+| SIRI-UX-470 | minor | **SystemPromptEditor token counter не связан с textarea через `aria-describedby`**: `SystemPromptEditor.tsx` — screen readers не анонсируют количество токенов при вводе. WCAG 1.3.1. Fix: добавить `id` на token counter span + `aria-describedby` на textarea. | Siri | done |
+| SIRI-UX-471 | minor | **CompaniesPage Edit buttons без company-specific `aria-label`**: `CompaniesPage.tsx` — каждая кнопка Edit не содержит имя компании. Screen readers слышат "Edit" N раз без контекста (паттерн уже фиксили в LibraryPage SIRI-UX-220). Fix: `aria-label={`Edit ${co.name}`}`. | Siri | done |
 
 ---
 
