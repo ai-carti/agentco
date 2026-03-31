@@ -88,6 +88,11 @@
 | SIRI-UX-456 | minor | **AgentPage статический document title**: `AgentPage.tsx` — `useDocumentTitle('Agent — AgentCo')` статическая строка. После загрузки агента должно быть `${agent.name} — AgentCo`. Улучшает browser history + tabs. | Siri | done |
 | SIRI-UX-457 | minor | **AgentPage saveToLibraryError span без `role="alert"`**: `AgentPage.tsx` — ошибка "Failed to save to library" рендерится как обычный `<span>` без `role="alert"`. Screen readers не анонсируют ошибку. WCAG 4.1.3. Fix: добавить `role="alert"`. | Siri | done |
 | SIRI-UX-458 | minor | **WarRoomPage Stop button — `disabled` без `aria-disabled`**: `WarRoomPage.tsx` — кнопка Stop имеет `disabled={runStatus !== 'running'}` но не `aria-disabled`. Некоторые screen readers читают нативный `disabled` как "недоступно", но паттерн с `aria-disabled` более консистентен с WCAG. Fix: добавить `aria-disabled={runStatus !== 'running'}`. | Siri | done |
+| SIRI-UX-459 | minor | **OnboardingPage `console.warn` без DEV guard**: `OnboardingPage.tsx` — `console.warn(...)` вызов не обёрнут в `import.meta.env.DEV` guard → засоряет production консоль. Fix: `if (import.meta.env.DEV) console.warn(...)`. | Siri | done |
+| SIRI-UX-460 | minor | **CompanySettingsPage нет loading skeleton**: `CompanySettingsPage.tsx` — пока компания загружается показывается пустой экран. Несоответствие со стилем остальных страниц. Fix: добавить `data-testid="company-settings-loading"` skeleton пока `isLoading=true`. | Siri | done |
+| SIRI-UX-461 | minor | **AgentEditPage "Saving..." индикатор без `role="status"`**: `AgentEditPage.tsx` — `<p>Saving...</p>` рендерится без `role="status"`. Screen readers не анонсируют изменение статуса. WCAG 4.1.3. Fix: добавить `role="status"`. | Siri | done |
+| SIRI-UX-462 | minor | **WarRoomPage agent card — inline `marginLeft` для иерархического отступа**: `WarRoomPage.tsx` — `style={{ marginLeft: level * 24 }}` inline style. Блокирует CSS caching, сложнее тестировать. Fix: `data-level={level}` атрибут + CSS переменная `--level` в index.css. | Siri | done |
+| SIRI-UX-463 | minor | **AgentForm Submit кнопка без `aria-busy`**: `AgentForm.tsx` — кнопка Submit не имеет `aria-busy={isSaving}`. Screen readers не анонсируют процесс сохранения. WCAG 4.1.3. Fix: добавить `aria-busy={isSaving}`. | Siri | done |
 
 ---
 
