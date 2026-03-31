@@ -23,25 +23,30 @@ describe('Sidebar — UX-019', () => {
     expect(screen.getByTestId('sidebar')).toBeInTheDocument()
   })
 
-  it('starts expanded (240px) on wide screens', () => {
+  it('starts expanded (w-60) on wide screens', () => {
     renderSidebar()
     const sidebar = screen.getByTestId('sidebar')
-    expect(sidebar.style.width).toBe('240px')
+    // SIRI-UX-450: width via Tailwind class, not inline style
+    expect(sidebar.className).toContain('w-60')
+    expect(sidebar.style.width).toBe('')
   })
 
-  it('toggle button collapses to 48px', () => {
+  it('toggle button collapses to w-12', () => {
     renderSidebar()
     fireEvent.click(screen.getByTestId('sidebar-toggle'))
     const sidebar = screen.getByTestId('sidebar')
-    expect(sidebar.style.width).toBe('48px')
+    // SIRI-UX-450: width via Tailwind class, not inline style
+    expect(sidebar.className).toContain('w-12')
+    expect(sidebar.style.width).toBe('')
   })
 
-  it('toggle button expands back to 240px', () => {
+  it('toggle button expands back to w-60', () => {
     renderSidebar()
     const toggle = screen.getByTestId('sidebar-toggle')
     fireEvent.click(toggle) // collapse
     fireEvent.click(toggle) // expand
-    expect(screen.getByTestId('sidebar').style.width).toBe('240px')
+    // SIRI-UX-450: width via Tailwind class, not inline style
+    expect(screen.getByTestId('sidebar').className).toContain('w-60')
   })
 
   it('persists collapsed state to localStorage', () => {
@@ -53,13 +58,15 @@ describe('Sidebar — UX-019', () => {
   it('restores collapsed state from localStorage', () => {
     localStorage.setItem('sidebar:collapsed', 'true')
     renderSidebar()
-    expect(screen.getByTestId('sidebar').style.width).toBe('48px')
+    // SIRI-UX-450: width via Tailwind class, not inline style
+    expect(screen.getByTestId('sidebar').className).toContain('w-12')
   })
 
   it('defaults to collapsed on screens < 1024px', () => {
     Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 800 })
     renderSidebar()
-    expect(screen.getByTestId('sidebar').style.width).toBe('48px')
+    // SIRI-UX-450: width via Tailwind class, not inline style
+    expect(screen.getByTestId('sidebar').className).toContain('w-12')
   })
 
   it('shows only icons when collapsed (nav items have tooltip attribute)', () => {

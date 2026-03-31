@@ -13,6 +13,8 @@ vi.mock('../components/WarRoom', () => ({
 vi.mock('../components/KanbanBoard', () => ({
   default: () => <div data-testid="kanban-board">KanbanBoard</div>,
 }))
+// SIRI-UX-449: WarRoomPage is no longer a top-level lazy route — it's embedded in CompanyPage.
+// Mock is kept for CompanyPage's internal import but not tested as a standalone route.
 vi.mock('../components/WarRoomPage', () => ({
   default: () => <div data-testid="war-room-page">WarRoomPage</div>,
 }))
@@ -128,9 +130,10 @@ describe('Routing', () => {
       await waitFor(() => expect(screen.getByTestId('agent-page')).toBeInTheDocument())
     })
 
-    it('renders war room page at /companies/:id/warroom', async () => {
+    // SIRI-UX-449: /companies/:id/warroom route removed — dead route (War Room is a tab in CompanyPage)
+    it('/companies/:id/warroom renders 404 (route no longer registered)', async () => {
       renderWithRouter('/companies/abc/warroom')
-      await waitFor(() => expect(screen.getByTestId('war-room-page')).toBeInTheDocument())
+      await waitFor(() => expect(screen.getByTestId('not-found-page')).toBeInTheDocument())
     })
 
     it('renders settings page at /settings', async () => {

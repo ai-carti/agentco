@@ -52,7 +52,8 @@ _LLM_CALL_TIMEOUT_SEC: float = float(os.getenv("LLM_CALL_TIMEOUT_SEC", "120"))
 # ─── Cost rates (USD per 1K tokens by model prefix) ─────────────────────────
 
 _COST_PER_1K_TOKENS: dict[str, float] = {
-    # OpenAI
+    # OpenAI — more-specific prefixes MUST come before less-specific ones
+    # (ALEX-TD-293: prefix matching iterates in insertion order, first match wins)
     "gpt-4o-mini": 0.00015,    # $0.15/1M input tokens
     "gpt-4o": 0.005,
     "gpt-4-turbo": 0.01,
@@ -60,13 +61,17 @@ _COST_PER_1K_TOKENS: dict[str, float] = {
     "gpt-3.5": 0.002,
     "o3": 0.01,                # o3-mini range
     "o1": 0.015,
-    # Anthropic
+    # Anthropic — ALEX-TD-291: add claude-sonnet/claude-opus prefixes for newer
+    # naming convention (claude-sonnet-4-5, claude-opus-4-20250514) that don't
+    # start with "claude-3" or "claude-4".
+    "claude-sonnet": 0.003,    # claude-sonnet-4-5, claude-sonnet-4-20250514
+    "claude-opus": 0.015,      # claude-opus-4-20250514
     "claude-4": 0.015,
     "claude-3-7": 0.003,
     "claude-3-5": 0.003,
     "claude-3": 0.003,
     # Google
-    "gemini": 0.00125,         # Gemini 1.5 Pro
+    "gemini": 0.00125,         # Gemini 1.5/2.0
     "default": 0.002,
 }
 

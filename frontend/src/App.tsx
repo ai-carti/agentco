@@ -16,7 +16,6 @@ const AgentPage = lazy(() => import('./components/AgentPage'))
 const AgentEditPage = lazy(() => import('./components/AgentEditPage'))
 const SettingsPage = lazy(() => import('./components/SettingsPage'))
 const CompanySettingsPage = lazy(() => import('./components/CompanySettingsPage'))
-const WarRoomPage = lazy(() => import('./components/WarRoomPage'))
 const OnboardingPage = lazy(() => import('./components/OnboardingPage'))
 const LibraryPage = lazy(() => import('./components/LibraryPage'))
 const LibraryPortfolioPage = lazy(() => import('./components/LibraryPortfolioPage'))
@@ -46,7 +45,9 @@ function AppLayout() {
                 <Route path="/companies/:id" element={<CompanyPage />} />
                 {/* SIRI-UX-052: /war-room without company context → redirect to companies list */}
                 <Route path="/war-room" element={<Navigate to="/" replace />} />
-                <Route path="/companies/:id/warroom" element={<WarRoomPage />} />
+                {/* SIRI-UX-449: /companies/:id/warroom was a dead route — War Room is embedded
+                    in CompanyPage as a tab panel. No navigate/Link/href pointed to this route.
+                    Removed to eliminate unreachable code. */}
                 <Route path="/companies/:id/agents/:agentId" element={<AgentPage />} />
                 <Route path="/companies/:id/agents/:agentId/edit" element={<AgentEditPage />} />
                 <Route path="/companies/:id/settings" element={<CompanySettingsPage />} />

@@ -3,8 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useAgentStore } from '../store/agentStore'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const EXPANDED_WIDTH = 240
-const COLLAPSED_WIDTH = 48
+// SIRI-UX-450: EXPANDED_WIDTH/COLLAPSED_WIDTH replaced by Tailwind classes w-60/w-12
 const STORAGE_KEY = 'sidebar:collapsed'
 const TABLET_BREAKPOINT = 1024
 
@@ -68,12 +67,15 @@ export default function Sidebar() {
       )}
       <aside
         data-testid="sidebar"
-        className="flex flex-col border-r border-slate-800 bg-gray-900 transition-[width] duration-200 ease-in-out overflow-hidden shrink-0"
-        style={{
-          width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
-          minHeight: '100%',
-          ...(mobile ? { position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 40 } : { position: 'relative' }),
-        }}
+        className={[
+          'flex flex-col border-r border-slate-800 bg-gray-900 transition-[width] duration-200 ease-in-out overflow-hidden shrink-0',
+          // SIRI-UX-450: width via Tailwind — w-12 = 48px (collapsed), w-60 = 240px (expanded)
+          collapsed ? 'w-12' : 'w-60',
+          // SIRI-UX-450: minHeight via Tailwind
+          'min-h-full',
+          // SIRI-UX-450: position/top/left/bottom/zIndex via Tailwind
+          mobile ? 'fixed top-0 left-0 bottom-0 z-[40]' : 'relative',
+        ].join(' ')}
       >
         {/* Toggle button */}
         <button
