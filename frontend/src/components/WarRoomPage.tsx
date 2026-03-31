@@ -441,6 +441,8 @@ export default function WarRoomPage() {
             variant="danger"
             onClick={handleStop}
             disabled={isStopDisabled}
+            // SIRI-UX-458: aria-disabled mirrors disabled so AT users know why button is inactive
+            aria-disabled={isStopDisabled}
             className={`px-5 py-2 text-[0.9rem] ${isStopDisabled ? 'opacity-40' : 'opacity-100'}`}
           >
             {stopping ? 'Stopping…' : 'Stop'}

@@ -36,10 +36,11 @@ interface AgentData {
 }
 
 export default function AgentPage() {
-  useDocumentTitle('Agent — AgentCo')
   const { id: companyId, agentId } = useParams<{ id: string; agentId: string }>()
   const navigate = useNavigate()
   const [agentData, setAgentData] = useState<AgentData | null>(null)
+  // SIRI-UX-456: dynamic title — shows agent name for better tab/history UX
+  useDocumentTitle(agentData ? `${agentData.name} — AgentCo` : 'Agent — AgentCo')
   const [agentLoading, setAgentLoading] = useState(true)
   const [agentLoadError, setAgentLoadError] = useState(false)
   const [savedToLibrary, setSavedToLibrary] = useState(false)
@@ -263,6 +264,8 @@ export default function AgentPage() {
           {saveToLibraryError && (
             <span
               data-testid="save-to-library-error"
+              // SIRI-UX-457: role="alert" so screen readers auto-announce save errors
+              role="alert"
               className="text-red-400 text-sm"
             >
               {saveToLibraryError}
