@@ -44,6 +44,13 @@
 |----|----------|----------|----------|--------|
 | ALEX-TD-288 | minor | **`orchestration/agent_node.py` — `tools=[]` передаётся в LiteLLM**: пустой `[]` вызывает `400 Bad Request` у Anthropic/Gemini. Fix: guard `if tools:`. | Alex | done (was already guarded) |
 | ALEX-TD-289 | minor | **`memory/service.py` — `_EMBEDDING_MODEL` и `_DEFAULT_DB` при импорте без cache_clear**: тесты с monkeypatch.setenv не влияют. Fix: `@functools.lru_cache`. | Alex | done |
+| ALEX-TD-290 | minor | **README.md пустой или слишком короткий**: `backend/README.md` — должен содержать Quick Start, API, Environment секции. Fix: написать реальную документацию. | Alex | done |
+| ALEX-TD-291 | minor | **`_COST_PER_1K_TOKENS` не покрывает новые имена моделей**: `claude-sonnet-4-5`, `claude-opus-4-20250514` → падают в `"default"` rate. Fix: добавить `"claude-sonnet"` и `"claude-opus"` префиксы. | Alex | done |
+| ALEX-TD-292 | minor | **`PROVIDER_MODELS` устарел**: не содержит `claude-sonnet-4-5`, `claude-opus-4-20250514`, `claude-sonnet-4-20250514`. Fix: обновить список. | Alex | done |
+| ALEX-TD-293 | minor | **`_COST_PER_1K_TOKENS` prefix ordering не задокументирован**: `gpt-4o-mini` должен идти перед `gpt-4o`, иначе `gpt-4o-mini` матчится на `gpt-4o` rate. Fix: порядок + тест. | Alex | done |
+| ALEX-TD-294 | minor | **`GET /api/library` нет `sort_by` параметра**: нет способа получить агентов отсортированных по `use_count DESC`. `use_count` индекс добавлен в ALEX-TD-266 "for future ORDER BY" но endpoint не реализован. Fix: `?sort_by=use_count\|created_at`, валидация allowlist. | Alex | done |
+| ALEX-TD-295 | minor | **`LibraryAgentOut` не имеет поля `avatar`**: frontend `LibraryPage.tsx` ожидает `avatar?: string` и рендерит emoji если оно есть, иначе Bot icon. `AgentLibraryORM` не хранит avatar. Fix: добавить nullable `avatar` column в ORM + поле в схему. | Alex | done |
+| ALEX-TD-296 | minor | **`GET /api/library` нет фильтра `?mine=true`**: ALEX-TD-269 добавил `owner_id` в DB с индексом "for future GET /api/library?mine=true" но endpoint не реализован. Fix: `?mine=true` фильтрует по `owner_id = current_user.id`. | Alex | done |
 
 ---
 
