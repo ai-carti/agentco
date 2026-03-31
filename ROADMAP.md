@@ -85,6 +85,9 @@
 | SIRI-UX-453 | minor | **Toast auto-dismiss одинаковый для error и success**: error тосты должны держаться дольше (5s) чем success (3s) — у пользователя меньше времени осознать что пошло не так. Fix: `{ success: 3000, info: 3000, error: 5000 }`. | Siri | done |
 | SIRI-UX-454 | minor | **OnboardingPage поле company name без `autoFocus`**: первый ввод на странице онбординга не фокусируется автоматически. Плохой UX для клавиатурных пользователей. Fix: `autoFocus` на input. | Siri | done |
 | SIRI-UX-455 | minor | **LibraryPortfolioPage пустой список задач — голый `<p>`**: `No tasks yet` выводится как bare `<p>` без иконки и структуры. Несоответствует стилю остального приложения. Fix: стилизованный empty state с emoji и двумя строками текста. | Siri | done |
+| SIRI-UX-456 | minor | **AgentPage статический document title**: `AgentPage.tsx` — `useDocumentTitle('Agent — AgentCo')` статическая строка. После загрузки агента должно быть `${agent.name} — AgentCo`. Улучшает browser history + tabs. | Siri | done |
+| SIRI-UX-457 | minor | **AgentPage saveToLibraryError span без `role="alert"`**: `AgentPage.tsx` — ошибка "Failed to save to library" рендерится как обычный `<span>` без `role="alert"`. Screen readers не анонсируют ошибку. WCAG 4.1.3. Fix: добавить `role="alert"`. | Siri | done |
+| SIRI-UX-458 | minor | **WarRoomPage Stop button — `disabled` без `aria-disabled`**: `WarRoomPage.tsx` — кнопка Stop имеет `disabled={runStatus !== 'running'}` но не `aria-disabled`. Некоторые screen readers читают нативный `disabled` как "недоступно", но паттерн с `aria-disabled` более консистентен с WCAG. Fix: добавить `aria-disabled={runStatus !== 'running'}`. | Siri | done |
 
 ---
 
