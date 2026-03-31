@@ -142,20 +142,32 @@ def test_get_embedding_has_timeout():
 
 def test_memory_handler_always_closes_service():
     """
-    ALEX-TD-101: handlers/memory.py must always call memory_service.close() via try/finally.
+    ALEX-TD-101: handlers/memory.py prevents connection leaks.
 
-    This ensures sqlite connections are not leaked even if get_all() raises.
+    ALEX-TD-298: architecture changed from per-request MemoryService (with try/finally close)
+    to a module-level singleton that persists across requests. The connection is NOT closed
+    per-request — it's a single long-lived connection protected by threading.Lock.
+
+    Instead of try/finally per-request, connection safety is ensured by:
+    - _reset_memory_store() in lifespan shutdown (called by tests and graceful shutdown)
+    - SqliteVecStore._lock (threading.Lock) guards concurrent access
+    - No per-request close needed because no per-request connection is opened
+
+    This test verifies the new pattern: singleton factory is used, not per-request close.
     """
     import inspect
     import agentco.handlers.memory as mem_module
 
     src = inspect.getsource(mem_module.get_agent_memory)
-    assert "try:" in src and "finally:" in src, (
-        "ALEX-TD-101: get_agent_memory must use try/finally to ensure MemoryService.close() "
-        "is always called — prevents sqlite connection leaks."
+    # ALEX-TD-298: new pattern — uses singleton factory, not per-request creation+close
+    assert "_get_memory_store" in src, (
+        "ALEX-TD-298: get_agent_memory must use _get_memory_store() singleton factory "
+        "instead of creating a new MemoryService per request."
     )
-    assert "memory_service.close()" in src, (
-        "ALEX-TD-101: get_agent_memory must explicitly call memory_service.close() in finally block."
+    # Verify module exports _reset_memory_store for test isolation and graceful shutdown
+    assert hasattr(mem_module, "_reset_memory_store"), (
+        "ALEX-TD-298: handlers/memory.py must export _reset_memory_store() "
+        "for test isolation and graceful shutdown."
     )
 
 

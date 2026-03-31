@@ -189,20 +189,27 @@ def test_extract_tokens_logs_missing_usage():
 
 
 def test_extract_tokens_returns_zero_for_no_usage():
-    """ALEX-TD-094: _extract_tokens returns 0 when usage is None — baseline behavior preserved."""
+    """ALEX-TD-094: _extract_tokens returns (0,0,0) when usage is None.
+    ALEX-TD-299: return type changed from int to tuple[int,int,int] — update assertions.
+    """
     from agentco.orchestration.agent_node import _extract_tokens
 
     # Chunk with no usage
     chunk = MagicMock()
     chunk.usage = None
-    assert _extract_tokens(chunk) == 0
+    result = _extract_tokens(chunk)
+    assert result == (0, 0, 0), f"Expected (0,0,0), got {result}"
 
 
 def test_extract_tokens_returns_value_when_present():
-    """ALEX-TD-094: _extract_tokens returns correct value when usage is present."""
+    """ALEX-TD-094: _extract_tokens returns correct total in tuple[int,int,int].
+    ALEX-TD-299: return type changed from int to tuple[int,int,int] — update assertions.
+    total_tokens accessible via result[0].
+    """
     from agentco.orchestration.agent_node import _extract_tokens
 
     chunk = MagicMock()
     chunk.usage = MagicMock()
     chunk.usage.total_tokens = 150
-    assert _extract_tokens(chunk) == 150
+    result = _extract_tokens(chunk)
+    assert result[0] == 150, f"Expected total_tokens=150, got {result[0]}"
