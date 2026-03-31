@@ -176,9 +176,16 @@ export default function LibraryPage() {
   const [loadError, setLoadError] = useState(false)
   const [forkTarget, setForkTarget] = useState<string | null>(null)
 
+  // SIRI-UX-448: AbortController ref for manual retry clicks — prevents setState on unmounted component
+  const retryController = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => { retryController.current?.abort() }
+  }, [])
+
   // SIRI-UX-386: useCallback so Retry button click uses stable reference
   const loadAgents = useCallback((signal?: AbortSignal) => {
     setLoadError(false)
+    setLoading(true)
     const token = getStoredToken()
     // SIRI-UX-069: use limit param now that backend supports pagination (ALEX-TD-040)
     fetch(`${BASE_URL}/api/library?limit=50`, {
@@ -199,6 +206,14 @@ export default function LibraryPage() {
   // SIRI-UX-386: no deps — only reads stable setState functions
   }, []) // SIRI-UX-386
 
+  // SIRI-UX-448: handleRetry creates a fresh AbortController so retry fetch can be cancelled on unmount
+  const handleRetry = useCallback(() => {
+    retryController.current?.abort()
+    const controller = new AbortController()
+    retryController.current = controller
+    loadAgents(controller.signal)
+  }, [loadAgents])
+
   useEffect(() => {
     const controller = new AbortController()
     loadAgents(controller.signal)
@@ -215,12 +230,20 @@ export default function LibraryPage() {
       </h1>
 
       {/* SIRI-UX-152: error state — shown when fetch fails */}
+      {/* SIRI-UX-448: Retry button uses handleRetry which creates a fresh AbortController */}
       {loadError && (
         <div
           role="alert"
-          className="mb-4 py-3.5 px-4 bg-red-900/85 border border-red-700 rounded-lg text-red-100 text-sm"
+          className="mb-4 py-3.5 px-4 bg-red-900/85 border border-red-700 rounded-lg text-red-100 text-sm flex items-center justify-between gap-3"
         >
-          Failed to load agent library. Please try again.
+          <span>Failed to load agent library. Please try again.</span>
+          <button
+            data-testid="library-retry-btn"
+            onClick={handleRetry}
+            className="shrink-0 px-3 py-1.5 bg-red-700 border-none rounded text-red-100 text-xs font-semibold cursor-pointer"
+          >
+            Retry
+          </button>
         </div>
       )}
 

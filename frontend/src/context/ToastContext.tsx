@@ -122,12 +122,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           )
         })}
       </div>
-      <style>{`
-        @keyframes toast-slide-in {
-          from { opacity: 0; transform: translateY(0.5rem); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </ToastContext.Provider>
   )
 }

@@ -371,6 +371,13 @@
   border-color: #f87171 !important;
 }
 
+/* SIRI-UX-446: toast-slide-in moved from inline <style> JSX in ToastContext to global CSS
+   so it benefits from CSS caching, purging, and reduced-motion support */
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* SIRI-UX-201: respect prefers-reduced-motion for users with vestibular disorders (WCAG 2.3.3) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
