@@ -4,7 +4,7 @@
  * SIRI-UX-458: WarRoomPage Stop button has aria-disabled mirroring disabled prop
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import AgentPage from '../components/AgentPage'
 import WarRoomPage from '../components/WarRoomPage'
@@ -146,7 +146,8 @@ describe('SIRI-UX-458: WarRoomPage Stop button — aria-disabled mirrors disable
     const { useWarRoomStore } = await import('../store/warRoomStore')
     // Set agents to get past empty/connecting state
     act(() => {
-      (useWarRoomStore as ReturnType<typeof import('zustand').create>).setState({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (useWarRoomStore as any).setState({
         agents: [{ id: 'a1', name: 'CEO', role: 'Chief', avatar: '🤖', status: 'idle', level: 0 }],
         runStatus: 'idle',
         messages: [],
