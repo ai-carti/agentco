@@ -51,6 +51,9 @@
 | ALEX-TD-294 | minor | **`GET /api/library` нет `sort_by` параметра**: нет способа получить агентов отсортированных по `use_count DESC`. `use_count` индекс добавлен в ALEX-TD-266 "for future ORDER BY" но endpoint не реализован. Fix: `?sort_by=use_count\|created_at`, валидация allowlist. | Alex | done |
 | ALEX-TD-295 | minor | **`LibraryAgentOut` не имеет поля `avatar`**: frontend `LibraryPage.tsx` ожидает `avatar?: string` и рендерит emoji если оно есть, иначе Bot icon. `AgentLibraryORM` не хранит avatar. Fix: добавить nullable `avatar` column в ORM + поле в схему. | Alex | done |
 | ALEX-TD-296 | minor | **`GET /api/library` нет фильтра `?mine=true`**: ALEX-TD-269 добавил `owner_id` в DB с индексом "for future GET /api/library?mine=true" но endpoint не реализован. Fix: `?mine=true` фильтрует по `owner_id = current_user.id`. | Alex | done |
+| ALEX-TD-297 | minor | **`SqliteVecStore` — missing index on `agent_id`**: `agent_memory_meta` table has no index on `agent_id` column. Every `search()`, `get_all()`, `delete_by_agent()` does a full table scan on meta table. Fix: add `CREATE INDEX IF NOT EXISTS idx_agent_memory_meta_agent_id ON agent_memory_meta(agent_id)` in `_setup()`. | Alex | open |
+| ALEX-TD-298 | minor | **`handlers/memory.py` — creates new MemoryService + sqlite connection per request**: каждый GET `/memory` создаёт новый `sqlite3.connect()` + `sqlite_vec.load()` extension. При 60 RPS — 60 параллельных connections + extension loads. Fix: module-level singleton `_memory_store` для `SqliteVecStore`, передавать в `MemoryService`. | Alex | open |
+| ALEX-TD-299 | minor | **`_estimate_cost` uses flat rate — no input/output differentiation**: all major LLM providers charge different rates for input vs output tokens. Current code uses single `total_tokens * rate` which overestimates for input-heavy workloads and underestimates for output-heavy. Fix: split into `_COST_INPUT` / `_COST_OUTPUT` dicts, use `prompt_tokens` / `completion_tokens` from `chunk.usage` when available. | Alex | open |
 
 ---
 
@@ -76,6 +79,11 @@
 | SIRI-UX-448 | minor | **LibraryPage retry button — no AbortController**: `components/LibraryPage.tsx` — `handleRetry` re-uses initial fetch logic without a cancellation signal. If component unmounts during retry, setState called on dead component. Fix: add `retryController` ref, abort on unmount. | Siri | done |
 | SIRI-UX-449 | minor | **Dead route `/companies/:id/warroom`**: `App.tsx:49` — separate lazy route for WarRoomPage, but War Room is always accessed via CompanyPage tab panel. This route is unreachable from any UI link/navigation. Investigate if it's used externally (deep links) or remove. | Siri | done |
 | SIRI-UX-450 | minor | **Sidebar inline `style` for width/position**: `Sidebar.tsx` — uses inline `style={{ width, minHeight, position, top, left, bottom, zIndex }}` instead of Tailwind classes. Prevents CSS caching, makes responsive breakpoints harder. Incremental migration to Tailwind. | Siri | done |
+| SIRI-UX-451 | minor | **CompanyPage document title не включает имя компании**: `useDocumentTitle('Company — AgentCo')` — статическое название. Должно быть динамическим: `${companyName} — AgentCo`. Улучшает browser history + tab management. | Siri | done |
+| SIRI-UX-452 | minor | **KanbanBoard нет `overflow-x-auto`**: 6 колонок сжимаются на узких экранах вместо горизонтального скролла. Fix: добавить `overflow-x-auto` на wrapper колонок. | Siri | done |
+| SIRI-UX-453 | minor | **Toast auto-dismiss одинаковый для error и success**: error тосты должны держаться дольше (5s) чем success (3s) — у пользователя меньше времени осознать что пошло не так. Fix: `{ success: 3000, info: 3000, error: 5000 }`. | Siri | done |
+| SIRI-UX-454 | minor | **OnboardingPage поле company name без `autoFocus`**: первый ввод на странице онбординга не фокусируется автоматически. Плохой UX для клавиатурных пользователей. Fix: `autoFocus` на input. | Siri | done |
+| SIRI-UX-455 | minor | **LibraryPortfolioPage пустой список задач — голый `<p>`**: `No tasks yet` выводится как bare `<p>` без иконки и структуры. Несоответствует стилю остального приложения. Fix: стилизованный empty state с emoji и двумя строками текста. | Siri | done |
 
 ---
 
