@@ -54,6 +54,7 @@
 | ALEX-TD-297 | minor | **`SqliteVecStore` — missing index on `agent_id`**: `agent_memory_meta` table has no index on `agent_id` column. Every `search()`, `get_all()`, `delete_by_agent()` does a full table scan on meta table. Fix: add `CREATE INDEX IF NOT EXISTS idx_agent_memory_meta_agent_id ON agent_memory_meta(agent_id)` in `_setup()`. | Alex | done |
 | ALEX-TD-298 | minor | **`handlers/memory.py` — creates new MemoryService + sqlite connection per request**: каждый GET `/memory` создаёт новый `sqlite3.connect()` + `sqlite_vec.load()` extension. При 60 RPS — 60 параллельных connections + extension loads. Fix: module-level singleton `_memory_store` для `SqliteVecStore`, передавать в `MemoryService`. | Alex | done |
 | ALEX-TD-299 | minor | **`_estimate_cost` uses flat rate — no input/output differentiation**: all major LLM providers charge different rates for input vs output tokens. Current code uses single `total_tokens * rate` which overestimates for input-heavy workloads and underestimates for output-heavy. Fix: split into `_COST_INPUT` / `_COST_OUTPUT` dicts, use `prompt_tokens` / `completion_tokens` from `chunk.usage` when available. | Alex | done |
+| ALEX-TD-300 | minor | **Stale тесты после ALEX-TD-298/299**: `test_alex_td_092_094.py` проверял `_extract_tokens() == int` (старая сигнатура), `test_alex_td_099_102.py` проверял `try/finally close()` (per-request паттерн). Оба паттерна изменились в TD-298/299 → тесты упали. Fix: обновить ассерты под новые сигнатуры и singleton паттерн. | Alex | done |
 
 ---
 
