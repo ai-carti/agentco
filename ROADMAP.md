@@ -63,7 +63,10 @@
 | SIRI-UX-442 | minor | **Unused vitest imports in audit test**: `__tests__/SIRI-UX-437-441-Audit.test.tsx:8` — `vi` and `beforeEach` imported but never used → `tsc --noEmit` errors (TS6133). Fix: remove unused imports. | Siri | done |
 | SIRI-UX-443 | minor | **vendor-router bundle 178KB (58KB gzip)**: react-router-dom v7.13.1 produces a 178KB chunk. v6 was ~30KB. Evaluate: lazy-load router, or pin v6 if v7 features aren't needed. | Siri | done |
 | SIRI-UX-444 | minor | **CompanyPage chunk 45KB (11KB gzip) — split KanbanBoard**: `CompanyPage-*.js` bundles KanbanBoard+TaskDetailSidebar+AgentForm. Split KanbanBoard into its own lazy chunk since Board tab is not always active. | Siri | done |
-| SIRI-UX-445 | minor | **464 inline styles vs 71 className usages — migrate to Tailwind classes**: Heavy inline style usage across all components. Increases bundle size, prevents CSS caching, makes theming/dark mode harder. Incremental migration per component recommended. | Siri | open |
+| SIRI-UX-445 | minor | **464 inline styles vs 71 className usages — migrate to Tailwind classes**: Heavy inline style usage across all components. Increases bundle size, prevents CSS caching, makes theming/dark mode harder. Incremental migration per component recommended. | Siri | done |
+| SIRI-UX-446 | minor | **ToastContext inline `<style>` keyframe**: `context/ToastContext.tsx` — `@keyframes toast-slide-in` defined in JSX `<style>` tag, bypasses Tailwind CSS pipeline and caching. Fix: move to `index.css`, reference via `animate-[toast-slide-in]`. | Siri | done |
+| SIRI-UX-447 | minor | **React Router v6 future flag warnings**: `main.tsx` — `BrowserRouter` missing `future={{ v7_startTransition, v7_relativeSplatPath }}` flags. Console polluted with deprecation warnings on every nav. Fix: add both flags to BrowserRouter. | Siri | done |
+| SIRI-UX-448 | minor | **LibraryPage retry button — no AbortController**: `components/LibraryPage.tsx` — `handleRetry` re-uses initial fetch logic without a cancellation signal. If component unmounts during retry, setState called on dead component. Fix: add `retryController` ref, abort on unmount. | Siri | done |
 
 ---
 
