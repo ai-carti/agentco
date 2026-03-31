@@ -16,9 +16,11 @@ export interface AgentFormData {
 interface AgentFormProps {
   onSubmit: (data: AgentFormData) => void
   initialValues?: Partial<AgentFormData>
+  // SIRI-UX-463: optional saving prop from parent — enables aria-busy on submit button
+  saving?: boolean
 }
 
-export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
+export default function AgentForm({ onSubmit, initialValues, saving = false }: AgentFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [role, setRole] = useState(initialValues?.role ?? '')
   const [model, setModel] = useState(initialValues?.model ?? '')
@@ -130,13 +132,16 @@ export default function AgentForm({ onSubmit, initialValues }: AgentFormProps) {
         <SystemPromptEditor id="agent-system-prompt" value={systemPrompt} onChange={setSystemPrompt} />
       </div>
 
+      {/* SIRI-UX-463: aria-busy reflects parent saving state so screen readers announce progress */}
       <Button
         data-testid="agent-form-submit"
         type="submit"
         variant="primary"
+        disabled={saving}
+        aria-busy={saving}
         className="w-full"
       >
-        Save Agent
+        {saving ? 'Saving…' : 'Save Agent'}
       </Button>
     </form>
   )

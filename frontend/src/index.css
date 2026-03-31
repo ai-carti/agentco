@@ -34,6 +34,12 @@
   }
 }
 
+/* SIRI-UX-462: agent card indentation via CSS variable + data-level attribute
+   Replaces inline style={{ marginLeft: level*24 }} so CSS is cacheable and themeable */
+.war-room-agent-card {
+  margin-left: calc(var(--agent-level, 0) * 24px);
+}
+
 /* SIRI-UX-228: CSS class for App-level Suspense fallback spinner — same pattern as war-room-connecting-spinner */
 .app-suspense-spinner {
   animation: spin 0.8s linear infinite;

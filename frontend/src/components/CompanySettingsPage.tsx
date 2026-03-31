@@ -6,6 +6,8 @@ import Button from './Button'
 // SIRI-POST-006: focus trap for modals
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+// SIRI-UX-460: skeleton while company data loads
+import SkeletonCard from './SkeletonCard'
 
 
 interface CompanyData {
@@ -21,6 +23,7 @@ export default function CompanySettingsPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const [company, setCompany] = useState<CompanyData | null>(null)
+  const [loadingCompany, setLoadingCompany] = useState(true)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -49,9 +52,11 @@ export default function CompanySettingsPage() {
           setName(data.name ?? '')
           setDescription(data.description ?? '')
         }
+        setLoadingCompany(false)
       })
       .catch((err) => {
         if (err?.name === 'AbortError') return
+        setLoadingCompany(false)
       })
     return () => controller.abort()
   }, [companyId])
@@ -134,6 +139,15 @@ export default function CompanySettingsPage() {
     }
   // SIRI-UX-384: deps — companyId, company.name (for confirm validation), navigate, toast
   }, [companyId, navigate, toast]) // SIRI-UX-384
+
+  // SIRI-UX-460: show loading skeleton while company data is being fetched
+  if (loadingCompany) {
+    return (
+      <div data-testid="company-settings-loading" className="p-6 max-w-[560px]" role="status" aria-label="Loading company settings…">
+        <SkeletonCard variant="task" count={3} />
+      </div>
+    )
+  }
 
   return (
     <div data-testid="company-settings-page" className="p-6 max-w-[560px]">

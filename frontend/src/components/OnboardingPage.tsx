@@ -80,7 +80,8 @@ export default function OnboardingPage({ onCompanyCreated }: OnboardingPageProps
         headers,
         body: JSON.stringify({ template_id: template.id, name: companyName.trim() }),
         signal,
-      }).catch((err) => { console.warn('[SIRI-UX-421] from-template endpoint failed, falling back to manual creation:', err); return null })
+      // SIRI-UX-459: guard console.warn with DEV flag — don't emit in production builds
+      }).catch((err) => { if (import.meta.env.DEV) { console.warn('[SIRI-UX-421] from-template endpoint failed, falling back to manual creation:', err) } return null })
 
       if (templateRes?.ok) {
         const data = await templateRes.json()

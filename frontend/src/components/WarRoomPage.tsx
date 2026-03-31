@@ -522,14 +522,17 @@ export default function WarRoomPage() {
                   // SIRI-UX-200: role + aria-label for screen reader accessibility
                   role="article"
                   aria-label={`${agent.name} — ${statusLabel[agent.status]}`}
-                  className={`rounded-[10px] px-3.5 py-3 transition-[background,border-color] duration-300 border ${isFlashing ? 'flash-green' : ''} ${
+                  className={`rounded-[10px] px-3.5 py-3 transition-[background,border-color] duration-300 border war-room-agent-card ${isFlashing ? 'flash-green' : ''} ${
                     isFlashing
                       ? 'bg-green-500/25 border-green-500/50'
                       : agent.status === 'thinking' || agent.status === 'running'
                         ? 'bg-green-500/[0.06] border-white/[0.08]'
                         : 'bg-white/[0.03] border-white/[0.08]'
                   }`}
-                  style={{ marginLeft: `${agent.level * 24}px` }}
+                  // SIRI-UX-462: use CSS variable + data-level instead of inline marginLeft
+                  // Prevents inline style, keeps CSS cacheable, and enables theme overrides
+                  data-level={agent.level}
+                  style={{ '--agent-level': agent.level } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-[1.4rem]">{agent.avatar}</span>

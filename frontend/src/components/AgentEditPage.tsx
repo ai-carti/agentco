@@ -151,14 +151,19 @@ export default function AgentEditPage() {
         Edit Agent
       </h1>
 
+      {/* SIRI-UX-463: pass saving state so AgentForm submit button shows aria-busy */}
       <AgentForm
         onSubmit={handleSubmit}
         initialValues={initialValues}
+        saving={saving}
       />
 
       {saving && (
+        // SIRI-UX-461: role="status" so screen readers announce saving state via aria-live polite
         <p
           data-testid="agent-edit-saving"
+          role="status"
+          aria-live="polite"
           className="text-blue-400 text-sm mt-3"
         >
           Saving…

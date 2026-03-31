@@ -249,9 +249,10 @@ describe('WarRoomPage', () => {
 
     const panel = screen.getByTestId('agent-panel')
     const cards = within(panel).getAllByTestId(/^agent-card-/)
-    // CEO should have no indent (level 0), others should be indented
-    expect(cards[0].style.marginLeft).toBe('0px')
-    expect(parseInt(cards[1].style.marginLeft)).toBeGreaterThan(0)
+    // SIRI-UX-462: indentation now via data-level + CSS variable (not inline marginLeft)
+    // CEO should be at level 0, subordinates at level > 0
+    expect(cards[0]).toHaveAttribute('data-level', '0')
+    expect(parseInt(cards[1].getAttribute('data-level') ?? '0')).toBeGreaterThan(0)
   })
 
   // --- AC 9: Empty state ---
