@@ -74,8 +74,8 @@
 | SIRI-UX-446 | minor | **ToastContext inline `<style>` keyframe**: `context/ToastContext.tsx` — `@keyframes toast-slide-in` defined in JSX `<style>` tag, bypasses Tailwind CSS pipeline and caching. Fix: move to `index.css`, reference via `animate-[toast-slide-in]`. | Siri | done |
 | SIRI-UX-447 | minor | **React Router v6 future flag warnings**: `main.tsx` — `BrowserRouter` missing `future={{ v7_startTransition, v7_relativeSplatPath }}` flags. Console polluted with deprecation warnings on every nav. Fix: add both flags to BrowserRouter. | Siri | done |
 | SIRI-UX-448 | minor | **LibraryPage retry button — no AbortController**: `components/LibraryPage.tsx` — `handleRetry` re-uses initial fetch logic without a cancellation signal. If component unmounts during retry, setState called on dead component. Fix: add `retryController` ref, abort on unmount. | Siri | done |
-| SIRI-UX-449 | minor | **Dead route `/companies/:id/warroom`**: `App.tsx:49` — separate lazy route for WarRoomPage, but War Room is always accessed via CompanyPage tab panel. This route is unreachable from any UI link/navigation. Investigate if it's used externally (deep links) or remove. | Siri | open |
-| SIRI-UX-450 | minor | **Sidebar inline `style` for width/position**: `Sidebar.tsx` — uses inline `style={{ width, minHeight, position, top, left, bottom, zIndex }}` instead of Tailwind classes. Prevents CSS caching, makes responsive breakpoints harder. Incremental migration to Tailwind. | Siri | open |
+| SIRI-UX-449 | minor | **Dead route `/companies/:id/warroom`**: `App.tsx:49` — separate lazy route for WarRoomPage, but War Room is always accessed via CompanyPage tab panel. This route is unreachable from any UI link/navigation. Investigate if it's used externally (deep links) or remove. | Siri | done |
+| SIRI-UX-450 | minor | **Sidebar inline `style` for width/position**: `Sidebar.tsx` — uses inline `style={{ width, minHeight, position, top, left, bottom, zIndex }}` instead of Tailwind classes. Prevents CSS caching, makes responsive breakpoints harder. Incremental migration to Tailwind. | Siri | done |
 
 ---
 
