@@ -38,7 +38,7 @@ export default function CompanySettingsPage() {
   const deleteAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    if (!companyId) return
+    if (!companyId) { setLoadingCompany(false); return }
     const controller = new AbortController()
     const token = getStoredToken()
     fetch(`${BASE_URL}/api/companies/${companyId}`, {
