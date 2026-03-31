@@ -48,6 +48,9 @@ class LibraryAgentOut(BaseModel):
     # ALEX-TD-269: expose owner_id so frontend can implement "My Library" and
     # operators can audit who saved each agent. nullable because legacy entries have no owner.
     owner_id: str | None = None
+    # ALEX-TD-295: emoji avatar — frontend LibraryPage.tsx renders it if present.
+    # None for agents saved before this field was added.
+    avatar: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -124,24 +127,48 @@ def save_to_library(
 
 # ── GET /api/library ──────────────────────────────────────────────────────────
 
+_LIBRARY_SORT_FIELDS = {"created_at", "use_count"}
+
 @router.get("/api/library", response_model=list[LibraryAgentOut])
 @limiter.limit(_RATE_LIMIT_LIBRARY_READ)
 def list_library(
     request: Request,
     limit: int = Query(default=50, ge=1, le=100),  # ALEX-TD-238: le=500→100 consistent with ALEX-TD-236
     offset: int = Query(default=0, ge=0),
+    # ALEX-TD-294: sort_by parameter — "created_at" (default) or "use_count" (popularity)
+    sort_by: str = Query(default="created_at"),
+    # ALEX-TD-296: mine=true filters by current user's saved agents (owner_id match)
+    mine: bool = Query(default=False),
     session: Session = Depends(get_session),
     current_user: UserORM = Depends(get_current_user),  # just requires auth
 ):
     """ALEX-TD-040: pagination added (default limit=50, max=500) to prevent OOM.
     ALEX-TD-062: ORDER BY created_at DESC for deterministic pagination cursor.
+    ALEX-TD-294: sort_by parameter — "created_at" (default) or "use_count" (popularity).
+    ALEX-TD-296: mine=true filters to current user's saved agents only.
     """
-    entries = session.execute(
-        select(AgentLibraryORM)
-        .order_by(AgentLibraryORM.created_at.desc())
-        .limit(limit)
-        .offset(offset)
-    ).scalars().all()
+    # ALEX-TD-294: validate sort_by against allowlist to prevent SQL injection
+    if sort_by not in _LIBRARY_SORT_FIELDS:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid sort_by '{sort_by}'. Valid values: {sorted(_LIBRARY_SORT_FIELDS)}",
+        )
+
+    stmt = select(AgentLibraryORM)
+
+    # ALEX-TD-296: mine=true — only show current user's saved agents
+    if mine:
+        stmt = stmt.where(AgentLibraryORM.owner_id == current_user.id)
+
+    # ALEX-TD-294: sort by requested field DESC
+    if sort_by == "use_count":
+        stmt = stmt.order_by(AgentLibraryORM.use_count.desc(), AgentLibraryORM.created_at.desc())
+    else:
+        stmt = stmt.order_by(AgentLibraryORM.created_at.desc())
+
+    stmt = stmt.limit(limit).offset(offset)
+    entries = session.execute(stmt).scalars().all()
     return list(entries)
 
 

@@ -23,3 +23,6 @@ class AgentLibraryORM(Base):
     # nullable=True for backward compat with existing rows (pre-migration entries have no owner).
     # Index on owner_id for future "GET /api/library?mine=true" queries.
     owner_id: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
+    # ALEX-TD-295: emoji avatar field — frontend LibraryPage.tsx expects optional avatar
+    # (e.g. "🤖", "💼"). nullable=True for backward compat with existing rows.
+    avatar: Mapped[str | None] = mapped_column(Text, nullable=True)
