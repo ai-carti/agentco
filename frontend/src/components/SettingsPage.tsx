@@ -322,7 +322,9 @@ export default function SettingsPage() {
                   data-testid="llm-api-key-input"
                   type="password"
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value.trim())}
+                  // SIRI-UX-464: don't trim on keystroke — causes cursor jumps and breaks paste.
+                  // Trim happens in handleSubmit before validation/save.
+                  onChange={(e) => setApiKey(e.target.value)}
                   className="input-focus-ring w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-slate-50 text-sm box-border outline-none"
                   placeholder="sk-..."
                   required

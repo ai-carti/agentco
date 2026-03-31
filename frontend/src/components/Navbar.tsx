@@ -29,8 +29,11 @@ export default function Navbar() {
           </span>
         )}
         {/* SIRI-UX-259: replaced JS hover with CSS class .navbar-logout-btn */}
+        {/* SIRI-UX-468: aria-label for screen readers — "Logout" text is visible but
+            "Sign out" is more descriptive for AT context (matches common sign-out patterns) */}
         <button
           onClick={logout}
+          aria-label="Sign out"
           className="navbar-logout-btn"
         >
           Logout

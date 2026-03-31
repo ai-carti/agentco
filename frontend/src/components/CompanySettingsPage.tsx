@@ -243,11 +243,13 @@ export default function CompanySettingsPage() {
               >
                 Cancel
               </Button>
+              {/* SIRI-UX-465: aria-disabled mirrors disabled — consistent with all other buttons (KanbanBoard, CompaniesPage, AuthPage, WarRoomPage) */}
               <Button
                 data-testid="confirm-delete-company-btn"
                 variant="danger"
                 onClick={handleDelete}
                 disabled={deleteConfirm !== company?.name || isDeleting}
+                aria-disabled={deleteConfirm !== company?.name || isDeleting}
                 className="py-1.5 px-3.5"
               >
                 {isDeleting ? 'Deleting…' : 'Delete permanently'}

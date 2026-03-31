@@ -232,9 +232,11 @@ export default function WarRoom() {
             <div
               key={run.run_id}
               // SIRI-UX-197: keyboard accessible — role + tabIndex + onKeyDown
+              // SIRI-UX-466: added tabIndex={0} so keyboard users can focus run items
               role="article"
+              tabIndex={0}
               aria-label={`${run.agent_name}: ${run.task_title} — ${run.status}`}
-              className={`flex items-center gap-3 rounded-lg px-4 py-3 bg-gray-800 border border-white/10 ${
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 bg-gray-800 border border-white/10 outline-none input-focus-ring-blue ${
                 run.status === 'done' ? 'opacity-75' : ''
               }`}
             >

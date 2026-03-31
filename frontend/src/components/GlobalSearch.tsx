@@ -60,10 +60,15 @@ export default function GlobalSearch() {
   }, [])
 
   // SIRI-UX-275: Escape listener gated on `open` — only active when dialog is open.
+  // SIRI-UX-467: stopPropagation prevents parent modal/dialog handlers from also closing
+  // when GlobalSearch is open inside another context (e.g. overlay stack).
   useEffect(() => {
     if (!open) return
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        setOpen(false)
+      }
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
