@@ -229,8 +229,16 @@ def _extract_tokens(chunk) -> tuple[int, int, int]:
     try:
         if chunk.usage and chunk.usage.total_tokens:
             total = chunk.usage.total_tokens
-            prompt = getattr(chunk.usage, "prompt_tokens", None) or 0
-            completion = getattr(chunk.usage, "completion_tokens", None) or 0
+            # ALEX-TD-299: safely extract prompt/completion tokens.
+            # Use int() conversion to handle MagicMock or other non-int values from test mocks.
+            try:
+                prompt = int(getattr(chunk.usage, "prompt_tokens", 0) or 0)
+            except (TypeError, ValueError):
+                prompt = 0
+            try:
+                completion = int(getattr(chunk.usage, "completion_tokens", 0) or 0)
+            except (TypeError, ValueError):
+                completion = 0
             return (total, prompt, completion)
         logger.debug("_extract_tokens: chunk.usage missing or zero (provider may omit mid-stream)")
     except (AttributeError, TypeError):
